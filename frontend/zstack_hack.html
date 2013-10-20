@@ -1,15 +1,13 @@
 <html>
 <head>
-  <script type='text/javascript' src='lib/openseadragon/openseadragon.js'></script>
+  <script type='text/javascript' src='openseadragon.js'></script>
 
   <script type="text/javascript">
     
-    //var SEQUENCE_URL_PREFIX = 'http://monster.krash.net/iipsrv/iipsrv.fcgi?DeepZoom=p_Tile_r1-c1_w043_';
     var SEQUENCE_URL_PREFIX = 'http://monster.krash.net/iipsrv/iipsrv.fcgi?DeepZoom=p_Tile_r1-c1_w043_';
-
     IMAGES = ['sec051', 'sec052', 'sec053', 'sec058'];
-    CUR_IMAGE = 0;
 
+    CUR_IMAGE = 0;
     window.onload = function() {
 
       // var viewer = OpenSeadragon({id: "sd1",
@@ -18,24 +16,18 @@
       //                 SEQUENCE_URL_PREFIX + 'sec058.tif.dzi']
       // });
       
-      viewer = OpenSeadragon({id: "sd1",
+      viewer = OpenSeadragon({id: "sd1", z:0,
         showNavigator: true,
         tileSources: {
           height: 25600,
           width: 25600,
           tileSize: 256,
-          getTileUrl: function( z, level, x, y ) {
+          getTileUrl: function( level, x, y ) {
             
-            return SEQUENCE_URL_PREFIX + IMAGES[z] + '.tif_files/' + level + '/' + x + '_' + y + '.jpg';
-            
+            return SEQUENCE_URL_PREFIX + IMAGES[CUR_IMAGE] + '.tif_files/' + level + '/' + x + '_' + y + '.jpg';
           }
 
         }
-
-
-
-        // [SEQUENCE_URL_PREFIX + 'sec051.tif.dzi',
-        //               SEQUENCE_URL_PREFIX + 'sec058.tif.dzi']
       });
 
 

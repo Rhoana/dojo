@@ -1,6 +1,6 @@
-//! <%= pkg.name %> <%= pkg.version %>
-//! Built on <%= grunt.template.today('yyyy-mm-dd') %>
-//! Git commit: <%= gitInfo %>
+//! OpenSeadragon 0.9.131
+//! Built on 2013-09-23
+//! Git commit: v0.9.131-0-g13249cc
 //! http://openseadragon.github.io
 //! License: http://openseadragon.github.io/license/
 
@@ -495,8 +495,7 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
             xmlPath:                null,
             tileSources:            null,
             tileHost:               null,
-            initialPage:            0,
-            
+
             //PAN AND ZOOM SETTINGS AND CONSTRAINTS
             panHorizontal:          true,
             panVertical:            true,
@@ -703,44 +702,6 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
             }
 
             return result;
-        },
-
-
-        /**
-         * Determines the position of the upper-left corner of the element adjusted for current page and/or element scroll.
-         * @function
-         * @name OpenSeadragon.getElementOffset
-         * @param {Element|String} element - the element we want the position for.
-         * @returns {Point} - the position of the upper left corner of the element adjusted for current page and/or element scroll.
-         */
-        getElementOffset: function( element ) {
-            element = $.getElement( element );
-
-            var doc = element && element.ownerDocument,
-                docElement,
-                win,
-                boundingRect = { top: 0, left: 0 };
-
-            if ( !doc ) {
-                return new $.Point();
-            }
-
-            docElement = doc.documentElement;
-
-            if ( typeof element.getBoundingClientRect !== typeof undefined ) {
-                boundingRect = element.getBoundingClientRect();
-            }
-
-            win = ( doc == doc.window ) ?
-                doc :
-                ( doc.nodeType === 9 ) ?
-                    doc.defaultView || doc.parentWindow :
-                    false;
-
-            return new $.Point(
-                boundingRect.left + ( win.pageXOffset || docElement.scrollLeft ) - ( docElement.clientLeft || 0 ),
-                boundingRect.top + ( win.pageYOffset || docElement.scrollTop ) - ( docElement.clientTop || 0 )
-            );
         },
 
 
@@ -2131,7 +2092,7 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
 })( OpenSeadragon );
 
 /*
- * OpenSeadragon - EventSource
+ * OpenSeadragon - EventHandler
  *
  * Copyright (C) 2009 CodePlex Foundation
  * Copyright (C) 2010-2013 OpenSeadragon contributors
@@ -2168,22 +2129,26 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
 
 /**
  * For use by classes which want to support custom, non-browser events.
- * TODO: Add a method 'one' which automatically unbinds a listener after 
- *       the first triggered event that matches.
+ * TODO: This is an awful name!  This thing represents an "event source",
+ *       not an "event handler".  PLEASE change the to EventSource. Also please
+ *       change 'addHandler', 'removeHandler' and 'raiseEvent' to 'bind',
+ *       'unbind', and 'trigger' respectively.  Finally add a method 'one' which
+ *       automatically unbinds a listener after the first triggered event that
+ *       matches.
  * @class
  */
-$.EventSource = function() {
+$.EventHandler = function() {
     this.events = {};
 };
 
-$.EventSource.prototype = {
+$.EventHandler.prototype = {
 
     /**
      * Add an event handler for a given event.
      * @function
      * @param {String} eventName - Name of event to register.
      * @param {Function} handler - Function to call when event is triggered.
-     * @param {Object} [userData=null] - Arbitrary object to be passed unchanged to the handler.
+     * @param {Object} optional userData - Arbitrary object to be passed to the handler.
      */
     addHandler: function ( eventName, handler, userData ) {
         var events = this.events[ eventName ];
@@ -2253,9 +2218,8 @@ $.EventSource.prototype = {
                 length = events.length;
             for ( i = 0; i < length; i++ ) {
                 if ( events[ i ] ) {
-                    args.eventSource = source;
                     args.userData = events[ i ].userData;
-                    events[ i ].handler( args );
+                    events[ i ].handler( source, args );
                 }
             }
         };
@@ -2318,18 +2282,18 @@ $.EventSource.prototype = {
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-(function ( $ ) {
+(function( $ ){
 
         // is any button currently being pressed while mouse events occur
-    var IS_BUTTON_DOWN = false,
+    var IS_BUTTON_DOWN  = false,
         // is any tracker currently capturing?
-        IS_CAPTURING   = false,
+        IS_CAPTURING    = false,
         // dictionary from hash to MouseTracker
-        ACTIVE         = {},
+        ACTIVE          = {},
         // list of trackers interested in capture
-        CAPTURING      = [],
+        CAPTURING       = [],
         // dictionary from hash to private properties
-        THIS           = {};
+        THIS            = {};
 
     /**
      * The MouseTracker allows other classes to set handlers for common mouse
@@ -2358,22 +2322,12 @@ $.EventSource.prototype = {
      *      An optional handler for mouse press.
      * @param {Function} options.releaseHandler
      *      An optional handler for mouse release.
-     * @param {Function} options.moveHandler
-     *      An optional handler for mouse move.
      * @param {Function} options.scrollHandler
      *      An optional handler for mouse scroll.
      * @param {Function} options.clickHandler
      *      An optional handler for mouse click.
      * @param {Function} options.dragHandler
      *      An optional handler for mouse drag.
-     * @param {Function} options.keyHandler
-     *      An optional handler for keypress.
-     * @param {Function} options.focusHandler
-     *      An optional handler for focus.
-     * @param {Function} options.blurHandler
-     *      An optional handler for blur.
-     * @param {Object} [options.userData=null]
-     *      Arbitrary object to be passed unchanged to any attached handler methods.
      * @property {Number} hash
      *      An unique hash for this tracker.
      * @property {Element} element
@@ -2387,9 +2341,9 @@ $.EventSource.prototype = {
      */
     $.MouseTracker = function ( options ) {
 
-        var args = arguments;
+        var args  = arguments;
 
-        if ( !$.isPlainObject( options ) ) {
+        if( !$.isPlainObject( options ) ){
             options = {
                 element:            args[ 0 ],
                 clickTimeThreshold: args[ 1 ],
@@ -2401,13 +2355,12 @@ $.EventSource.prototype = {
         this.element            = $.getElement( options.element );
         this.clickTimeThreshold = options.clickTimeThreshold;
         this.clickDistThreshold = options.clickDistThreshold;
-        this.userData           = options.userData       || null;
+
 
         this.enterHandler       = options.enterHandler   || null;
         this.exitHandler        = options.exitHandler    || null;
         this.pressHandler       = options.pressHandler   || null;
         this.releaseHandler     = options.releaseHandler || null;
-        this.moveHandler        = options.moveHandler    || null;
         this.scrollHandler      = options.scrollHandler  || null;
         this.clickHandler       = options.clickHandler   || null;
         this.dragHandler        = options.dragHandler    || null;
@@ -2424,7 +2377,7 @@ $.EventSource.prototype = {
          *      Are we currently tracking mouse events.
          * @property {Boolean} capturing
          *      Are we curruently capturing mouse events.
-         * @property {Boolean} insideElementPressed
+         * @property {Boolean} buttonDown
          *      True if the left mouse button is currently being pressed and was
          *      initiated inside the tracked element, otherwise false.
          * @property {Boolean} insideElement
@@ -2437,32 +2390,31 @@ $.EventSource.prototype = {
          *      Position of last mouse down
          */
         THIS[ this.hash ] = {
-            mouseover:             function ( event ) { onMouseOver( _this, event, false ); },
-            mouseout:              function ( event ) { onMouseOut( _this, event, false ); },
-            mousedown:             function ( event ) { onMouseDown( _this, event ); },
-            mouseup:               function ( event ) { onMouseUp( _this, event, false ); },
-            mousemove:             function ( event ) { onMouseMove( _this, event ); },
-            click:                 function ( event ) { onMouseClick( _this, event ); },
-            DOMMouseScroll:        function ( event ) { onMouseWheelSpin( _this, event, false ); },
-            mousewheel:            function ( event ) { onMouseWheelSpin( _this, event, false ); },
-            mouseupie:             function ( event ) { onMouseUpIE( _this, event ); },
-            mousemovecapturedie:   function ( event ) { onMouseMoveCapturedIE( _this, event ); },
-            mouseupcaptured:       function ( event ) { onMouseUpCaptured( _this, event ); },
-            mousemovecaptured:     function ( event ) { onMouseMoveCaptured( _this, event, false ); },
-            touchstart:            function ( event ) { onTouchStart( _this, event ); },
-            touchmove:             function ( event ) { onTouchMove( _this, event ); },
-            touchend:              function ( event ) { onTouchEnd( _this, event ); },
-            keypress:              function ( event ) { onKeyPress( _this, event ); },
-            focus:                 function ( event ) { onFocus( _this, event ); },
-            blur:                  function ( event ) { onBlur( _this, event ); },
-            tracking:              false,
-            capturing:             false,
-            insideElementPressed:  false,
-            insideElement:         false,
-            lastPoint:             null,
-            lastMouseDownTime:     null,
-            lastMouseDownPoint:    null,
-            lastPinchDelta:        0
+            mouseover:          function( event ){ onMouseOver( _this, event ); },
+            mouseout:           function( event ){ onMouseOut( _this, event ); },
+            mousedown:          function( event ){ onMouseDown( _this, event ); },
+            mouseup:            function( event ){ onMouseUp( _this, event ); },
+            click:              function( event ){ onMouseClick( _this, event ); },
+            DOMMouseScroll:     function( event ){ onMouseWheelSpin( _this, event ); },
+            mousewheel:         function( event ){ onMouseWheelSpin( _this, event ); },
+            mouseupie:          function( event ){ onMouseUpIE( _this, event ); },
+            mousemoveie:        function( event ){ onMouseMoveIE( _this, event ); },
+            mouseupwindow:      function( event ){ onMouseUpWindow( _this, event ); },
+            mousemove:          function( event ){ onMouseMove( _this, event ); },
+            touchstart:         function( event ){ onTouchStart( _this, event ); },
+            touchmove:          function( event ){ onTouchMove( _this, event ); },
+            touchend:           function( event ){ onTouchEnd( _this, event ); },
+            keypress:           function( event ){ onKeyPress( _this, event ); },
+            focus:              function( event ){ onFocus( _this, event ); },
+            blur:               function( event ){ onBlur( _this, event ); },
+            tracking:           false,
+            capturing:          false,
+            buttonDown:         false,
+            insideElement:      false,
+            lastPoint:          null,
+            lastMouseDownTime:  null,
+            lastMouseDownPoint: null,
+            lastPinchDelta:     0
         };
 
     };
@@ -2473,7 +2425,7 @@ $.EventSource.prototype = {
          * Clean up any events or objects created by the mouse tracker.
          * @function
          */
-        destroy: function () {
+        destroy: function() {
             stopTracking( this );
             this.element = null;
         },
@@ -2508,218 +2460,125 @@ $.EventSource.prototype = {
          * Implement or assign implmentation to these handlers during or after
          * calling the constructor.
          * @function
-         * @param {Object} event
-         * @param {OpenSeadragon.MouseTracker} event.eventSource
+         * @param {OpenSeadragon.MouseTracker} tracker
          *      A reference to the tracker instance.
-         * @param {OpenSeadragon.Point} event.position
-         *      The position of the event relative to the tracked element.
-         * @param {Boolean} event.insideElementPressed
+         * @param {OpenSeadragon.Point} position
+         *      The poistion of the event on the screen.
+         * @param {Boolean} buttonDown
          *      True if the left mouse button is currently being pressed and was
          *      initiated inside the tracked element, otherwise false.
-         * @param {Boolean} event.buttonDownAny
+         * @param {Boolean} buttonDownAny
          *      Was the button down anywhere in the screen during the event.
-         * @param {Boolean} event.isTouchEvent
-         *      True if the original event is a touch event, otherwise false.
-         * @param {Object} event.originalEvent
-         *      The original event object.
-         * @param {Object} event.userData
-         *      Arbitrary user-defined object.
          */
-        enterHandler: function () { },
+        enterHandler: function(){},
 
         /**
          * Implement or assign implmentation to these handlers during or after
          * calling the constructor.
          * @function
-         * @param {Object} event
-         * @param {OpenSeadragon.MouseTracker} event.eventSource
+         * @param {OpenSeadragon.MouseTracker} tracker
          *      A reference to the tracker instance.
-         * @param {OpenSeadragon.Point} event.position
-         *      The position of the event relative to the tracked element.
-         * @param {Boolean} event.insideElementPressed
+         * @param {OpenSeadragon.Point} position
+         *      The poistion of the event on the screen.
+         * @param {Boolean} buttonDown
          *      True if the left mouse button is currently being pressed and was
          *      initiated inside the tracked element, otherwise false.
-         * @param {Boolean} event.buttonDownAny
+         * @param {Boolean} buttonDownAny
          *      Was the button down anywhere in the screen during the event.
-         * @param {Boolean} event.isTouchEvent
-         *      True if the original event is a touch event, otherwise false.
-         * @param {Object} event.originalEvent
-         *      The original event object.
-         * @param {Object} event.userData
-         *      Arbitrary user-defined object.
          */
-        exitHandler: function () { },
+        exitHandler: function(){},
 
         /**
          * Implement or assign implmentation to these handlers during or after
          * calling the constructor.
          * @function
-         * @param {Object} event
-         * @param {OpenSeadragon.MouseTracker} event.eventSource
+         * @param {OpenSeadragon.MouseTracker} tracker
          *      A reference to the tracker instance.
-         * @param {OpenSeadragon.Point} event.position
-         *      The position of the event relative to the tracked element.
-         * @param {Boolean} event.isTouchEvent
-         *      True if the original event is a touch event, otherwise false.
-         * @param {Object} event.originalEvent
-         *      The original event object.
-         * @param {Object} event.userData
-         *      Arbitrary user-defined object.
+         * @param {OpenSeadragon.Point} position
+         *      The poistion of the event on the screen.
          */
-        pressHandler: function () { },
+        pressHandler: function(){},
 
         /**
          * Implement or assign implmentation to these handlers during or after
          * calling the constructor.
          * @function
-         * @param {Object} event
-         * @param {OpenSeadragon.MouseTracker} event.eventSource
+         * @param {OpenSeadragon.MouseTracker} tracker
          *      A reference to the tracker instance.
-         * @param {OpenSeadragon.Point} event.position
-         *      The position of the event relative to the tracked element.
-         * @param {Boolean} event.insideElementPressed
+         * @param {OpenSeadragon.Point} position
+         *      The poistion of the event on the screen.
+         * @param {Boolean} buttonDown
          *      True if the left mouse button is currently being pressed and was
          *      initiated inside the tracked element, otherwise false.
-         * @param {Boolean} event.insideElementReleased
-         *      True if the cursor still inside the tracked element when the button was released.
-         * @param {Boolean} event.isTouchEvent
-         *      True if the original event is a touch event, otherwise false.
-         * @param {Object} event.originalEvent
-         *      The original event object.
-         * @param {Object} event.userData
-         *      Arbitrary user-defined object.
+         * @param {Boolean} insideElementRelease
+         *      Was the mouse still inside the tracked element when the button
+         *      was released.
          */
-        releaseHandler: function () { },
+        releaseHandler: function(){},
 
         /**
          * Implement or assign implmentation to these handlers during or after
          * calling the constructor.
          * @function
-         * @param {Object} event
-         * @param {OpenSeadragon.MouseTracker} event.eventSource
+         * @param {OpenSeadragon.MouseTracker} tracker
          *      A reference to the tracker instance.
-         * @param {OpenSeadragon.Point} event.position
-         *      The position of the event relative to the tracked element.
-         * @param {Boolean} event.isTouchEvent
-         *      True if the original event is a touch event, otherwise false.
-         * @param {Object} event.originalEvent
-         *      The original event object.
-         * @param {Object} event.userData
-         *      Arbitrary user-defined object.
-         */
-        moveHandler: function () { },
-
-        /**
-         * Implement or assign implmentation to these handlers during or after
-         * calling the constructor.
-         * @function
-         * @param {Object} event
-         * @param {OpenSeadragon.MouseTracker} event.eventSource
-         *      A reference to the tracker instance.
-         * @param {OpenSeadragon.Point} event.position
-         *      The position of the event relative to the tracked element.
-         * @param {Number} event.scroll
+         * @param {OpenSeadragon.Point} position
+         *      The poistion of the event on the screen.
+         * @param {Number} scroll
          *      The scroll delta for the event.
-         * @param {Boolean} event.shift
-         *      True if the shift key was pressed during this event.
-         * @param {Boolean} event.isTouchEvent
-         *      True if the original event is a touch event, otherwise false.
-         * @param {Object} event.originalEvent
-         *      The original event object.
-         * @param {Object} event.userData
-         *      Arbitrary user-defined object.
+         * @param {Boolean} shift
+         *      Was the shift key being pressed during this event?
          */
-        scrollHandler: function () { },
+        scrollHandler: function(){},
 
         /**
          * Implement or assign implmentation to these handlers during or after
          * calling the constructor.
          * @function
-         * @param {Object} event
-         * @param {OpenSeadragon.MouseTracker} event.eventSource
+         * @param {OpenSeadragon.MouseTracker} tracker
          *      A reference to the tracker instance.
-         * @param {OpenSeadragon.Point} event.position
-         *      The position of the event relative to the tracked element.
-         * @param {Number} event.quick
-         *      True only if the clickDistThreshold and clickDeltaThreshold are both pased. Useful for ignoring events.
-         * @param {Boolean} event.shift
-         *      True if the shift key was pressed during this event.
-         * @param {Boolean} event.isTouchEvent
-         *      True if the original event is a touch event, otherwise false.
-         * @param {Object} event.originalEvent
-         *      The original event object.
-         * @param {Object} event.userData
-         *      Arbitrary user-defined object.
+         * @param {OpenSeadragon.Point} position
+         *      The poistion of the event on the screen.
+         * @param {Boolean} quick
+         *      True only if the clickDistThreshold and clickDeltaThreshold are
+         *      both pased. Useful for ignoring events.
+         * @param {Boolean} shift
+         *      Was the shift key being pressed during this event?
          */
-        clickHandler: function () { },
+        clickHandler: function(){},
 
         /**
          * Implement or assign implmentation to these handlers during or after
          * calling the constructor.
          * @function
-         * @param {Object} event
-         * @param {OpenSeadragon.MouseTracker} event.eventSource
+         * @param {OpenSeadragon.MouseTracker} tracker
          *      A reference to the tracker instance.
-         * @param {OpenSeadragon.Point} event.position
-         *      The position of the event relative to the tracked element.
-         * @param {OpenSeadragon.Point} event.delta
-         *      The x,y components of the difference between start drag and end drag.  Usefule for ignoring or weighting the events.
-         * @param {Boolean} event.shift
-         *      True if the shift key was pressed during this event.
-         * @param {Boolean} event.isTouchEvent
-         *      True if the original event is a touch event, otherwise false.
-         * @param {Object} event.originalEvent
-         *      The original event object.
-         * @param {Object} event.userData
-         *      Arbitrary user-defined object.
+         * @param {OpenSeadragon.Point} position
+         *      The poistion of the event on the screen.
+         * @param {OpenSeadragon.Point} delta
+         *      The x,y components of the difference between start drag and
+         *      end drag.  Usefule for ignoring or weighting the events.
+         * @param {Boolean} shift
+         *      Was the shift key being pressed during this event?
          */
-        dragHandler: function () { },
+        dragHandler: function(){},
 
         /**
          * Implement or assign implmentation to these handlers during or after
          * calling the constructor.
          * @function
-         * @param {Object} event
-         * @param {OpenSeadragon.MouseTracker} event.eventSource
+         * @param {OpenSeadragon.MouseTracker} tracker
          *      A reference to the tracker instance.
-         * @param {Number} event.keyCode
+         * @param {Number} keyCode
          *      The key code that was pressed.
-         * @param {Boolean} event.shift
-         *      True if the shift key was pressed during this event.
-         * @param {Object} event.originalEvent
-         *      The original event object.
-         * @param {Object} event.userData
-         *      Arbitrary user-defined object.
+         * @param {Boolean} shift
+         *      Was the shift key being pressed during this event?
          */
-        keyHandler: function () { },
+        keyHandler: function(){},
 
-        /**
-         * Implement or assign implmentation to these handlers during or after
-         * calling the constructor.
-         * @function
-         * @param {Object} event
-         * @param {OpenSeadragon.MouseTracker} event.eventSource
-         *      A reference to the tracker instance.
-         * @param {Object} event.originalEvent
-         *      The original event object.
-         * @param {Object} event.userData
-         *      Arbitrary user-defined object.
-         */
-        focusHandler: function () { },
+        focusHandler: function(){},
 
-        /**
-         * Implement or assign implmentation to these handlers during or after
-         * calling the constructor.
-         * @function
-         * @param {Object} event
-         * @param {OpenSeadragon.MouseTracker} event.eventSource
-         *      A reference to the tracker instance.
-         * @param {Object} event.originalEvent
-         *      The original event object.
-         * @param {Object} event.userData
-         *      Arbitrary user-defined object.
-         */
-        blurHandler: function () { }
+        blurHandler: function(){}
     };
 
     /**
@@ -2729,7 +2588,7 @@ $.EventSource.prototype = {
      */
     function startTracking( tracker ) {
         var events = [
-                "mouseover", "mouseout", "mousedown", "mouseup", "mousemove",
+                "mouseover", "mouseout", "mousedown", "mouseup",
                 "click",
                 "DOMMouseScroll", "mousewheel",
                 "touchstart", "touchmove", "touchend",
@@ -2741,7 +2600,7 @@ $.EventSource.prototype = {
             i;
 
         if ( !delegate.tracking ) {
-            for ( i = 0; i < events.length; i++ ) {
+            for( i = 0; i < events.length; i++ ){
                 event = events[ i ];
                 $.addEvent(
                     tracker.element,
@@ -2762,7 +2621,7 @@ $.EventSource.prototype = {
      */
     function stopTracking( tracker ) {
         var events = [
-                "mouseover", "mouseout", "mousedown", "mouseup", "mousemove",
+                "mouseover", "mouseout", "mousedown", "mouseup",
                 "click",
                 "DOMMouseScroll", "mousewheel",
                 "touchstart", "touchmove", "touchend",
@@ -2774,7 +2633,7 @@ $.EventSource.prototype = {
             i;
 
         if ( delegate.tracking ) {
-            for ( i = 0; i < events.length; i++ ) {
+            for( i = 0; i < events.length; i++ ){
                 event = events[ i ];
                 $.removeEvent(
                     tracker.element,
@@ -2823,20 +2682,20 @@ $.EventSource.prototype = {
                 $.addEvent(
                     tracker.element,
                     "mousemove",
-                    delegate.mousemovecapturedie,
+                    delegate.mousemoveie,
                     true
                 );
             } else {
                 $.addEvent(
                     window,
                     "mouseup",
-                    delegate.mouseupcaptured,
+                    delegate.mouseupwindow,
                     true
                 );
                 $.addEvent(
                     window,
                     "mousemove",
-                    delegate.mousemovecaptured,
+                    delegate.mousemove,
                     true
                 );
             }
@@ -2858,7 +2717,7 @@ $.EventSource.prototype = {
                 $.removeEvent(
                     tracker.element,
                     "mousemove",
-                    delegate.mousemovecapturedie,
+                    delegate.mousemoveie,
                     true
                 );
                 $.removeEvent(
@@ -2877,13 +2736,13 @@ $.EventSource.prototype = {
                 $.removeEvent(
                     window,
                     "mousemove",
-                    delegate.mousemovecaptured,
+                    delegate.mousemove,
                     true
                 );
                 $.removeEvent(
                     window,
                     "mouseup",
-                    delegate.mouseupcaptured,
+                    delegate.mouseupwindow,
                     true
                 );
             }
@@ -2896,11 +2755,11 @@ $.EventSource.prototype = {
      * @private
      * @inner
      */
-    function triggerOthers( tracker, handler, event, isTouch ) {
+    function triggerOthers( tracker, handler, event ) {
         var otherHash;
         for ( otherHash in ACTIVE ) {
             if ( ACTIVE.hasOwnProperty( otherHash ) && tracker.hash != otherHash ) {
-                handler( ACTIVE[ otherHash ], event, isTouch );
+                handler( ACTIVE[ otherHash ], event );
             }
         }
     }
@@ -2910,18 +2769,15 @@ $.EventSource.prototype = {
      * @private
      * @inner
      */
-    function onFocus( tracker, event ) {
+    function onFocus( tracker, event ){
         //console.log( "focus %s", event );
         var propagate;
         if ( tracker.focusHandler ) {
             propagate = tracker.focusHandler(
-                {
-                    eventSource: tracker,
-                    originalEvent: event,
-                    userData: tracker.userData
-                }
+                tracker,
+                event
             );
-            if ( propagate === false ) {
+            if( propagate === false ){
                 $.cancelEvent( event );
             }
         }
@@ -2932,18 +2788,15 @@ $.EventSource.prototype = {
      * @private
      * @inner
      */
-    function onBlur( tracker, event ) {
+    function onBlur( tracker, event ){
         //console.log( "blur %s", event );
         var propagate;
         if ( tracker.blurHandler ) {
             propagate = tracker.blurHandler(
-                {
-                    eventSource: tracker,
-                    originalEvent: event,
-                    userData: tracker.userData
-                }
+                tracker,
+                event
             );
-            if ( propagate === false ) {
+            if( propagate === false ){
                 $.cancelEvent( event );
             }
         }
@@ -2954,21 +2807,16 @@ $.EventSource.prototype = {
      * @private
      * @inner
      */
-    function onKeyPress( tracker, event ) {
+    function onKeyPress( tracker, event ){
         //console.log( "keypress %s %s %s %s %s", event.keyCode, event.charCode, event.ctrlKey, event.shiftKey, event.altKey );
         var propagate;
         if ( tracker.keyHandler ) {
             propagate = tracker.keyHandler(
-                {
-                    eventSource: tracker,
-                    position: getMouseRelative( event, tracker.element ),
-                    keyCode: event.keyCode ? event.keyCode : event.charCode,
-                    shift: event.shiftKey,
-                    originalEvent: event,
-                    userData: tracker.userData
-                }
+                tracker,
+                event.keyCode ? event.keyCode : event.charCode,
+                event.shiftKey
             );
-            if ( !propagate ) {
+            if( !propagate ){
                 $.cancelEvent( event );
             }
         }
@@ -2979,52 +2827,43 @@ $.EventSource.prototype = {
      * @private
      * @inner
      */
-    function onMouseOver( tracker, event, isTouch ) {
+    function onMouseOver( tracker, event ) {
 
         var delegate = THIS[ tracker.hash ],
             propagate;
 
-        isTouch = isTouch || false;
-
         event = $.getEvent( event );
 
-        if ( !isTouch ) {
-            if ( $.Browser.vendor == $.BROWSERS.IE &&
-                 $.Browser.version < 9 &&
-                 delegate.capturing &&
-                 !isChild( event.srcElement, tracker.element ) ) {
+        if ( $.Browser.vendor == $.BROWSERS.IE &&
+             $.Browser.version < 9 &&
+             delegate.capturing &&
+             !isChild( event.srcElement, tracker.element ) ) {
 
-                triggerOthers( tracker, onMouseOver, event, isTouch );
-            }
+            triggerOthers( tracker, onMouseOver, event );
+        }
 
-            var to = event.target ?
-                    event.target :
-                    event.srcElement,
-                from = event.relatedTarget ?
-                    event.relatedTarget :
-                    event.fromElement;
+        var to = event.target ?
+                event.target :
+                event.srcElement,
+            from = event.relatedTarget ?
+                event.relatedTarget :
+                event.fromElement;
 
-            if ( !isChild( tracker.element, to ) ||
-                  isChild( tracker.element, from ) ) {
-                return;
-            }
+        if ( !isChild( tracker.element, to ) ||
+              isChild( tracker.element, from ) ) {
+            return;
         }
 
         delegate.insideElement = true;
 
         if ( tracker.enterHandler ) {
             propagate = tracker.enterHandler(
-                {
-                    eventSource: tracker,
-                    position: getMouseRelative( isTouch ? event.changedTouches[ 0 ] : event, tracker.element ),
-                    insideElementPressed: delegate.insideElementPressed,
-                    buttonDownAny: IS_BUTTON_DOWN,
-                    isTouchEvent: isTouch,
-                    originalEvent: event,
-                    userData: tracker.userData
-                }
+                tracker,
+                getMouseRelative( event, tracker.element ),
+                delegate.buttonDown,
+                IS_BUTTON_DOWN
             );
-            if ( propagate === false ) {
+            if( propagate === false ){
                 $.cancelEvent( event );
             }
         }
@@ -3035,53 +2874,44 @@ $.EventSource.prototype = {
      * @private
      * @inner
      */
-    function onMouseOut( tracker, event, isTouch ) {
+    function onMouseOut( tracker, event ) {
         var delegate = THIS[ tracker.hash ],
             propagate;
 
-        isTouch = isTouch || false;
-
         event = $.getEvent( event );
 
-        if ( !isTouch ) {
-            if ( $.Browser.vendor == $.BROWSERS.IE &&
-                 $.Browser.version < 9 &&
-                 delegate.capturing &&
-                 !isChild( event.srcElement, tracker.element ) ) {
+        if ( $.Browser.vendor == $.BROWSERS.IE &&
+             $.Browser.version < 9 &&
+             delegate.capturing &&
+             !isChild( event.srcElement, tracker.element ) ) {
 
-                triggerOthers( tracker, onMouseOut, event, isTouch );
+            triggerOthers( tracker, onMouseOut, event );
 
-            }
+        }
 
-            var from = event.target ?
-                    event.target :
-                    event.srcElement,
-                to = event.relatedTarget ?
-                    event.relatedTarget :
-                    event.toElement;
+        var from = event.target ?
+                event.target :
+                event.srcElement,
+            to = event.relatedTarget ?
+                event.relatedTarget :
+                event.toElement;
 
-            if ( !isChild( tracker.element, from ) ||
-                  isChild( tracker.element, to ) ) {
-                return;
-            }
+        if ( !isChild( tracker.element, from ) ||
+              isChild( tracker.element, to ) ) {
+            return;
         }
 
         delegate.insideElement = false;
 
         if ( tracker.exitHandler ) {
             propagate = tracker.exitHandler(
-                {
-                    eventSource: tracker,
-                    position: getMouseRelative( isTouch ? event.changedTouches[ 0 ] : event, tracker.element ),
-                    insideElementPressed: delegate.insideElementPressed,
-                    buttonDownAny: IS_BUTTON_DOWN,
-                    isTouchEvent: isTouch,
-                    originalEvent: event,
-                    userData: tracker.userData
-                }
+                tracker,
+                getMouseRelative( event, tracker.element ),
+                delegate.buttonDown,
+                IS_BUTTON_DOWN
             );
 
-            if ( propagate === false ) {
+            if( propagate === false ){
                 $.cancelEvent( event );
             }
         }
@@ -3092,37 +2922,28 @@ $.EventSource.prototype = {
      * @private
      * @inner
      */
-    function onMouseDown( tracker, event, noCapture, isTouch ) {
+    function onMouseDown( tracker, event, noCapture ) {
         var delegate = THIS[ tracker.hash ],
             propagate;
 
-        isTouch = isTouch || false;
-
-        event = $.getEvent(event);
-
-        var eventOrTouchPoint = isTouch ? event.touches[ 0 ] : event;
+        event = $.getEvent( event );
 
         if ( event.button == 2 ) {
             return;
         }
 
-        delegate.insideElementPressed = true;
+        delegate.buttonDown = true;
 
-        delegate.lastPoint = getMouseAbsolute( eventOrTouchPoint );
+        delegate.lastPoint = getMouseAbsolute( event );
         delegate.lastMouseDownPoint = delegate.lastPoint;
         delegate.lastMouseDownTime = $.now();
 
         if ( tracker.pressHandler ) {
             propagate = tracker.pressHandler(
-                {
-                    eventSource: tracker,
-                    position: getMouseRelative( eventOrTouchPoint, tracker.element ),
-                    isTouchEvent: isTouch,
-                    originalEvent: event,
-                    userData: tracker.userData
-                }
+                tracker,
+                getMouseRelative( event, tracker.element )
             );
-            if ( propagate === false ) {
+            if( propagate === false ){
                 $.cancelEvent( event );
             }
         }
@@ -3134,15 +2955,14 @@ $.EventSource.prototype = {
         if ( noCapture ) {
             return;
         }
-
-        if ( isTouch ||
-             !( $.Browser.vendor == $.BROWSERS.IE && $.Browser.version < 9 ) ||
+            
+        if ( !( $.Browser.vendor == $.BROWSERS.IE && $.Browser.version < 9 ) ||
              !IS_CAPTURING ) {
             captureMouse( tracker );
             IS_CAPTURING = true;
             // reset to empty & add us
             CAPTURING = [ tracker ];
-        } else if ( $.Browser.vendor == $.BROWSERS.IE && $.Browser.version < 9 ) {
+        } else if ( $.Browser.vendor == $.BROWSERS.IE  && $.Browser.version < 9 ) {
             // add us to the list
             CAPTURING.push( tracker );
         }
@@ -3156,18 +2976,18 @@ $.EventSource.prototype = {
         var touchA,
             touchB;
 
-        if ( event.touches.length == 1 &&
+        if( event.touches.length == 1 &&
             event.targetTouches.length == 1 &&
-            event.changedTouches.length == 1 ) {
+            event.changedTouches.length == 1 ){
 
             THIS[ tracker.hash ].lastTouch = event.touches[ 0 ];
-            onMouseOver( tracker, event, true );
-            // call with no capture as the onMouseMoveCaptured will 
+            onMouseOver( tracker, event.changedTouches[ 0 ] );
+            // call with no capture as the onMouseMove will 
             // be triggered by onTouchMove
-            onMouseDown( tracker, event, true, true );
+            onMouseDown( tracker, event.touches[ 0 ], true );
         }
 
-        if ( event.touches.length == 2 ) {
+        if( event.touches.length == 2 ){
 
             touchA = getMouseAbsolute( event.touches[ 0 ] );
             touchB = getMouseAbsolute( event.touches[ 1 ] );
@@ -3175,7 +2995,7 @@ $.EventSource.prototype = {
                 Math.abs( touchA.x - touchB.x ) +
                 Math.abs( touchA.y - touchB.y );
             THIS[ tracker.hash ].pinchMidpoint = new $.Point(
-                ( touchA.x + touchB.x ) / 2,
+                ( touchA.x + touchB.x ) / 2 ,
                 ( touchA.y + touchB.y ) / 2
             );
             //$.console.debug("pinch start : "+THIS[ tracker.hash ].lastPinchDelta);
@@ -3189,43 +3009,36 @@ $.EventSource.prototype = {
      * @private
      * @inner
      */
-    function onMouseUp( tracker, event, isTouch ) {
+    function onMouseUp( tracker, event ) {
         var delegate = THIS[ tracker.hash ],
             //were we inside the tracked element when we were pressed
-            insideElementPressed = delegate.insideElementPressed,
+            insideElementPress = delegate.buttonDown,
             //are we still inside the tracked element when we released
-            insideElementReleased = delegate.insideElement,
+            insideElementRelease = delegate.insideElement,
             propagate;
 
-        isTouch = isTouch || false;
-
-        event = $.getEvent(event);
+        event = $.getEvent( event );
 
         if ( event.button == 2 ) {
             return;
         }
 
-        delegate.insideElementPressed = false;
+        delegate.buttonDown = false;
 
         if ( tracker.releaseHandler ) {
             propagate = tracker.releaseHandler(
-                {
-                    eventSource: tracker,
-                    position: getMouseRelative( isTouch ? event.changedTouches[ 0 ] : event, tracker.element ),
-                    insideElementPressed: insideElementPressed,
-                    insideElementReleased: insideElementReleased,
-                    isTouchEvent: isTouch,
-                    originalEvent: event,
-                    userData: tracker.userData
-                }
+                tracker,
+                getMouseRelative( event, tracker.element ),
+                insideElementPress,
+                insideElementRelease
             );
-            if ( propagate === false ) {
+            if( propagate === false ){
                 $.cancelEvent( event );
             }
         }
 
-        if ( insideElementPressed && insideElementReleased ) {
-            handleMouseClick( tracker, event, isTouch );
+        if ( insideElementPress && insideElementRelease ) {
+            handleMouseClick( tracker, event );
         }
     }
 
@@ -3236,20 +3049,20 @@ $.EventSource.prototype = {
      */
     function onTouchEnd( tracker, event ) {
 
-        if ( event.touches.length === 0 &&
+        if( event.touches.length === 0 &&
             event.targetTouches.length === 0 &&
-            event.changedTouches.length == 1 ) {
+            event.changedTouches.length == 1 ){
 
             THIS[ tracker.hash ].lastTouch = null;
-
+            
             // call with no release, as the mouse events are 
             // not registered in onTouchStart
-            onMouseUpCaptured( tracker, event, true, true );
-            onMouseOut( tracker, event, true );
+            onMouseUpWindow( tracker, event.changedTouches[ 0 ], true );
+            onMouseOut( tracker, event.changedTouches[ 0 ] );
         }
-        if ( event.touches.length + event.changedTouches.length == 2 ) {
+        if( event.touches.length + event.changedTouches.length == 2 ){
             THIS[ tracker.hash ].lastPinchDelta = null;
-            THIS[ tracker.hash ].pinchMidpoint = null;
+            THIS[ tracker.hash ].pinchMidpoint  = null;
             //$.console.debug("pinch end");
         }
         event.preventDefault();
@@ -3279,7 +3092,7 @@ $.EventSource.prototype = {
         for ( i = 0; i < CAPTURING.length; i++ ) {
             othertracker = CAPTURING[ i ];
             if ( !hasMouse( othertracker ) ) {
-                onMouseUp( othertracker, event, false );
+                onMouseUp( othertracker, event );
             }
         }
 
@@ -3303,42 +3116,16 @@ $.EventSource.prototype = {
      * @private
      * @inner
      */
-    function onMouseUpCaptured( tracker, event, noRelease, isTouch ) {
-        isTouch = isTouch || false;
-
-        if ( !THIS[ tracker.hash ].insideElement || isTouch ) {
-            onMouseUp( tracker, event, isTouch );
+    function onMouseUpWindow( tracker, event, noRelease ) {
+        if ( ! THIS[ tracker.hash ].insideElement ) {
+            onMouseUp( tracker, event );
         }
 
-        if ( noRelease ) {
+        if (noRelease) {
             return;
         }
 
         releaseMouse( tracker );
-    }
-
-
-    /**
-     * @private
-     * @inner
-     */
-    function onMouseMove( tracker, event ) {
-        if ( tracker.moveHandler ) {
-            event = $.getEvent( event );
-
-            var propagate = tracker.moveHandler(
-                {
-                    eventSource: tracker,
-                    position: getMouseRelative( event, tracker.element ),
-                    isTouchEvent: false,
-                    originalEvent: event,
-                    userData: tracker.userData
-                }
-            );
-            if ( propagate === false ) {
-                $.cancelEvent( event );
-            }
-        }
     }
 
 
@@ -3357,11 +3144,9 @@ $.EventSource.prototype = {
      * @private
      * @inner
      */
-    function onMouseWheelSpin( tracker, event, isTouch ) {
+    function onMouseWheelSpin( tracker, event ) {
         var nDelta = 0,
             propagate;
-
-        isTouch = isTouch || false;
 
         if ( !event ) { // For IE, access the global (window) event object
             event = window.event;
@@ -3372,7 +3157,7 @@ $.EventSource.prototype = {
             if ( window.opera ) {  // Opera has the values reversed
                 nDelta = -nDelta;
             }
-        } else if ( event.detail ) { // Mozilla FireFox
+        } else if (event.detail) { // Mozilla FireFox
             nDelta = -event.detail;
         }
         //The nDelta variable is gated to provide smooth z-index scrolling
@@ -3382,20 +3167,12 @@ $.EventSource.prototype = {
 
         if ( tracker.scrollHandler ) {
             propagate = tracker.scrollHandler(
-                {
-                    eventSource: tracker,
-                    // Note: Ok to call getMouseRelative on passed event for isTouch==true since 
-                    //   event.pageX/event.pageY are added to the original touchmove event in
-                    //   onTouchMove().
-                    position: getMouseRelative( event, tracker.element ),
-                    scroll: nDelta,
-                    shift: event.shiftKey,
-                    isTouchEvent: isTouch,
-                    originalEvent: event,
-                    userData: tracker.userData
-                }
+                tracker,
+                getMouseRelative( event, tracker.element ),
+                nDelta,
+                event.shiftKey
             );
-            if ( propagate === false ) {
+            if( propagate === false ){
                 $.cancelEvent( event );
             }
         }
@@ -3406,39 +3183,30 @@ $.EventSource.prototype = {
      * @private
      * @inner
      */
-    function handleMouseClick( tracker, event, isTouch ) {
+    function handleMouseClick( tracker, event ) {
         var delegate = THIS[ tracker.hash ],
             propagate;
 
-        isTouch = isTouch || false;
-
         event = $.getEvent( event );
-
-        var eventOrTouchPoint = isTouch ? event.changedTouches[ 0 ] : event;
 
         if ( event.button == 2 ) {
             return;
         }
 
-        var time = $.now() - delegate.lastMouseDownTime,
-            point = getMouseAbsolute( eventOrTouchPoint ),
+        var time     = $.now() - delegate.lastMouseDownTime,
+            point    = getMouseAbsolute( event ),
             distance = delegate.lastMouseDownPoint.distanceTo( point ),
-            quick = time <= tracker.clickTimeThreshold &&
+            quick    = time     <= tracker.clickTimeThreshold &&
                        distance <= tracker.clickDistThreshold;
 
         if ( tracker.clickHandler ) {
             propagate = tracker.clickHandler(
-                {
-                    eventSource: tracker,
-                    position: getMouseRelative( eventOrTouchPoint, tracker.element ),
-                    quick: quick,
-                    shift: event.shiftKey,
-                    isTouchEvent: isTouch,
-                    originalEvent: event,
-                    userData: tracker.userData
-                }
+                tracker,
+                getMouseRelative( event, tracker.element ),
+                quick,
+                event.shiftKey
             );
-            if ( propagate === false ) {
+            if( propagate === false ){
                 $.cancelEvent( event );
             }
         }
@@ -3449,34 +3217,26 @@ $.EventSource.prototype = {
      * @private
      * @inner
      */
-    function onMouseMoveCaptured( tracker, event, isTouch ) {
+    function onMouseMove( tracker, event ) {
         var delegate = THIS[ tracker.hash ],
             delta,
             propagate,
             point;
 
-        isTouch = isTouch || false;
-
-        event = $.getEvent(event);
-        var eventOrTouchPoint = isTouch ? event.touches[ 0 ] : event;
-        point = getMouseAbsolute( eventOrTouchPoint );
+        event = $.getEvent( event );
+        point = getMouseAbsolute( event );
         delta = point.minus( delegate.lastPoint );
 
         delegate.lastPoint = point;
 
         if ( tracker.dragHandler ) {
             propagate = tracker.dragHandler(
-                {
-                    eventSource: tracker,
-                    position: getMouseRelative( eventOrTouchPoint, tracker.element ),
-                    delta: delta,
-                    shift: event.shiftKey,
-                    isTouchEvent: isTouch,
-                    originalEvent: event,
-                    userData: tracker.userData
-                }
+                tracker,
+                getMouseRelative( event, tracker.element ),
+                delta,
+                event.shiftKey
             );
-            if ( propagate === false ) {
+            if( propagate === false ){
                 $.cancelEvent( event );
             }
         }
@@ -3493,17 +3253,17 @@ $.EventSource.prototype = {
             pinchDelta;
 
         if ( !THIS[ tracker.hash ].lastTouch ) {
-            return;
+          return;
         }
 
-        if ( event.touches.length === 1 &&
+        if( event.touches.length === 1 &&
             event.targetTouches.length === 1 &&
             event.changedTouches.length === 1 &&
-            THIS[ tracker.hash ].lastTouch.identifier === event.touches[ 0 ].identifier ) {
+            THIS[ tracker.hash ].lastTouch.identifier === event.touches[ 0 ].identifier){
 
-            onMouseMoveCaptured( tracker, event, true );
+            onMouseMove( tracker, event.touches[ 0 ] );
 
-        } else if ( event.touches.length === 2 ) {
+        } else if (  event.touches.length === 2 ){
 
             touchA = getMouseAbsolute( event.touches[ 0 ] );
             touchB = getMouseAbsolute( event.touches[ 1 ] );
@@ -3512,18 +3272,17 @@ $.EventSource.prototype = {
                 Math.abs( touchA.y - touchB.y );
 
             //TODO: make the 75px pinch threshold configurable
-            if ( Math.abs( THIS[ tracker.hash ].lastPinchDelta - pinchDelta ) > 75 ) {
+            if( Math.abs( THIS[ tracker.hash ].lastPinchDelta - pinchDelta ) > 75 ){
                 //$.console.debug( "pinch delta : " + pinchDelta + " | previous : " + THIS[ tracker.hash ].lastPinchDelta);
 
-                // Simulate a mouse wheel scroll event
-                var simulatedEvent = {
-                    shiftKey: event.shiftKey || false,
-                    pageX:    THIS[ tracker.hash ].pinchMidpoint.x,
-                    pageY:    THIS[ tracker.hash ].pinchMidpoint.y,
-                    detail:   ( THIS[ tracker.hash ].lastPinchDelta > pinchDelta ) ? 1 : -1
-                };
-
-                onMouseWheelSpin( tracker, simulatedEvent, true );
+                onMouseWheelSpin( tracker, {
+                    shift: false,
+                    pageX: THIS[ tracker.hash ].pinchMidpoint.x,
+                    pageY: THIS[ tracker.hash ].pinchMidpoint.y,
+                    detail:(
+                        THIS[ tracker.hash ].lastPinchDelta > pinchDelta
+                    ) ? 1 : -1
+                });
 
                 THIS[ tracker.hash ].lastPinchDelta = pinchDelta;
             }
@@ -3540,10 +3299,10 @@ $.EventSource.prototype = {
      * @private
      * @inner
      */
-    function onMouseMoveCapturedIE( tracker, event ) {
+    function onMouseMoveIE( tracker, event ) {
         var i;
         for ( i = 0; i < CAPTURING.length; i++ ) {
-            onMouseMoveCaptured( CAPTURING[ i ], event, false );
+            onMouseMove( CAPTURING[ i ], event );
         }
 
         $.stopEvent( event );
@@ -3558,27 +3317,27 @@ $.EventSource.prototype = {
     }
 
     /**
-     * @private
-     * @inner
-     */
+    * @private
+    * @inner
+    */
     function getMouseRelative( event, element ) {
-        var mouse  = $.getMousePosition( event ),
-            offset = $.getElementOffset( element );
+        var mouse   = $.getMousePosition( event ),
+            offset  = $.getElementPosition( element );
 
         return mouse.minus( offset );
     }
 
     /**
-     * @private
-     * @inner
-     * Returns true if elementB is a child node of elementA, or if they're equal.
-     */
+    * @private
+    * @inner
+    * Returns true if elementB is a child node of elementA, or if they're equal.
+    */
     function isChild( elementA, elementB ) {
         var body = document.body;
         while ( elementB && elementA != elementB && body != elementB ) {
             try {
                 elementB = elementB.parentNode;
-            } catch ( e ) {
+            } catch (e) {
                 return false;
             }
         }
@@ -3586,17 +3345,17 @@ $.EventSource.prototype = {
     }
 
     /**
-     * @private
-     * @inner
-     */
+    * @private
+    * @inner
+    */
     function onGlobalMouseDown() {
         IS_BUTTON_DOWN = true;
     }
 
     /**
-     * @private
-     * @inner
-     */
+    * @private
+    * @inner
+    */
     function onGlobalMouseUp() {
         IS_BUTTON_DOWN = false;
     }
@@ -3610,9 +3369,9 @@ $.EventSource.prototype = {
             $.addEvent( window, "mousedown", onGlobalMouseDown, true );
             $.addEvent( window, "mouseup", onGlobalMouseUp, true );
         }
-    } )();
+    })();
 
-} ( OpenSeadragon ) );
+}( OpenSeadragon ));
 
 /*
  * OpenSeadragon - Control
@@ -4047,7 +3806,7 @@ var THIS = {},
  * as arguments and we translate a positional call into an idiomatic call.
  *
  * @class
- * @extends OpenSeadragon.EventSource
+ * @extends OpenSeadragon.EventHandler
  * @extends OpenSeadragon.ControlDock
  * @param {Object} options
  * @param {String} options.element Id of Element to attach to,
@@ -4096,10 +3855,7 @@ $.Viewer = function( options ) {
 
         //internal state and dom identifiers
         id:             options.id,
-        hash:           options.hash || options.id,
-
-        // the stack index
-        z:              0,
+        hash:           options.id,
 
         //dom nodes
         element:        null,
@@ -4146,15 +3902,6 @@ $.Viewer = function( options ) {
 
     }, $.DEFAULT_SETTINGS, options );
 
-    if ( typeof( this.hash) === "undefined" ) {
-        throw new Error("A hash must be defined, either by specifying options.id or options.hash.");
-    }
-    if ( typeof( THIS[ this.hash ] ) !== "undefined" ) {
-        // We don't want to throw an error here, as the user might have discarded
-        // the previous viewer with the same hash and now want to recreate it.
-        $.console.warn("Hash " + this.hash + " has already been used.");
-    }
-
     //Private state properties
     THIS[ this.hash ] = {
         "fsBoundsDelta":     new $.Point( 1, 1 ),
@@ -4178,10 +3925,10 @@ $.Viewer = function( options ) {
     this._updateRequestId = null;
 
     //Inherit some behaviors and properties
-    $.EventSource.call( this );
+    $.EventHandler.call( this );
 
-    this.addHandler( 'open-failed', function ( event ) {
-        var msg = $.getString( "Errors.OpenFailed", event.eventSource, event.message);
+    this.addHandler( 'open-failed', function (source, args) {
+        var msg = $.getString( "Errors.Open-Failed", args.source, args.message);
         _this._showMessage( msg );
     });
 
@@ -4208,19 +3955,12 @@ $.Viewer = function( options ) {
             if( this.tileSources.length > 1 ){
                 THIS[ this.hash ].sequenced = true;
             }
-            
-            //Keeps the initial page within bounds
-            if ( this.initialPage > this.tileSources.length - 1 ){
-                this.initialPage = this.tileSources.length - 1;
-            }
-            
-            initialTileSource = this.tileSources[ this.initialPage ];
-            
-            //Update the sequence (aka currrent page) property
-            THIS[ this.hash ].sequence = this.initialPage;
+            initialTileSource = this.tileSources[ 0 ];
         } else {
             initialTileSource = this.tileSources;
         }
+
+        this.open( initialTileSource );
     }
 
     this.element              = this.element || document.getElementById( this.id );
@@ -4280,8 +4020,8 @@ $.Viewer = function( options ) {
                 window.scrollTo( 0, point.y );
             },
 
-            keyHandler:         function( event ){
-                switch( event.keyCode ){
+            keyHandler:         function(tracker, keyCode, shiftKey){
+                switch( keyCode ){
                     case 61://=|+
                         _this.viewport.zoomBy(1.1);
                         _this.viewport.applyConstraints();
@@ -4297,7 +4037,7 @@ $.Viewer = function( options ) {
                     case 119://w
                     case 87://W
                     case 38://up arrow
-                        if ( event.shift ) {
+                        if (shiftKey) {
                             _this.viewport.zoomBy(1.1);
                         } else {
                             _this.viewport.panBy(new $.Point(0, -0.05));
@@ -4307,7 +4047,7 @@ $.Viewer = function( options ) {
                     case 115://s
                     case 83://S
                     case 40://down arrow
-                        if ( event.shift ) {
+                        if (shiftKey) {
                             _this.viewport.zoomBy(0.9);
                         } else {
                             _this.viewport.panBy(new $.Point(0, 0.05));
@@ -4325,7 +4065,7 @@ $.Viewer = function( options ) {
                         _this.viewport.applyConstraints();
                         return false;
                     default:
-                        //console.log( 'navigator keycode %s', event.keyCode );
+                        //console.log( 'navigator keycode %s', keyCode );
                         return true;
                 }
             }
@@ -4358,14 +4098,6 @@ $.Viewer = function( options ) {
     this.bindStandardControls();
     this.bindSequenceControls();
 
-    if ( initialTileSource ) {
-        this.open( initialTileSource );
-
-        if ( this.tileSources.length > 1 ) {
-            this._updateSequenceButtons( this.initialPage );
-        }
-    }
-
     for ( i = 0; i < this.customControls.length; i++ ) {
         this.addControl(
             this.customControls[ i ].id,
@@ -4379,7 +4111,7 @@ $.Viewer = function( options ) {
 
 };
 
-$.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, {
+$.extend( $.Viewer.prototype, $.EventHandler.prototype, $.ControlDock.prototype, {
 
 
     /**
@@ -4461,11 +4193,11 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
         setTimeout(function(){
             if ( $.type( tileSource ) == 'string') {
                 //If its still a string it means it must be a url at this point
-                tileSource = new $.TileSource( tileSource, function( event ){
-                    openTileSource( _this, event.tileSource );
+                tileSource = new $.TileSource( tileSource, function( readySource ){
+                    openTileSource( _this, readySource );
                 });
-                tileSource.addHandler( 'open-failed', function ( event ) {
-                    _this.raiseEvent( 'open-failed', event );
+                tileSource.addHandler( 'open-failed', function ( name, args ) {
+                    _this.raiseEvent( 'open-failed', args );
                 });
 
             } else if ( $.isPlainObject( tileSource ) || tileSource.nodeType ){
@@ -4529,7 +4261,7 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
         VIEWERS[ this.hash ] = null;
         delete VIEWERS[ this.hash ];
 
-        this.raiseEvent( 'close', {} );
+        this.raiseEvent( 'close', { viewer: this } );
 
         return this;
     },
@@ -4592,7 +4324,7 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
      */
     setMouseNavEnabled: function( enabled ){
         this.innerTracker.setTracking( enabled );
-        this.raiseEvent( 'mouse-enabled', { enabled: enabled } );
+        this.raiseEvent( 'mouse-enabled', { enabled: enabled, viewer: this } );
         return this;
     },
 
@@ -4626,7 +4358,7 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
         } else {
             beginControlsAutoHide( this );
         }
-        this.raiseEvent( 'controls-enabled', { enabled: enabled } );
+        this.raiseEvent( 'controls-enabled', { enabled: enabled, viewer: this } );
         return this;
     },
 
@@ -4754,7 +4486,7 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
             THIS[ this.hash ].fullPage = true;
 
             // mouse will be inside container now
-            $.delegate( this, onContainerEnter )( {} );
+            $.delegate( this, onContainerEnter )();
 
 
         } else {
@@ -4813,11 +4545,11 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
             THIS[ this.hash ].fullPage = false;
 
             // mouse will likely be outside now
-            $.delegate( this, onContainerExit )( {} );
+            $.delegate( this, onContainerExit )();
 
 
         }
-        this.raiseEvent( 'fullpage', { fullpage: fullPage } );
+        this.raiseEvent( 'fullpage', { fullpage: fullPage, viewer: this } );
 
         if ( this.viewport ) {
             oldBounds = this.viewport.getBounds();
@@ -4877,7 +4609,7 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
      */
     setVisible: function( visible ){
         this.container.style.visibility = visible ? "" : "hidden";
-        this.raiseEvent( 'visible', { visible: visible } );
+        this.raiseEvent( 'visible', { visible: visible, viewer: this } );
         return this;
     },
 
@@ -5089,16 +4821,7 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
         }
         return this;
     },
-    
-    /**
-     * Gets the active page of a sequence
-     * @function
-     * @name OpenSeadragon.Viewer.prototype.currentPage
-     * @return {Number}
-     */
-    currentPage: function () {
-        return THIS[ this.hash ].sequence;
-      },
+
 
     /**
      * @function
@@ -5108,36 +4831,11 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
     goToPage: function( page ){
         //page is a 1 based index so normalize now
         //page = page;
-        this.raiseEvent( 'page', { page: page } );
+        this.raiseEvent( 'page', { page: page, viewer: this } );
 
         if( this.tileSources.length > page ){
 
             THIS[ this.hash ].sequence = page;
-
-            this._updateSequenceButtons( page );
-
-            this.open( this.tileSources[ page ] );
-        }
-
-        if( $.isFunction( this.onPageChange ) ){
-            this.onPageChange({
-                page: page,
-                viewer: this
-            });
-        }
-        if( this.referenceStrip ){
-            this.referenceStrip.setFocus( page );
-        }
-        return this;
-    },
-
-    /**
-     * Updates the sequence buttons.
-     * @function
-     * @private
-     * @param {Number} Sequence Value
-     */
-    _updateSequenceButtons: function (page) {
 
             if( this.nextButton ){
                 if( ( this.tileSources.length - 1 ) === page  ){
@@ -5159,8 +4857,22 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
                     }
                 }
             }
-      },
-      
+
+            this.open( this.tileSources[ page ] );
+        }
+
+        if( $.isFunction( this.onPageChange ) ){
+            this.onPageChange({
+                page: page,
+                viewer: this
+            });
+        }
+        if( this.referenceStrip ){
+            this.referenceStrip.setFocus( page );
+        }
+        return this;
+    },
+
     /**
      * Display a message in the viewport
      * @function
@@ -5377,7 +5089,7 @@ function openTileSource( viewer, source ) {
     }
     VIEWERS[ _this.hash ] = _this;
 
-    _this.raiseEvent( 'open', { source: source } );
+    _this.raiseEvent( 'open', { source: source, viewer: _this } );
 
     return _this;
 }
@@ -5470,37 +5182,37 @@ function onBlur(){
 
 }
 
-function onCanvasClick( event ) {
+function onCanvasClick( tracker, position, quick, shift ) {
     var zoomPerClick,
         factor;
-    if ( this.viewport && event.quick ) {    // ignore clicks where mouse moved
+    if ( this.viewport && quick ) {    // ignore clicks where mouse moved
         zoomPerClick = this.zoomPerClick;
-        factor = event.shift ? 1.0 / zoomPerClick : zoomPerClick;
+        factor = shift ? 1.0 / zoomPerClick : zoomPerClick;
         this.viewport.zoomBy(
             factor,
-            this.viewport.pointFromPixel( event.position, true )
+            this.viewport.pointFromPixel( position, true )
         );
         this.viewport.applyConstraints();
     }
     this.raiseEvent( 'canvas-click', {
-        tracker: event.eventSource,
-        position: event.position,
-        quick: event.quick,
-        shift: event.shift
+        tracker: tracker,
+        position: position,
+        quick: quick,
+        shift: shift
     });
 }
 
-function onCanvasDrag( event ) {
+function onCanvasDrag( tracker, position, delta, shift ) {
     if ( this.viewport ) {
         if( !this.panHorizontal ){
-            event.delta.x = 0;
+            delta.x = 0;
         }
         if( !this.panVertical ){
-            event.delta.y = 0;
+            delta.y = 0;
         }
         this.viewport.panBy(
             this.viewport.deltaPointsFromPixels(
-                event.delta.negate()
+                delta.negate()
             )
         );
         if( this.constrainDuringPan ){
@@ -5508,83 +5220,83 @@ function onCanvasDrag( event ) {
         }
     }
     this.raiseEvent( 'canvas-drag', {
-        tracker: event.eventSource,
-        position: event.position,
-        delta: event.delta,
-        shift: event.shift
+        tracker: tracker,
+        position: position,
+        delta: delta,
+        shift: shift
     });
 }
 
-function onCanvasRelease( event ) {
-    if ( event.insideElementPressed && this.viewport ) {
+function onCanvasRelease( tracker, position, insideElementPress, insideElementRelease ) {
+    if ( insideElementPress && this.viewport ) {
         this.viewport.applyConstraints();
     }
     this.raiseEvent( 'canvas-release', {
-        tracker: event.eventSource,
-        position: event.position,
-        insideElementPressed: event.insideElementPressed,
-        insideElementReleased: event.insideElementReleased
+        tracker: tracker,
+        position: position,
+        insideElementPress: insideElementPress,
+        insideElementRelease: insideElementRelease
     });
 }
 
-function onCanvasScroll( event ) {
+function onCanvasScroll( tracker, position, scroll, shift ) {
     var factor;
     if ( this.viewport ) {
-        factor = Math.pow( this.zoomPerScroll, event.scroll );
+        factor = Math.pow( this.zoomPerScroll, scroll );
         this.viewport.zoomBy(
             factor,
-            this.viewport.pointFromPixel( event.position, true )
+            this.viewport.pointFromPixel( position, true )
         );
         this.viewport.applyConstraints();
     }
     this.raiseEvent( 'canvas-scroll', {
-        tracker: event.eventSource,
-        position: event.position,
-        scroll: event.scroll,
-        shift: event.shift
+        tracker: tracker,
+        position: position,
+        scroll: scroll,
+        shift: shift
     });
     //cancels event
     return false;
 }
 
-function onContainerExit( event ) {
-    if ( !event.insideElementPressed ) {
+function onContainerExit( tracker, position, buttonDownElement, buttonDownAny ) {
+    if ( !buttonDownElement ) {
         THIS[ this.hash ].mouseInside = false;
         if ( !THIS[ this.hash ].animating ) {
             beginControlsAutoHide( this );
         }
     }
     this.raiseEvent( 'container-exit', {
-        tracker: event.eventSource,
-        position: event.position,
-        insideElementPressed: event.insideElementPressed,
-        buttonDownAny: event.buttonDownAny
+        tracker: tracker,
+        position: position,
+        buttonDownElement: buttonDownElement,
+        buttonDownAny: buttonDownAny
     });
 }
 
-function onContainerRelease( event ) {
-    if ( !event.insideElementReleased ) {
+function onContainerRelease( tracker, position, insideElementPress, insideElementRelease ) {
+    if ( !insideElementRelease ) {
         THIS[ this.hash ].mouseInside = false;
         if ( !THIS[ this.hash ].animating ) {
             beginControlsAutoHide( this );
         }
     }
     this.raiseEvent( 'container-release', {
-        tracker: event.eventSource,
-        position: event.position,
-        insideElementPressed: event.insideElementPressed,
-        insideElementReleased: event.insideElementReleased
+        tracker: tracker,
+        position: position,
+        insideElementPress: insideElementPress,
+        insideElementRelease: insideElementRelease
     });
 }
 
-function onContainerEnter( event ) {
+function onContainerEnter( tracker, position, buttonDownElement, buttonDownAny ) {
     THIS[ this.hash ].mouseInside = true;
     abortControlsAutoHide( this );
     this.raiseEvent( 'container-enter', {
-        tracker: event.eventSource,
-        position: event.position,
-        insideElementPressed: event.insideElementPressed,
-        buttonDownAny: event.buttonDownAny
+        tracker: tracker,
+        position: position,
+        buttonDownElement: buttonDownElement,
+        buttonDownAny: buttonDownAny
     });
 }
 
@@ -5632,18 +5344,18 @@ function updateOnce( viewer ) {
     }
 
     if ( !THIS[ viewer.hash ].animating && animated ) {
-        viewer.raiseEvent( "animation-start" );
+        viewer.raiseEvent( "animationstart" );
         abortControlsAutoHide( viewer );
     }
 
     if ( animated ) {
-        viewer.drawer.update( viewer.z );
+        viewer.drawer.update();
         if( viewer.navigator ){
             viewer.navigator.update( viewer.viewport );
         }
         viewer.raiseEvent( "animation" );
     } else if ( THIS[ viewer.hash ].forceRedraw || viewer.drawer.needsUpdate() ) {
-        viewer.drawer.update( viewer.z );
+        viewer.drawer.update();
         if( viewer.navigator ){
             viewer.navigator.update( viewer.viewport );
         }
@@ -5651,7 +5363,7 @@ function updateOnce( viewer ) {
     }
 
     if ( THIS[ viewer.hash ].animating && !animated ) {
-        viewer.raiseEvent( "animation-finish" );
+        viewer.raiseEvent( "animationfinish" );
 
         if ( !THIS[ viewer.hash ].mouseInside ) {
             beginControlsAutoHide( viewer );
@@ -5831,7 +5543,7 @@ function onNext(){
  * @class
  * @name OpenSeadragon.Navigator
  * @extends OpenSeadragon.Viewer
- * @extends OpenSeadragon.EventSource
+ * @extends OpenSeadragon.EventHandler
  * @param {Object} options
  * @param {String} options.viewerId
  */
@@ -5984,7 +5696,7 @@ $.Navigator = function( options ){
 
 };
 
-$.extend( $.Navigator.prototype, $.EventSource.prototype, $.Viewer.prototype, {
+$.extend( $.Navigator.prototype, $.EventHandler.prototype, $.Viewer.prototype, {
 
     /**
      * @function
@@ -6039,13 +5751,13 @@ $.extend( $.Navigator.prototype, $.EventSource.prototype, $.Viewer.prototype, {
  * @inner
  * @function
  */
-function onCanvasClick( event ) {
+function onCanvasClick( tracker, position, quick, shift ) {
     var newBounds,
         viewerPosition,
         dimensions;
     if (! this.drag) {
         if ( this.viewer.viewport ) {
-            viewerPosition = this.viewport.deltaPointsFromPixels( event.position );
+            viewerPosition = this.viewport.deltaPointsFromPixels(position);
             dimensions = this.viewer.viewport.getBounds().getSize();
             newBounds = new $.Rect(
                 viewerPosition.x - dimensions.x/2,
@@ -6073,18 +5785,18 @@ function onCanvasClick( event ) {
  * @inner
  * @function
  */
-function onCanvasDrag( event ) {
+function onCanvasDrag( tracker, position, delta, shift ) {
     if ( this.viewer.viewport ) {
         this.drag = true;
         if( !this.panHorizontal ){
-            event.delta.x = 0;
+            delta.x = 0;
         }
         if( !this.panVertical ){
-            event.delta.y = 0;
+            delta.y = 0;
         }
         this.viewer.viewport.panBy(
             this.viewport.deltaPointsFromPixels(
-                event.delta
+                delta
             )
         );
     }
@@ -6096,8 +5808,8 @@ function onCanvasDrag( event ) {
  * @inner
  * @function
  */
-function onCanvasRelease( event ) {
-    if ( event.insideElementPressed && this.viewer.viewport ) {
+function onCanvasRelease( tracker, position, insideElementPress, insideElementRelease ) {
+    if ( insideElementPress && this.viewer.viewport ) {
         this.viewer.viewport.applyConstraints();
     }
 }
@@ -6108,10 +5820,10 @@ function onCanvasRelease( event ) {
  * @inner
  * @function
  */
-function onCanvasScroll( event ) {
+function onCanvasScroll( tracker, position, scroll, shift ) {
     var factor;
     if ( this.viewer.viewport ) {
-        factor = Math.pow( this.zoomPerScroll, event.scroll );
+        factor = Math.pow( this.zoomPerScroll, scroll );
         this.viewer.viewport.zoomBy(
             factor,
             this.viewport.getCenter()
@@ -6173,7 +5885,7 @@ var I18N = {
         Security:       "It looks like a security restriction stopped us from " +
                         "loading this Deep Zoom Image.",
         Status:         "This space unintentionally left blank ({0} {1}).",
-        OpenFailed:     "Unable to open {0}: {1}"
+        "Open-Failed":  "Unable to open {0}: {1}"
     },
 
     Tooltips: {
@@ -6488,7 +6200,7 @@ $.Point.prototype = {
  * side in M (in pixels), where N is the smallest integer which satisfies
  *      <strong>2^(N+1) >= M</strong>.
  * @class
- * @extends OpenSeadragon.EventSource
+ * @extends OpenSeadragon.EventHandler
  * @param {Number|Object|Array|String} width
  *      If more than a single argument is supplied, the traditional use of
  *      positional parameters is supplied and width is expected to be the width
@@ -6543,7 +6255,7 @@ $.TileSource = function( width, height, tileSize, tileOverlap, minLevel, maxLeve
 
     //Tile sources supply some events, namely 'ready' when they must be configured
     //by asyncronously fetching their configuration data.
-    $.EventSource.call( this );
+    $.EventHandler.call( this );
 
     //we allow options to override anything we dont treat as
     //required via idiomatic options or which is functionally
@@ -6556,8 +6268,15 @@ $.TileSource = function( width, height, tileSize, tileOverlap, minLevel, maxLeve
     for ( i = 0; i < arguments.length; i++ ) {
         if ( $.isFunction( arguments[ i ] ) ) {
             callback = arguments[ i ];
-            this.addHandler( 'ready', function ( event ) {
-                callback( event );
+            // TODO Send generic object wrapping readySource as a property (breaking change)
+            // TODO Maybe placeHolderSource should be passed to callback as well for consistency
+            //      with event handler signature?
+            //  Should be this (although technically it works as-is):
+            //this.addHandler( 'ready', function ( placeHolderSource, placeHolderArgs ) {
+            //    callback( placeHolderArgs );
+            //} );
+            this.addHandler( 'ready', function ( placeHolderSource, readySource ) {
+                callback( readySource );
             } );
             //only one callback per constructor
             break;
@@ -6740,7 +6459,10 @@ $.TileSource.prototype = {
             options = $TileSource.prototype.configure.apply( _this, [ data, url ]);
             readySource = new $TileSource( options );
             _this.ready = true;
-            _this.raiseEvent( 'ready', { tileSource: readySource } );
+            // TODO Send generic object wrapping readySource as a property (breaking change)
+            //  Should be this:
+            //_this.raiseEvent( 'ready', { tileSource: readySource } );
+            _this.raiseEvent( 'ready', readySource );
         };
 
         if( url.match(/\.js$/) ){
@@ -6861,7 +6583,7 @@ $.TileSource.prototype = {
 };
 
 
-$.extend( true, $.TileSource.prototype, $.EventSource.prototype );
+$.extend( true, $.TileSource.prototype, $.EventHandler.prototype );
 
 
 /**
@@ -7457,7 +7179,7 @@ $.extend( $.IIIFTileSource.prototype, $.TileSource.prototype, {
             scale = Math.pow( 0.5, this.maxLevel - level ),
 
             //## get iiif size
-            // iiif_size = 'pct:' + ( scale * 100 ),
+            iiif_size = 'pct:' + ( scale * 100 ),
 
             //# image dimensions at this level
             level_width = Math.ceil( this.width * scale ),
@@ -7470,19 +7192,16 @@ $.extend( $.IIIFTileSource.prototype, $.TileSource.prototype, {
             iiif_tile_x,
             iiif_tile_y,
             iiif_tile_w,
-            iiif_tile_h,
-            iiif_size;
+            iiif_tile_h;
 
 
         if ( level_width < this.tile_width && level_height < this.tile_height ){
-            iiif_size = level_width + ","; // + level_height; only one dim. for IIIF level 1 compliance
             iiif_region = 'full';
         } else {
             iiif_tile_x = x * iiif_tile_size_width;
             iiif_tile_y = y * iiif_tile_size_height;
             iiif_tile_w = Math.min( iiif_tile_size_width, this.width - iiif_tile_x );
             iiif_tile_h = Math.min( iiif_tile_size_height, this.height - iiif_tile_y );
-            iiif_size = Math.ceil(iiif_tile_w * scale) + ",";
             iiif_region = [ iiif_tile_x, iiif_tile_y, iiif_tile_w, iiif_tile_h ].join(',');
         }
 
@@ -7616,170 +7335,6 @@ function configureFromObject( tileSource, configuration ){
     }
     return configuration;
 }
-
-}( OpenSeadragon ));
-
-/*
- * OpenSeadragon - IIIF1_1TileSource
- *
- * Copyright (C) 2009 CodePlex Foundation
- * Copyright (C) 2010-2013 OpenSeadragon contributors
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- * - Redistributions of source code must retain the above copyright notice,
- *   this list of conditions and the following disclaimer.
- *
- * - Redistributions in binary form must reproduce the above copyright
- *   notice, this list of conditions and the following disclaimer in the
- *   documentation and/or other materials provided with the distribution.
- *
- * - Neither the name of CodePlex Foundation nor the names of its
- *   contributors may be used to endorse or promote products derived from
- *   this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
- * TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
-(function( $ ){
-
-/**
- * A client implementation of the International Image Interoperability
- * Format: Image API 1.1 - Please read more about the specification
- * at
- *
- * @class
- * @extends OpenSeadragon.TileSource
- * @see http://library.stanford.edu/iiif/image-api/
- */
-$.IIIF1_1TileSource = function( options ){
-
-    $.extend( true, this, options );
-
-    if( !(this.height && this.width && this['@id'] ) ){
-        throw new Error('IIIF required parameters not provided.');
-    }
-
-    options.tileSize = this.tile_width;
-
-    if (! options.maxLevel ) {
-        var mf = -1;
-        var scfs = this.scale_factors || this.scale_factor;
-        if ( scfs instanceof Array ) {
-            for ( var i = 0; i < scfs.length; i++ ) {
-                var cf = Number( scfs[i] );
-                if ( !isNaN( cf ) && cf > mf ) { mf = cf; }
-            }
-        }
-        if ( mf < 0 ) { options.maxLevel = Number(Math.ceil(Math.log(Math.max(this.width, this.height), 2))); }
-        else { options.maxLevel = mf; }
-    }
-
-    $.TileSource.apply( this, [ options ] );
-};
-
-$.extend( $.IIIF1_1TileSource.prototype, $.TileSource.prototype, {
-    /**
-     * Determine if the data and/or url imply the image service is supported by
-     * this tile source.
-     * @function
-     * @name OpenSeadragon.IIIF1_1TileSource.prototype.supports
-     * @param {Object|Array} data
-     * @param {String} optional - url
-     */
-    supports: function( data, url ){
-        return data.profile && (
-            "http://library.stanford.edu/iiif/image-api/1.1/compliance.html#level0" == data.profile ||
-            "http://library.stanford.edu/iiif/image-api/1.1/compliance.html#level1" == data.profile ||
-            "http://library.stanford.edu/iiif/image-api/1.1/compliance.html#level2" == data.profile ||
-            "http://library.stanford.edu/iiif/image-api/1.1/compliance.html#level3" == data.profile ||
-            "http://library.stanford.edu/iiif/image-api/1.1/compliance.html" == data.profile
-        );
-    },
-
-    /**
-     *
-     * @function
-     * @name OpenSeadragon.IIIF1_1TileSource.prototype.configure
-     * @param {Object} data - the raw configuration
-     */
-    // IIIF 1.1 Info Looks like this (XML syntax is no more):
-    // {
-    //   "@context" : "http://library.stanford.edu/iiif/image-api/1.1/context.json",
-    //   "@id" : "http://iiif.example.com/prefix/1E34750D-38DB-4825-A38A-B60A345E591C",
-    //   "width" : 6000,
-    //   "height" : 4000,
-    //   "scale_factors" : [ 1, 2, 4 ],
-    //   "tile_width" : 1024,
-    //   "tile_height" : 1024,
-    //   "formats" : [ "jpg", "png" ],
-    //   "qualities" : [ "native", "grey" ]
-    //   "profile" : "http://library.stanford.edu/iiif/image-api/1.1/compliance.html#level0" 
-    // } 
-    configure: function( data ){
-      return data;
-    },
-    /**
-     * Responsible for retreiving the url which will return an image for the
-     * region specified by the given x, y, and level components.
-     * @function
-     * @name OpenSeadragon.IIIF1_1TileSource.prototype.getTileUrl
-     * @param {Number} level - z index
-     * @param {Number} x
-     * @param {Number} y
-     * @throws {Error}
-     */
-    getTileUrl: function( level, x, y ){
-
-        //# constants
-        var IIIF_ROTATION = '0',
-            IIIF_QUALITY = 'native.jpg',
-
-            //## get the scale (level as a decimal)
-            scale = Math.pow( 0.5, this.maxLevel - level ),
-
-            //# image dimensions at this level
-            level_width = Math.ceil( this.width * scale ),
-            level_height = Math.ceil( this.height * scale ),
-
-            //## iiif region
-            iiif_tile_size_width = Math.ceil( this.tileSize / scale ),
-            iiif_tile_size_height = Math.ceil( this.tileSize / scale ),
-            iiif_region,
-            iiif_tile_x,
-            iiif_tile_y,
-            iiif_tile_w,
-            iiif_tile_h,
-            iiif_size,
-            uri;
-
-        if ( level_width < this.tile_width && level_height < this.tile_height ){
-            iiif_size = level_width + "," + level_height;
-            iiif_region = 'full';
-        } else {
-            iiif_tile_x = x * iiif_tile_size_width;
-            iiif_tile_y = y * iiif_tile_size_height;
-            iiif_tile_w = Math.min( iiif_tile_size_width, this.width - iiif_tile_x );
-            iiif_tile_h = Math.min( iiif_tile_size_height, this.height - iiif_tile_y );
-            iiif_size = Math.ceil(iiif_tile_w * scale) + "," +  Math.ceil(iiif_tile_h * scale);
-            iiif_region = [ iiif_tile_x, iiif_tile_y, iiif_tile_w, iiif_tile_h ].join(',');
-        }
-        uri = [ this['@id'], iiif_region, iiif_size, IIIF_ROTATION, IIIF_QUALITY ].join('/');
-        return uri;
-    }
-  });
 
 }( OpenSeadragon ));
 
@@ -8579,7 +8134,7 @@ $.ButtonState = {
  * as fading the bottons out when the user has not interacted with them
  * for a specified period.
  * @class
- * @extends OpenSeadragon.EventSource
+ * @extends OpenSeadragon.EventHandler
  * @param {Object} options
  * @param {String} options.tooltip Provides context help for the button we the
  *  user hovers over it.
@@ -8612,7 +8167,7 @@ $.Button = function( options ) {
 
     var _this = this;
 
-    $.EventSource.call( this );
+    $.EventHandler.call( this );
 
     $.extend( true, this, {
 
@@ -8681,13 +8236,13 @@ $.Button = function( options ) {
     }
 
 
-    this.addHandler( "press",     this.onPress );
-    this.addHandler( "release",   this.onRelease );
-    this.addHandler( "click",     this.onClick );
-    this.addHandler( "enter",     this.onEnter );
-    this.addHandler( "exit",      this.onExit );
-    this.addHandler( "focus",     this.onFocus );
-    this.addHandler( "blur",      this.onBlur );
+    this.addHandler( "onPress",     this.onPress );
+    this.addHandler( "onRelease",   this.onRelease );
+    this.addHandler( "onClick",     this.onClick );
+    this.addHandler( "onEnter",     this.onEnter );
+    this.addHandler( "onExit",      this.onExit );
+    this.addHandler( "onFocus",     this.onFocus );
+    this.addHandler( "onBlur",      this.onBlur );
 
     this.currentState = $.ButtonState.GROUP;
 
@@ -8704,59 +8259,59 @@ $.Button = function( options ) {
         clickTimeThreshold: this.clickTimeThreshold,
         clickDistThreshold: this.clickDistThreshold,
 
-        enterHandler: function( event ) {
-            if ( event.insideElementPressed ) {
+        enterHandler: function( tracker, position, buttonDownElement, buttonDownAny ) {
+            if ( buttonDownElement ) {
                 inTo( _this, $.ButtonState.DOWN );
-                _this.raiseEvent( "enter", {} );
-            } else if ( !event.buttonDownAny ) {
+                _this.raiseEvent( "onEnter", _this );
+            } else if ( !buttonDownAny ) {
                 inTo( _this, $.ButtonState.HOVER );
             }
         },
 
-        focusHandler: function ( event ) {
-            this.enterHandler( event );
-            _this.raiseEvent( "focus", {} );
+        focusHandler: function( tracker, position, buttonDownElement, buttonDownAny ) {
+            this.enterHandler( tracker, position, buttonDownElement, buttonDownAny );
+            _this.raiseEvent( "onFocus", _this );
         },
 
-        exitHandler: function( event ) {
+        exitHandler: function( tracker, position, buttonDownElement, buttonDownAny ) {
             outTo( _this, $.ButtonState.GROUP );
-            if ( event.insideElementPressed ) {
-                _this.raiseEvent( "exit", {} );
+            if ( buttonDownElement ) {
+                _this.raiseEvent( "onExit", _this );
             }
         },
 
-        blurHandler: function ( event ) {
-            this.exitHandler( event );
-            _this.raiseEvent( "blur", {} );
+        blurHandler: function( tracker, position, buttonDownElement, buttonDownAny ) {
+            this.exitHandler( tracker, position, buttonDownElement, buttonDownAny );
+            _this.raiseEvent( "onBlur", _this );
         },
 
-        pressHandler: function ( event ) {
+        pressHandler: function( tracker, position ) {
             inTo( _this, $.ButtonState.DOWN );
-            _this.raiseEvent( "press", {} );
+            _this.raiseEvent( "onPress", _this );
         },
 
-        releaseHandler: function( event ) {
-            if ( event.insideElementPressed && event.insideElementReleased ) {
+        releaseHandler: function( tracker, position, insideElementPress, insideElementRelease ) {
+            if ( insideElementPress && insideElementRelease ) {
                 outTo( _this, $.ButtonState.HOVER );
-                _this.raiseEvent( "release", {} );
-            } else if ( event.insideElementPressed ) {
+                _this.raiseEvent( "onRelease", _this );
+            } else if ( insideElementPress ) {
                 outTo( _this, $.ButtonState.GROUP );
             } else {
                 inTo( _this, $.ButtonState.HOVER );
             }
         },
 
-        clickHandler: function( event ) {
-            if ( event.quick ) {
-                _this.raiseEvent("click", {});
+        clickHandler: function( tracker, position, quick, shift ) {
+            if ( quick ) {
+                _this.raiseEvent("onClick", _this);
             }
         },
 
-        keyHandler: function( event ){
-            //console.log( "%s : handling key %s!", _this.tooltip, event.keyCode);
-            if( 13 === event.keyCode ){
-                _this.raiseEvent( "click", {} );
-                _this.raiseEvent( "release", {} );
+        keyHandler: function( tracker, key ){
+            //console.log( "%s : handling key %s!", _this.tooltip, key);
+            if( 13 === key ){
+                _this.raiseEvent( "onClick", _this );
+                _this.raiseEvent( "onRelease", _this );
                 return false;
             }
             return true;
@@ -8767,7 +8322,7 @@ $.Button = function( options ) {
     outTo( this, $.ButtonState.REST );
 };
 
-$.extend( $.Button.prototype, $.EventSource.prototype, {
+$.extend( $.Button.prototype, $.EventHandler.prototype, {
 
     /**
      * TODO: Determine what this function is intended to do and if it's actually
@@ -8997,23 +8552,29 @@ $.ButtonGroup = function( options ) {
         element:            this.element,
         clickTimeThreshold: this.clickTimeThreshold,
         clickDistThreshold: this.clickDistThreshold,
-        enterHandler: function ( event ) {
+        enterHandler: function() {
             var i;
             for ( i = 0; i < _this.buttons.length; i++ ) {
                 _this.buttons[ i ].notifyGroupEnter();
             }
         },
-        exitHandler: function ( event ) {
-            var i;
-            if ( !event.insideElementPressed ) {
+        exitHandler: function() {
+            var i,
+                buttonDownElement = arguments.length > 2 ?
+                    arguments[ 2 ] :
+                    null;
+            if ( !buttonDownElement ) {
                 for ( i = 0; i < _this.buttons.length; i++ ) {
                     _this.buttons[ i ].notifyGroupExit();
                 }
             }
         },
-        releaseHandler: function ( event ) {
-            var i;
-            if ( !event.insideElementReleased ) {
+        releaseHandler: function() {
+            var i,
+                insideElementRelease = arguments.length > 3 ?
+                    arguments[ 3 ] :
+                    null;
+            if ( !insideElementRelease ) {
                 for ( i = 0; i < _this.buttons.length; i++ ) {
                     _this.buttons[ i ].notifyGroupExit();
                 }
@@ -9031,7 +8592,7 @@ $.ButtonGroup.prototype = {
      * @name OpenSeadragon.ButtonGroup.prototype.emulateEnter
      */
     emulateEnter: function() {
-        this.tracker.enterHandler( { eventSource: this.tracker } );
+        this.tracker.enterHandler();
     },
 
     /**
@@ -9041,7 +8602,7 @@ $.ButtonGroup.prototype = {
      * @name OpenSeadragon.ButtonGroup.prototype.emulateExit
      */
     emulateExit: function() {
-        this.tracker.exitHandler( { eventSource: this.tracker } );
+        this.tracker.exitHandler();
     }
 };
 
@@ -9319,7 +8880,7 @@ $.Rect.prototype = {
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-(function ( $ ) {
+(function( $ ){
 
 // dictionary from id to private properties
 var THIS = {};
@@ -9343,7 +8904,7 @@ var THIS = {};
  *          require better abstraction at those points in order to effeciently
  *          reuse those paradigms.
  */
-$.ReferenceStrip = function ( options ) {
+$.ReferenceStrip = function( options ){
 
     var _this       = this,
         viewer      = options.viewer,
@@ -9354,7 +8915,7 @@ $.ReferenceStrip = function ( options ) {
 
     //We may need to create a new element and id if they did not
     //provide the id for the existing element
-    if ( !options.id ) {
+    if( !options.id ){
         options.id              = 'referencestrip-' + $.now();
         this.element            = $.makeNeutralElement( "div" );
         this.element.id         = options.id;
@@ -9375,17 +8936,17 @@ $.ReferenceStrip = function ( options ) {
         mouseNavEnabled:        false,
         showNavigationControl:  false,
         showSequenceControl:    false
-    } );
+    });
 
     $.extend( this, options );
     //Private state properties
-    THIS[this.id] = {
-        "animating":           false
+    THIS[ this.id ] = {
+        "animating":         false
     };
 
     this.minPixelRatio = this.viewer.minPixelRatio;
 
-    style = this.element.style;
+    style               = this.element.style;
     style.marginTop     = '0px';
     style.marginRight   = '0px';
     style.marginBottom  = '0px';
@@ -9399,56 +8960,56 @@ $.ReferenceStrip = function ( options ) {
     $.setElementOpacity( this.element, 0.8 );
 
     this.viewer = viewer;
-    this.innerTracker = new $.MouseTracker( {
+    this.innerTracker = new $.MouseTracker({
         element:        this.element,
         dragHandler:    $.delegate( this, onStripDrag ),
         scrollHandler:  $.delegate( this, onStripScroll ),
         enterHandler:   $.delegate( this, onStripEnter ),
         exitHandler:    $.delegate( this, onStripExit ),
         keyHandler:     $.delegate( this, onKeyPress )
-    } ).setTracking( true );
+    }).setTracking( true );
 
     //Controls the position and orientation of the reference strip and sets the
     //appropriate width and height
-    if ( options.width && options.height ) {
+    if( options.width && options.height ){
         this.element.style.width  = options.width + 'px';
         this.element.style.height = options.height + 'px';
         viewer.addControl(
             this.element,
-            { anchor: $.ControlAnchor.BOTTOM_LEFT }
+            {anchor: $.ControlAnchor.BOTTOM_LEFT}
         );
     } else {
-        if ( "horizontal" == options.scroll ) {
+        if( "horizontal" == options.scroll ){
             this.element.style.width = (
                 viewerSize.x *
                 options.sizeRatio *
                 viewer.tileSources.length
             ) + ( 12 * viewer.tileSources.length ) + 'px';
 
-            this.element.style.height = (
+            this.element.style.height  = (
                 viewerSize.y *
                 options.sizeRatio
             ) + 'px';
 
             viewer.addControl(
                 this.element,
-                { anchor: $.ControlAnchor.BOTTOM_LEFT }
+                {anchor: $.ControlAnchor.BOTTOM_LEFT}
             );
-        } else {
+        }else {
             this.element.style.height = (
                 viewerSize.y *
                 options.sizeRatio *
                 viewer.tileSources.length
             ) + ( 12 * viewer.tileSources.length ) + 'px';
 
-            this.element.style.width = (
+            this.element.style.width  = (
                 viewerSize.x *
                 options.sizeRatio
             ) + 'px';
 
             viewer.addControl(
                 this.element,
-                { anchor: $.ControlAnchor.TOP_LEFT }
+                {anchor: $.ControlAnchor.TOP_LEFT}
             );
 
         }
@@ -9459,9 +9020,9 @@ $.ReferenceStrip = function ( options ) {
     this.panels = [];
 
     /*jshint loopfunc:true*/
-    for ( i = 0; i < viewer.tileSources.length; i++ ) {
+    for( i = 0; i < viewer.tileSources.length; i++ ){
 
-        element = $.makeNeutralElement( 'div' );
+        element = $.makeNeutralElement('div');
         element.id = this.element.id + "-" + i;
 
         element.style.width         = _this.panelWidth + 'px';
@@ -9472,28 +9033,27 @@ $.ReferenceStrip = function ( options ) {
         element.style.styleFloat    = 'left'; //IE
         element.style.padding       = '2px';
 
-        element.innerTracker = new $.MouseTracker( {
+        element.innerTracker = new $.MouseTracker({
             element:            element,
             clickTimeThreshold: this.clickTimeThreshold,
             clickDistThreshold: this.clickDistThreshold,
-            pressHandler: function ( event ) {
-                event.eventSource.dragging = $.now();
+            pressHandler: function( tracker ){
+                tracker.dragging = $.now();
             },
-            releaseHandler: function ( event ) {
-                var tracker = event.eventSource,
-                    id      = tracker.element.id,
-                    page    = Number( id.split( '-' )[2] ),
-                    now     = $.now();
+            releaseHandler: function( tracker, position, insideElementPress, insideElementRelease ){
+                var id = tracker.element.id,
+                    page = Number( id.split( '-' )[ 2 ] ),
+                    now = $.now();
 
-                if ( event.insideElementPressed &&
-                     event.insideElementReleased &&
+                if ( insideElementPress &&
+                     insideElementRelease &&
                      tracker.dragging &&
-                     ( now - tracker.dragging ) < tracker.clickTimeThreshold ) {
+                     ( now - tracker.dragging ) < tracker.clickTimeThreshold ){
                     tracker.dragging = null;
                     viewer.goToPage( page );
                 }
             }
-        } ).setTracking( true );
+        }).setTracking( true );
 
         this.element.appendChild( element );
 
@@ -9502,49 +9062,49 @@ $.ReferenceStrip = function ( options ) {
         this.panels.push( element );
 
     }
-    loadPanels( this, this.scroll == 'vertical' ? viewerSize.y : viewerSize.y, 0 );
+    loadPanels( this, this.scroll == 'vertical' ? viewerSize.y : viewerSize.y, 0);
     this.setFocus( 0 );
 
 };
 
-$.extend( $.ReferenceStrip.prototype, $.EventSource.prototype, $.Viewer.prototype, {
+$.extend( $.ReferenceStrip.prototype, $.EventHandler.prototype, $.Viewer.prototype, {
 
-    setFocus: function ( page ) {
-        var element      = $.getElement( this.element.id + '-' + page ),
-            viewerSize   = $.getElementSize( this.viewer.canvas ),
-            scrollWidth  = Number( this.element.style.width.replace( 'px', '' ) ),
-            scrollHeight = Number( this.element.style.height.replace( 'px', '' ) ),
-            offsetLeft   = -Number( this.element.style.marginLeft.replace( 'px', '' ) ),
-            offsetTop    = -Number( this.element.style.marginTop.replace( 'px', '' ) ),
+    setFocus: function( page ){
+        var element = $.getElement( this.element.id + '-' + page ),
+            viewerSize = $.getElementSize( this.viewer.canvas ),
+            scrollWidth = Number(this.element.style.width.replace('px','')),
+            scrollHeight = Number(this.element.style.height.replace('px','')),
+            offsetLeft = -Number(this.element.style.marginLeft.replace('px','')),
+            offsetTop = -Number(this.element.style.marginTop.replace('px','')),
             offset;
 
-        if ( this.currentSelected !== element ) {
-            if ( this.currentSelected ) {
+        if ( this.currentSelected !== element ){
+            if( this.currentSelected ){
                 this.currentSelected.style.background = '#000';
             }
             this.currentSelected = element;
             this.currentSelected.style.background = '#999';
 
-            if ( 'horizontal' == this.scroll ) {
+            if( 'horizontal' == this.scroll ){
                 //right left
-                offset = ( Number( page ) ) * ( this.panelWidth + 3 );
-                if ( offset > offsetLeft + viewerSize.x - this.panelWidth ) {
-                    offset = Math.min( offset, ( scrollWidth - viewerSize.x ) );
+                offset = (Number(page)) * ( this.panelWidth + 3 );
+                if( offset > offsetLeft + viewerSize.x - this.panelWidth){
+                    offset = Math.min(offset, (scrollWidth - viewerSize.x));
                     this.element.style.marginLeft = -offset + 'px';
                     loadPanels( this, viewerSize.x, -offset );
-                } else if ( offset < offsetLeft ) {
-                    offset = Math.max( 0, offset - viewerSize.x / 2 );
+                }else if( offset < offsetLeft ){
+                    offset = Math.max(0, offset - viewerSize.x / 2);
                     this.element.style.marginLeft = -offset + 'px';
                     loadPanels( this, viewerSize.x, -offset );
                 }
-            } else {
-                offset = ( Number( page ) ) * ( this.panelHeight + 3 );
-                if ( offset > offsetTop + viewerSize.y - this.panelHeight ) {
-                    offset = Math.min( offset, ( scrollHeight - viewerSize.y ) );
+            }else{
+                offset = (Number(page) ) * ( this.panelHeight + 3 );
+                if( offset > offsetTop + viewerSize.y - this.panelHeight){
+                    offset = Math.min(offset, (scrollHeight - viewerSize.y));
                     this.element.style.marginTop = -offset + 'px';
                     loadPanels( this, viewerSize.y, -offset );
-                } else if ( offset < offsetTop ) {
-                    offset = Math.max( 0, offset - viewerSize.y / 2 );
+                }else if( offset < offsetTop ){
+                    offset = Math.max(0, offset - viewerSize.y / 2);
                     this.element.style.marginTop = -offset + 'px';
                     loadPanels( this, viewerSize.y, -offset );
                 }
@@ -9552,22 +9112,22 @@ $.extend( $.ReferenceStrip.prototype, $.EventSource.prototype, $.Viewer.prototyp
 
             this.currentPage = page;
             $.getElement( element.id + '-displayregion' ).focus();
-            onStripEnter.call( this, { eventSource: this.innerTracker } );
+            onStripEnter.call( this, this.innerTracker );
         }
     },
     /**
      * @function
      * @name OpenSeadragon.ReferenceStrip.prototype.update
      */
-    update: function () {
-        if ( THIS[this.id].animating ) {
-            $.console.log( 'image reference strip update' );
+    update: function() {
+        if ( THIS[ this.id ].animating ) {
+            $.console.log('image reference strip update');
             return true;
         }
         return false;
     }
 
-} );
+});
 
 
 
@@ -9577,41 +9137,41 @@ $.extend( $.ReferenceStrip.prototype, $.EventSource.prototype, $.Viewer.prototyp
  * @inner
  * @function
  */
-function onStripDrag( event ) {
+function onStripDrag( tracker, position, delta, shift ) {
 
-    var offsetLeft   = Number( this.element.style.marginLeft.replace( 'px', '' ) ),
-        offsetTop    = Number( this.element.style.marginTop.replace( 'px', '' ) ),
-        scrollWidth  = Number( this.element.style.width.replace( 'px', '' ) ),
-        scrollHeight = Number( this.element.style.height.replace( 'px', '' ) ),
-        viewerSize   = $.getElementSize( this.viewer.canvas );
+    var offsetLeft = Number(this.element.style.marginLeft.replace('px','')),
+        offsetTop = Number(this.element.style.marginTop.replace('px','')),
+        scrollWidth = Number(this.element.style.width.replace('px','')),
+        scrollHeight = Number(this.element.style.height.replace('px','')),
+        viewerSize = $.getElementSize( this.viewer.canvas );
     this.dragging = true;
     if ( this.element ) {
-        if ( 'horizontal' == this.scroll ) {
-            if ( -event.delta.x > 0 ) {
+        if( 'horizontal' == this.scroll ){
+            if ( -delta.x > 0 ) {
                 //forward
-                if ( offsetLeft > -( scrollWidth - viewerSize.x ) ) {
-                    this.element.style.marginLeft = ( offsetLeft + ( event.delta.x * 2 ) ) + 'px';
-                    loadPanels( this, viewerSize.x, offsetLeft + ( event.delta.x * 2 ) );
+                if( offsetLeft > -(scrollWidth - viewerSize.x)){
+                    this.element.style.marginLeft = ( offsetLeft + (delta.x * 2) ) + 'px';
+                    loadPanels( this, viewerSize.x, offsetLeft + (delta.x * 2) );
                 }
-            } else if ( -event.delta.x < 0 ) {
+            } else if ( -delta.x < 0 ) {
                 //reverse
-                if ( offsetLeft < 0 ) {
-                    this.element.style.marginLeft = ( offsetLeft + ( event.delta.x * 2 ) ) + 'px';
-                    loadPanels( this, viewerSize.x, offsetLeft + ( event.delta.x * 2 ) );
+                if( offsetLeft < 0 ){
+                    this.element.style.marginLeft = ( offsetLeft + (delta.x * 2) ) + 'px';
+                    loadPanels( this, viewerSize.x, offsetLeft + (delta.x * 2) );
                 }
             }
-        } else {
-            if ( -event.delta.y > 0 ) {
+        }else{
+            if ( -delta.y > 0 ) {
                 //forward
-                if ( offsetTop > -( scrollHeight - viewerSize.y ) ) {
-                    this.element.style.marginTop = ( offsetTop + ( event.delta.y * 2 ) ) + 'px';
-                    loadPanels( this, viewerSize.y, offsetTop + ( event.delta.y * 2 ) );
+                if( offsetTop > -(scrollHeight - viewerSize.y)){
+                    this.element.style.marginTop = ( offsetTop + (delta.y * 2) ) + 'px';
+                    loadPanels( this, viewerSize.y, offsetTop + (delta.y * 2) );
                 }
-            } else if ( -event.delta.y < 0 ) {
+            } else if ( -delta.y < 0 ) {
                 //reverse
-                if ( offsetTop < 0 ) {
-                    this.element.style.marginTop = ( offsetTop + ( event.delta.y * 2 ) ) + 'px';
-                    loadPanels( this, viewerSize.y, offsetTop + ( event.delta.y * 2 ) );
+                if( offsetTop < 0 ){
+                    this.element.style.marginTop = ( offsetTop + (delta.y * 2) ) + 'px';
+                    loadPanels( this, viewerSize.y, offsetTop + (delta.y * 2) );
                 }
             }
         }
@@ -9627,39 +9187,39 @@ function onStripDrag( event ) {
  * @inner
  * @function
  */
-function onStripScroll( event ) {
-    var offsetLeft   = Number( this.element.style.marginLeft.replace( 'px', '' ) ),
-        offsetTop    = Number( this.element.style.marginTop.replace( 'px', '' ) ),
-        scrollWidth  = Number( this.element.style.width.replace( 'px', '' ) ),
-        scrollHeight = Number( this.element.style.height.replace( 'px', '' ) ),
-        viewerSize   = $.getElementSize( this.viewer.canvas );
+function onStripScroll( tracker, position, scroll, shift ) {
+    var offsetLeft = Number(this.element.style.marginLeft.replace('px','')),
+        offsetTop = Number(this.element.style.marginTop.replace('px','')),
+        scrollWidth = Number(this.element.style.width.replace('px','')),
+        scrollHeight = Number(this.element.style.height.replace('px','')),
+        viewerSize = $.getElementSize( this.viewer.canvas );
     if ( this.element ) {
-        if ( 'horizontal' == this.scroll ) {
-            if ( event.scroll > 0 ) {
+        if( 'horizontal' == this.scroll ){
+            if ( scroll > 0 ) {
                 //forward
-                if ( offsetLeft > -( scrollWidth - viewerSize.x ) ) {
-                    this.element.style.marginLeft = ( offsetLeft - ( event.scroll * 60 ) ) + 'px';
-                    loadPanels( this, viewerSize.x, offsetLeft - ( event.scroll * 60 ) );
+                if( offsetLeft > -(scrollWidth - viewerSize.x)){
+                    this.element.style.marginLeft = ( offsetLeft - (scroll * 60) ) + 'px';
+                    loadPanels( this, viewerSize.x, offsetLeft - (scroll * 60) );
                 }
-            } else if ( event.scroll < 0 ) {
+            } else if ( scroll < 0 ) {
                 //reverse
-                if ( offsetLeft < 0 ) {
-                    this.element.style.marginLeft = ( offsetLeft - ( event.scroll * 60 ) ) + 'px';
-                    loadPanels( this, viewerSize.x, offsetLeft - ( event.scroll * 60 ) );
+                if( offsetLeft < 0 ){
+                    this.element.style.marginLeft = ( offsetLeft - (scroll * 60) ) + 'px';
+                    loadPanels( this, viewerSize.x, offsetLeft - (scroll * 60) );
                 }
             }
-        } else {
-            if ( event.scroll < 0 ) {
+        }else{
+            if ( scroll < 0 ) {
                 //scroll up
-                if ( offsetTop > viewerSize.y - scrollHeight ) {
-                    this.element.style.marginTop = ( offsetTop + ( event.scroll * 60 ) ) + 'px';
-                    loadPanels( this, viewerSize.y, offsetTop + ( event.scroll * 60 ) );
+                if( offsetTop > viewerSize.y - scrollHeight  ){
+                    this.element.style.marginTop = ( offsetTop + (scroll * 60) ) + 'px';
+                    loadPanels( this, viewerSize.y, offsetTop + (scroll * 60) );
                 }
-            } else if ( event.scroll > 0 ) {
+            } else if ( scroll > 0 ) {
                 //scroll dowm
-                if ( offsetTop < 0 ) {
-                    this.element.style.marginTop = ( offsetTop + ( event.scroll * 60 ) ) + 'px';
-                    loadPanels( this, viewerSize.y, offsetTop + ( event.scroll * 60 ) );
+                if( offsetTop < 0 ){
+                    this.element.style.marginTop = ( offsetTop + (scroll * 60) ) + 'px';
+                    loadPanels( this, viewerSize.y, offsetTop + (scroll * 60) );
                 }
             }
         }
@@ -9669,7 +9229,7 @@ function onStripScroll( event ) {
 }
 
 
-function loadPanels( strip, viewerSize, scroll ) {
+function loadPanels(strip, viewerSize, scroll){
     var panelSize,
         activePanelsStart,
         activePanelsEnd,
@@ -9677,22 +9237,22 @@ function loadPanels( strip, viewerSize, scroll ) {
         style,
         i,
         element;
-    if ( 'horizontal' == strip.scroll ) {
+    if( 'horizontal' == strip.scroll ){
         panelSize = strip.panelWidth;
-    } else {
+    }else{
         panelSize = strip.panelHeight;
     }
     activePanelsStart = Math.ceil( viewerSize / panelSize ) + 5;
-    activePanelsEnd = Math.ceil( ( Math.abs( scroll ) + viewerSize ) / panelSize ) + 1;
+    activePanelsEnd = Math.ceil( (Math.abs(scroll) + viewerSize ) / panelSize ) + 1;
     activePanelsStart = activePanelsEnd - activePanelsStart;
     activePanelsStart = activePanelsStart < 0 ? 0 : activePanelsStart;
 
-    for ( i = activePanelsStart; i < activePanelsEnd && i < strip.panels.length; i++ ) {
-        element = strip.panels[i];
-        if ( !element.activePanel ) {
+    for( i = activePanelsStart; i < activePanelsEnd && i < strip.panels.length; i++ ){
+        element = strip.panels[ i ];
+        if ( !element.activePanel ){
             miniViewer = new $.Viewer( {
                 id:                     element.id,
-                tileSources:            [strip.viewer.tileSources[i]],
+                tileSources:            [ strip.viewer.tileSources[ i ] ],
                 element:                element,
                 navigatorSizeRatio:     strip.sizeRatio,
                 showNavigator:          false,
@@ -9708,7 +9268,7 @@ function loadPanels( strip, viewerSize, scroll ) {
             miniViewer.displayRegion.id        = element.id + '-displayregion';
             miniViewer.displayRegion.className = 'displayregion';
 
-            style               = miniViewer.displayRegion.style;
+            style = miniViewer.displayRegion.style;
             style.position      = 'relative';
             style.top           = '0px';
             style.left          = '0px';
@@ -9722,11 +9282,11 @@ function loadPanels( strip, viewerSize, scroll ) {
             style.width         = ( strip.panelWidth - 4 ) + 'px';
             style.height        = ( strip.panelHeight - 4 ) + 'px';
 
-            miniViewer.displayRegion.innerTracker = new $.MouseTracker( {
-                element: miniViewer.displayRegion
-            } );
+            miniViewer.displayRegion.innerTracker = new $.MouseTracker({
+                element:        miniViewer.displayRegion
+            });
 
-            element.getElementsByTagName( 'form' )[0].appendChild(
+            element.getElementsByTagName('form')[ 0 ].appendChild(
                 miniViewer.displayRegion
             );
 
@@ -9741,23 +9301,22 @@ function loadPanels( strip, viewerSize, scroll ) {
  * @inner
  * @function
  */
-function onStripEnter( event ) {
-    var element = event.eventSource.element;
-    
-    //$.setElementOpacity(element, 0.8);
+function onStripEnter( tracker ) {
 
-    //element.style.border = '1px solid #555';
-    //element.style.background = '#000';
+    //$.setElementOpacity(tracker.element, 0.8);
 
-    if ( 'horizontal' == this.scroll ) {
+    //tracker.element.style.border = '1px solid #555';
+    //tracker.element.style.background = '#000';
 
-        //element.style.paddingTop = "0px";
-        element.style.marginBottom = "0px";
+    if( 'horizontal' == this.scroll ){
+
+        //tracker.element.style.paddingTop = "0px";
+        tracker.element.style.marginBottom = "0px";
 
     } else {
 
-        //element.style.paddingRight = "0px";
-        element.style.marginLeft = "0px";
+        //tracker.element.style.paddingRight = "0px";
+        tracker.element.style.marginLeft = "0px";
 
     }
     return false;
@@ -9769,18 +9328,16 @@ function onStripEnter( event ) {
  * @inner
  * @function
  */
-function onStripExit( event ) {
-    var element = event.eventSource.element;
-    
+function onStripExit( tracker ) {
     if ( 'horizontal' == this.scroll ) {
 
-        //element.style.paddingTop = "10px";
-        element.style.marginBottom = "-" + ( $.getElementSize( element ).y / 2 ) + "px";
+        //tracker.element.style.paddingTop = "10px";
+        tracker.element.style.marginBottom = "-" + ( $.getElementSize( tracker.element ).y / 2 ) + "px";
 
     } else {
 
-        //element.style.paddingRight = "10px";
-        element.style.marginLeft = "-" + ( $.getElementSize( element ).x / 2 ) + "px";
+        //tracker.element.style.paddingRight = "10px";
+        tracker.element.style.marginLeft = "-" + ( $.getElementSize( tracker.element ).x / 2 )+ "px";
 
     }
     return false;
@@ -9793,44 +9350,44 @@ function onStripExit( event ) {
  * @inner
  * @function
  */
-function onKeyPress( event ) {
-    //console.log( event.keyCode );
+function onKeyPress( tracker, keyCode, shiftKey ){
+    //console.log( keyCode );
 
-    switch ( event.keyCode ) {
-        case 61: //=|+
-            onStripScroll.call( this, { eventSource: this.tracker, position: null, scroll: 1, shift: null } );
+    switch( keyCode ){
+        case 61://=|+
+            onStripScroll.call(this, this.tracker, null, 1, null);
             return false;
-        case 45: //-|_
-            onStripScroll.call( this, { eventSource: this.tracker, position: null, scroll: -1, shift: null } );
+        case 45://-|_
+            onStripScroll.call(this, this.tracker, null, -1, null);
             return false;
-        case 48: //0|)
-        case 119: //w
-        case 87: //W
-        case 38: //up arrow
-            onStripScroll.call( this, { eventSource: this.tracker, position: null, scroll: 1, shift: null } );
+        case 48://0|)
+        case 119://w
+        case 87://W
+        case 38://up arrow
+            onStripScroll.call(this, this.tracker, null, 1, null);
             return false;
-        case 115: //s
-        case 83: //S
-        case 40: //down arrow
-            onStripScroll.call( this, { eventSource: this.tracker, position: null, scroll: -1, shift: null } );
+        case 115://s
+        case 83://S
+        case 40://down arrow
+            onStripScroll.call(this, this.tracker, null, -1, null);
             return false;
-        case 97: //a
-        case 37: //left arrow
-            onStripScroll.call( this, { eventSource: this.tracker, position: null, scroll: -1, shift: null } );
+        case 97://a
+        case 37://left arrow
+            onStripScroll.call(this, this.tracker, null, -1, null);
             return false;
-        case 100: //d
-        case 39: //right arrow
-            onStripScroll.call( this, { eventSource: this.tracker, position: null, scroll: 1, shift: null } );
+        case 100://d
+        case 39://right arrow
+            onStripScroll.call(this, this.tracker, null, 1, null);
             return false;
         default:
-            //console.log( 'navigator keycode %s', event.keyCode );
+            //console.log( 'navigator keycode %s', keyCode );
             return true;
     }
 }
 
 
 
-} ( OpenSeadragon ) );
+}( OpenSeadragon ));
 
 /*
  * OpenSeadragon - DisplayRect
@@ -10115,8 +9672,7 @@ function transform( stiffness, x ) {
  * @property {Boolean} beingDrawn Whether this tile is currently being drawn
  * @property {Number} lastTouchTime Timestamp the tile was last touched.
  */
-$.Tile = function(z, level, x, y, bounds, exists, url) {
-    this.z = z;
+$.Tile = function(level, x, y, bounds, exists, url) {
     this.level   = level;
     this.x       = x;
     this.y       = y;
@@ -10753,6 +10309,7 @@ $.Drawer.prototype = {
         this.updateAgain = true;
         if( this.viewer ){
             this.viewer.raiseEvent( 'add-overlay', {
+                viewer: this.viewer,
                 element: element,
                 location: options.location,
                 placement: options.placement
@@ -10784,6 +10341,7 @@ $.Drawer.prototype = {
         }
         if( this.viewer ){
             this.viewer.raiseEvent( 'update-overlay', {
+                viewer: this.viewer,
                 element: element,
                 location: location,
                 placement: placement
@@ -10813,6 +10371,7 @@ $.Drawer.prototype = {
         }
         if( this.viewer ){
             this.viewer.raiseEvent( 'remove-overlay', {
+                viewer: this.viewer,
                 element: element
             });
         }
@@ -10831,7 +10390,9 @@ $.Drawer.prototype = {
             this.updateAgain = true;
         }
         if( this.viewer ){
-            this.viewer.raiseEvent( 'clear-overlay', {} );
+            this.viewer.raiseEvent( 'clear-overlay', {
+                viewer: this.viewer
+            });
         }
         return this;
     },
@@ -10876,13 +10437,10 @@ $.Drawer.prototype = {
      * @method
      * @return {OpenSeadragon.Drawer} Chainable.
      */
-    update: function(z) {
-
-        window.console.log(z);
-
+    update: function() {
         //this.profiler.beginUpdate();
         this.midUpdate = true;
-        updateViewport( z, this );
+        updateViewport( this );
         this.midUpdate = false;
         //this.profiler.endUpdate();
         return this;
@@ -11022,12 +10580,14 @@ $.Drawer.prototype = {
  * how each piece of this routine contributes to the drawing process.  That's
  * why there are so many TODO's inside this function.
  */
-function updateViewport( z, drawer ) {
+function updateViewport( drawer ) {
 
     drawer.updateAgain = false;
 
     if( drawer.viewer ){
-        drawer.viewer.raiseEvent( 'update-viewport', {} );
+        drawer.viewer.raiseEvent( 'update-viewport', {
+            viewer: drawer.viewer
+        });
     }
 
     var tile,
@@ -11159,7 +10719,6 @@ function updateViewport( z, drawer ) {
 
         //TODO
         best = updateLevel(
-            z,
             drawer,
             haveDrawn,
             drawLevel,
@@ -11172,10 +10731,8 @@ function updateViewport( z, drawer ) {
             best
         );
 
-        window.console.log(best);
-
         //TODO
-        if (  providesCoverage( drawer.coverage, level, z ) ) {
+        if (  providesCoverage( drawer.coverage, level ) ) {
             break;
         }
     }
@@ -11194,7 +10751,7 @@ function updateViewport( z, drawer ) {
 }
 
 
-function updateLevel( z, drawer, haveDrawn, drawLevel, level, levelOpacity, levelVisibility, viewportTL, viewportBR, currentTime, best ){
+function updateLevel( drawer, haveDrawn, drawLevel, level, levelOpacity, levelVisibility, viewportTL, viewportBR, currentTime, best ){
 
     var x, y,
         tileTL,
@@ -11205,6 +10762,7 @@ function updateLevel( z, drawer, haveDrawn, drawLevel, level, levelOpacity, leve
 
     if( drawer.viewer ){
         drawer.viewer.raiseEvent( 'update-level', {
+            viewer: drawer.viewer,
             havedrawn: haveDrawn,
             level: level,
             opacity: levelOpacity,
@@ -11219,10 +10777,9 @@ function updateLevel( z, drawer, haveDrawn, drawLevel, level, levelOpacity, leve
     //OK, a new drawing so do your calculations
     tileTL    = drawer.source.getTileAtPoint( level, viewportTL );
     tileBR    = drawer.source.getTileAtPoint( level, viewportBR );
-    window.console.log(tileTL, tileBR);
     numberOfTiles  = drawer.source.getNumTiles( level );
 
-    resetCoverage( drawer.coverage, level, z );
+    resetCoverage( drawer.coverage, level );
 
     if ( !drawer.wrapHorizontal ) {
         tileBR.x = Math.min( tileBR.x, numberOfTiles.x - 1 );
@@ -11238,7 +10795,7 @@ function updateLevel( z, drawer, haveDrawn, drawLevel, level, levelOpacity, leve
                 drawer,
                 drawLevel,
                 haveDrawn,
-                z, x, y,
+                x, y,
                 level,
                 levelOpacity,
                 levelVisibility,
@@ -11254,10 +10811,10 @@ function updateLevel( z, drawer, haveDrawn, drawLevel, level, levelOpacity, leve
     return best;
 }
 
-function updateTile( drawer, drawLevel, haveDrawn, z, x, y, level, levelOpacity, levelVisibility, viewportCenter, numberOfTiles, currentTime, best){
+function updateTile( drawer, drawLevel, haveDrawn, x, y, level, levelOpacity, levelVisibility, viewportCenter, numberOfTiles, currentTime, best){
 
     var tile = getTile(
-            z, x, y,
+            x, y,
             level,
             drawer.source,
             drawer.tilesMatrix,
@@ -11269,19 +10826,20 @@ function updateTile( drawer, drawLevel, haveDrawn, z, x, y, level, levelOpacity,
 
     if( drawer.viewer ){
         drawer.viewer.raiseEvent( 'update-tile', {
+            viewer: drawer.viewer,
             tile: tile
         });
     }
 
-    setCoverage( drawer.coverage, level, z, x, y, false );
+    setCoverage( drawer.coverage, level, x, y, false );
 
     if ( !tile.exists ) {
         return best;
     }
 
     if ( haveDrawn && !drawTile ) {
-        if ( isCovered( drawer.coverage, level, z, x, y ) ) {
-            setCoverage( drawer.coverage, level, z, x, y, true );
+        if ( isCovered( drawer.coverage, level, x, y ) ) {
+            setCoverage( drawer.coverage, level, x, y, true );
         } else {
             drawTile = true;
         }
@@ -11303,7 +10861,7 @@ function updateTile( drawer, drawLevel, haveDrawn, z, x, y, level, levelOpacity,
         var needsUpdate = blendTile(
             drawer,
             tile,
-            z, x, y,
+            x, y,
             level,
             levelOpacity,
             currentTime
@@ -11322,8 +10880,7 @@ function updateTile( drawer, drawLevel, haveDrawn, z, x, y, level, levelOpacity,
     return best;
 }
 
-function getTile( z, x, y, level, tileSource, tilesMatrix, time, numTiles, normHeight ) {
-
+function getTile( x, y, level, tileSource, tilesMatrix, time, numTiles, normHeight ) {
     var xMod,
         yMod,
         bounds,
@@ -11331,28 +10888,24 @@ function getTile( z, x, y, level, tileSource, tilesMatrix, time, numTiles, normH
         url,
         tile;
 
-    if ( !tilesMatrix[ z ] ) {
-        tilesMatrix[ z ] = {};
+    if ( !tilesMatrix[ level ] ) {
+        tilesMatrix[ level ] = {};
     }
-    if ( !tilesMatrix[ z ][ level ] ) {
-        tilesMatrix[ z ][ level ] = {};
-    }
-    if ( !tilesMatrix[ z ][ level ][ x ] ) {
-        tilesMatrix[ z ][ level ][ x ] = {};
+    if ( !tilesMatrix[ level ][ x ] ) {
+        tilesMatrix[ level ][ x ] = {};
     }
 
-    if ( !tilesMatrix[ z ][ level ][ x ][ y ] ) {
+    if ( !tilesMatrix[ level ][ x ][ y ] ) {
         xMod    = ( numTiles.x + ( x % numTiles.x ) ) % numTiles.x;
         yMod    = ( numTiles.y + ( y % numTiles.y ) ) % numTiles.y;
-        bounds  = tileSource.getTileBounds( z, level, xMod, yMod );
-        exists  = tileSource.tileExists( z, level, xMod, yMod );
-        url     = tileSource.getTileUrl( z, level, xMod, yMod );
+        bounds  = tileSource.getTileBounds( level, xMod, yMod );
+        exists  = tileSource.tileExists( level, xMod, yMod );
+        url     = tileSource.getTileUrl( level, xMod, yMod );
 
         bounds.x += 1.0 * ( x - xMod ) / numTiles.x;
         bounds.y += normHeight * ( y - yMod ) / numTiles.y;
 
-        tilesMatrix[ z ][ level ][ x ][ y ] = new $.Tile(
-            z,
+        tilesMatrix[ level ][ x ][ y ] = new $.Tile(
             level,
             x,
             y,
@@ -11362,7 +10915,7 @@ function getTile( z, x, y, level, tileSource, tilesMatrix, time, numTiles, normH
         );
     }
 
-    tile = tilesMatrix[ z ][ level ][ x ][ y ];
+    tile = tilesMatrix[ level ][ x ][ y ];
     tile.lastTouchTime = time;
 
     return tile;
@@ -11478,7 +11031,7 @@ function positionTile( tile, overlap, viewport, viewportCenter, levelVisibility 
 }
 
 
-function blendTile( drawer, tile, z, x, y, level, levelOpacity, currentTime ){
+function blendTile( drawer, tile, x, y, level, levelOpacity, currentTime ){
     var blendTimeMillis = 1000 * drawer.blendTime,
         deltaTime,
         opacity;
@@ -11499,7 +11052,7 @@ function blendTile( drawer, tile, z, x, y, level, levelOpacity, currentTime ){
     drawer.lastDrawn.push( tile );
 
     if ( opacity == 1 ) {
-        setCoverage( drawer.coverage, level, z, x, y, true );
+        setCoverage( drawer.coverage, level, x, y, true );
     } else if ( deltaTime < blendTimeMillis ) {
         return true;
     }
@@ -11524,21 +11077,17 @@ function clearTiles( drawer ) {
  * there's no content that they would need to cover. Tiles at non-existent
  * levels that are within the image bounds, however, do not.
  */
-function providesCoverage( coverage, level, z, x, y ) {
+function providesCoverage( coverage, level, x, y ) {
     var rows,
         cols,
         i, j;
 
-    if ( !coverage[ z ]) {
-        return false;
-    }
-
-    if ( !coverage[ z ][ level ] ) {
+    if ( !coverage[ level ] ) {
         return false;
     }
 
     if ( x === undefined || y === undefined ) {
-        rows = coverage[ z ][ level ];
+        rows = coverage[ level ];
         for ( i in rows ) {
             if ( rows.hasOwnProperty( i ) ) {
                 cols = rows[ i ];
@@ -11554,9 +11103,9 @@ function providesCoverage( coverage, level, z, x, y ) {
     }
 
     return (
-        coverage[ z ][ level ][ x] === undefined ||
-        coverage[ z ][ level ][ x ][ y ] === undefined ||
-        coverage[ z ][ level ][ x ][ y ] === true
+        coverage[ level ][ x] === undefined ||
+        coverage[ level ][ x ][ y ] === undefined ||
+        coverage[ level ][ x ][ y ] === true
     );
 }
 
@@ -11567,15 +11116,15 @@ function providesCoverage( coverage, level, z, x, y ) {
  * tiles of higher resolution representing the same content. If neither x
  * nor y is given, returns true if the entire visible level is covered.
  */
-function isCovered( coverage, level, z, x, y ) {
+function isCovered( coverage, level, x, y ) {
     if ( x === undefined || y === undefined ) {
-        return providesCoverage( coverage, level + 1, z );
+        return providesCoverage( coverage, level + 1 );
     } else {
         return (
-             providesCoverage( coverage, level + 1, z, 2 * x, 2 * y ) &&
-             providesCoverage( coverage, level + 1, z, 2 * x, 2 * y + 1 ) &&
-             providesCoverage( coverage, level + 1, z, 2 * x + 1, 2 * y ) &&
-             providesCoverage( coverage, level + 1, z, 2 * x + 1, 2 * y + 1 )
+             providesCoverage( coverage, level + 1, 2 * x, 2 * y ) &&
+             providesCoverage( coverage, level + 1, 2 * x, 2 * y + 1 ) &&
+             providesCoverage( coverage, level + 1, 2 * x + 1, 2 * y ) &&
+             providesCoverage( coverage, level + 1, 2 * x + 1, 2 * y + 1 )
         );
     }
 }
@@ -11585,8 +11134,8 @@ function isCovered( coverage, level, z, x, y ) {
  * @inner
  * Sets whether the given tile provides coverage or not.
  */
-function setCoverage( coverage, level, z, x, y, covers ) {
-    if ( !coverage[ z ][ level ] ) {
+function setCoverage( coverage, level, x, y, covers ) {
+    if ( !coverage[ level ] ) {
         $.console.warn(
             "Setting coverage for a tile before its level's coverage has been reset: %s",
             level
@@ -11594,11 +11143,11 @@ function setCoverage( coverage, level, z, x, y, covers ) {
         return;
     }
 
-    if ( !coverage[ z ][ level ][ x ] ) {
-        coverage[ z ][ level ][ x ] = {};
+    if ( !coverage[ level ][ x ] ) {
+        coverage[ level ][ x ] = {};
     }
 
-    coverage[ z ][ level ][ x ][ y ] = covers;
+    coverage[ level ][ x ][ y ] = covers;
 }
 
 /**
@@ -11608,10 +11157,8 @@ function setCoverage( coverage, level, z, x, y, covers ) {
  * after every draw routine. Note that at the beginning of the next draw
  * routine, coverage for every visible tile should be explicitly set.
  */
-function resetCoverage( coverage, level, z ) {
-
-    coverage[ z ] = {};
-    coverage[ z ][ level ] = {};
+function resetCoverage( coverage, level ) {
+    coverage[ level ] = {};
 }
 
 /**
@@ -11726,7 +11273,6 @@ function drawTiles( drawer, lastDrawn ){
                 //$.console.log("Rendering collection tile %s | %s | %s", tile.y, tile.y, position);
                 if( tileSource ){
                     drawer.collectionOverlays[ tileKey ] = viewer = new $.Viewer({
-                        hash:                   viewport.viewer.hash + "-" + tileKey,
                         element:                $.makeNeutralElement( "div" ),
                         mouseNavEnabled:        false,
                         showNavigator:          false,
@@ -11794,6 +11340,7 @@ function drawTiles( drawer, lastDrawn ){
 
         if( drawer.viewer ){
             drawer.viewer.raiseEvent( 'tile-drawn', {
+                viewer: drawer.viewer,
                 tile: tile
             });
         }
@@ -12014,7 +11561,8 @@ $.Viewport.prototype = {
 
         if( this.viewer ){
             this.viewer.raiseEvent( 'reset-size', {
-                contentSize: contentSize
+                contentSize: contentSize,
+                viewer: this.viewer
             });
         }
 
@@ -12060,7 +11608,8 @@ $.Viewport.prototype = {
     goHome: function( immediately ) {
         if( this.viewer ){
             this.viewer.raiseEvent( 'home', {
-                immediately: immediately
+                immediately: immediately,
+                viewer: this.viewer
             });
         }
         return this.fitBounds( this.getHomeBounds(), immediately );
@@ -12260,7 +11809,8 @@ $.Viewport.prototype = {
 
         if( this.viewer ){
             this.viewer.raiseEvent( 'constrain', {
-                immediately: immediately
+                immediately: immediately,
+                viewer: this.viewer
             });
         }
 
@@ -12412,7 +11962,8 @@ $.Viewport.prototype = {
         if( this.viewer ){
             this.viewer.raiseEvent( 'pan', {
                 center: center,
-                immediately: immediately
+                immediately: immediately,
+                viewer: this.viewer
             });
         }
 
@@ -12424,7 +11975,7 @@ $.Viewport.prototype = {
      * @return {OpenSeadragon.Viewport} Chainable.
      */
     zoomBy: function( factor, refPoint, immediately ) {
-        if( refPoint instanceof $.Point && !isNaN( refPoint.x ) && !isNaN( refPoint.y ) ) {
+        if( refPoint ) {
             refPoint = refPoint.rotate(
                 -this.degrees,
                 new $.Point( this.centerSpringX.target.value, this.centerSpringY.target.value )
@@ -12439,9 +11990,7 @@ $.Viewport.prototype = {
      */
     zoomTo: function( zoom, refPoint, immediately ) {
 
-        this.zoomPoint = refPoint instanceof $.Point &&
-            !isNaN(refPoint.x) &&
-            !isNaN(refPoint.y) ?
+        this.zoomPoint = refPoint instanceof $.Point ?
             refPoint :
             null;
 
@@ -12455,7 +12004,8 @@ $.Viewport.prototype = {
             this.viewer.raiseEvent( 'zoom', {
                 zoom: zoom,
                 refPoint: refPoint,
-                immediately: immediately
+                immediately: immediately,
+                viewer: this.viewer
             });
         }
 
@@ -12489,7 +12039,7 @@ $.Viewport.prototype = {
     /**
      * Gets the current rotation in degrees.
      * @function
-     * @name OpenSeadragon.Viewport.prototype.getRotation
+     * @name OpenSeadragon.Viewport.prototype.setRotation
      * @return {Number} The current rotation in degrees.
      */
     getRotation: function() {
@@ -12518,7 +12068,8 @@ $.Viewport.prototype = {
         if( this.viewer ){
             this.viewer.raiseEvent( 'resize', {
                 newContainerSize: newContainerSize,
-                maintain: maintain
+                maintain: maintain,
+                viewer: this.viewer
             });
         }
 
@@ -12564,7 +12115,6 @@ $.Viewport.prototype = {
 
 
     /**
-     * Convert a delta (translation vector) from pixels coordinates to viewport coordinates
      * @function
      * @param {Boolean} current - Pass true for the current location; defaults to false (target location).
      */
@@ -12575,7 +12125,6 @@ $.Viewport.prototype = {
     },
 
     /**
-     * Convert a delta (translation vector) from viewport coordinates to pixels coordinates.
      * @function
      * @param {Boolean} current - Pass true for the current location; defaults to false (target location).
      */
@@ -12586,7 +12135,6 @@ $.Viewport.prototype = {
     },
 
     /**
-     * Convert image pixel coordinates to viewport coordinates.
      * @function
      * @param {Boolean} current - Pass true for the current location; defaults to false (target location).
      */
@@ -12600,7 +12148,6 @@ $.Viewport.prototype = {
     },
 
     /**
-     * Convert viewport coordinates to image pixel coordinates.
      * @function
      * @param {Boolean} current - Pass true for the current location; defaults to false (target location).
      */
@@ -12721,106 +12268,6 @@ $.Viewport.prototype = {
             coordB.x,
             coordB.y
         );
-    },
-
-    /**
-     * Convert pixel coordinates relative to the viewer element to image
-     * coordinates.
-     * @param {OpenSeadragon.Point} pixel
-     * @returns {OpenSeadragon.Point}
-     */
-    viewerElementToImageCoordinates: function( pixel ) {
-        var point = this.pointFromPixel( pixel, true );
-        return this.viewportToImageCoordinates( point );
-    },
-
-    /**
-     * Convert pixel coordinates relative to the image to
-     * viewer element coordinates.
-     * @param {OpenSeadragon.Point} point
-     * @returns {OpenSeadragon.Point}
-     */
-    imageToViewerElementCoordinates: function( point ) {
-        var pixel = this.pixelFromPoint( point, true );
-        return this.imageToViewportCoordinates( pixel );
-    },
-
-    /**
-     * Convert pixel coordinates relative to the window to image coordinates.
-     * @param {OpenSeadragon.Point} pixel
-     * @returns {OpenSeadragon.Point}
-     */
-    windowToImageCoordinates: function( pixel ) {
-        var viewerCoordinates = pixel.minus(
-                OpenSeadragon.getElementPosition( this.viewer.element ));
-        return this.viewerElementToImageCoordinates( viewerCoordinates );
-    },
-
-    /**
-     * Convert image coordinates to pixel coordinates relative to the window.
-     * @param {OpenSeadragon.Point} pixel
-     * @returns {OpenSeadragon.Point}
-     */
-    imageToWindowCoordinates: function( pixel ) {
-        var viewerCoordinates = this.imageToViewerElementCoordinates( pixel );
-        return viewerCoordinates.plus(
-                OpenSeadragon.getElementPosition( this.viewer.element ));
-    },
-
-    /**
-     * Convert pixel coordinates relative to the viewer element to viewport
-     * coordinates.
-     * @param {OpenSeadragon.Point} pixel
-     * @returns {OpenSeadragon.Point}
-     */
-    viewerElementToViewportCoordinates: function( pixel ) {
-        return this.pointFromPixel( pixel, true );
-    },
-
-    /**
-     * Convert viewport coordinates to pixel coordinates relative to the
-     * viewer element.
-     * @param {OpenSeadragon.Point} point
-     * @returns {OpenSeadragon.Point}
-     */
-    viewportToViewerElementCoordinates: function( point ) {
-        return this.pixelFromPoint( point, true );
-    },
-
-    /**
-     * Convert pixel coordinates relative to the window to viewport coordinates.
-     * @param {OpenSeadragon.Point} pixel
-     * @returns {OpenSeadragon.Point}
-     */
-    windowToViewportCoordinates: function( pixel ) {
-        var viewerCoordinates = pixel.minus(
-                OpenSeadragon.getElementPosition( this.viewer.element ));
-        return this.viewerElementToViewportCoordinates( viewerCoordinates );
-    },
-
-    /**
-     * Convert viewport coordinates to pixel coordinates relative to the window.
-     * @param {OpenSeadragon.Point} point
-     * @returns {OpenSeadragon.Point}
-     */
-    viewportToWindowCoordinates: function( point ) {
-        var viewerCoordinates = this.viewportToViewerElementCoordinates( point );
-        return viewerCoordinates.plus(
-                OpenSeadragon.getElementPosition( this.viewer.element ));
-    },
-
-    /**
-     * Get the zoom ratio of the image. 1 means original image size, 0.5 half size...
-     * @function
-     * @param {Boolean} current If true gives the current zoom otherwise gives the
-     * target zoom.
-     * @returns {Number}
-     */
-    getImageZoomRatio: function( current ) {
-        var imageWidth = this.viewer.source.dimensions.x;
-        var containerWidth = this.getContainerSize().x;
-        var zoomToZoomLevelRatio = containerWidth / imageWidth;
-        return this.getZoom( current ) * zoomToZoomLevelRatio;
     }
 };
 
