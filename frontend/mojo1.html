@@ -4,8 +4,7 @@
 
   <script type="text/javascript">
     
-    var SEQUENCE_URL_PREFIX = 'http://monster.krash.net/iipsrv/iipsrv.fcgi?DeepZoom=p_Tile_r1-c1_w043_';
-    IMAGES = ['sec051', 'sec052', 'sec053', 'sec058'];
+    var SEQUENCE_URL_PREFIX = 'http://monster.krash.net/iipsrv/iipsrv.fcgi?DeepZoom=mojo1/';
 
     CUR_IMAGE = 0;
     window.onload = function() {
@@ -20,12 +19,12 @@
         showNavigator: true,
         maxZoomPixelRatio: 4,
         tileSources: {
-          height: 25600,
-          width: 25600,
+          height: 1024,
+          width: 1024,
           tileSize: 256,
           getTileUrl: function( level, x, y ) {
             
-            return SEQUENCE_URL_PREFIX + IMAGES[CUR_IMAGE] + '.tif_files/' + level + '/' + x + '_' + y + '.jpg';
+            return SEQUENCE_URL_PREFIX + 'p_'+ CUR_IMAGE + '.tif_files/' + level + '/' + x + '_' + y + '.jpg';
           }
 
         }
@@ -37,17 +36,18 @@
 
         CUR_IMAGE++;
 
-        if (CUR_IMAGE > 3) CUR_IMAGE = 0;
+        if (CUR_IMAGE == 75) CUR_IMAGE = 0;
 
       } else if (e.charCode == 97) {
 
         CUR_IMAGE--;
 
-        if (CUR_IMAGE < 0) CUR_IMAGE = 3;
+        if (CUR_IMAGE == 0) CUR_IMAGE = 74;
 
       }
 
       viewer.drawer.reset();
+
     }
 
     };
