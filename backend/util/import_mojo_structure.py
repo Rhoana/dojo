@@ -90,16 +90,12 @@ class ImportLogic():
             column = stack[tile][r][c]
             first_column = False
           else:
-            print column.shape
-            print stack[tile][r][c].shape
             column = np.concatenate((column, stack[tile][r][c]))
-            print column.shape
 
         if first_row:
           row = column
           first_row = False
         else:
-          print column.shape
           row = np.concatenate((row, column), axis=1)
 
       # save the merged image
