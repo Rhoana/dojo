@@ -62,11 +62,15 @@ class ImportLogic():
             l = l.split('=')
             exec(l[0]+'=int("'+l[1]+'")')
           # we now have x and y defined
-          
+
           # load the tif
           if not x in tile:
             tile[x] = {}
           tile[x][y] = tif.imread(os.path.join(zoomlevels[0],d,i))
+
+          if tile[x][y].ndim > 2:
+            # hack: if rgb dataset, only take 1 channel
+            tile[x][y] = tile[x][y][0]
 
         # print 'stored seq', seq_no
         stack[seq_no] = tile
@@ -86,12 +90,16 @@ class ImportLogic():
             column = stack[tile][r][c]
             first_column = False
           else:
-            column = np.concatenate((column, stack[tile][r][c]), axis=0)
+            print column.shape
+            print stack[tile][r][c].shape
+            column = np.concatenate((column, stack[tile][r][c]))
+            print column.shape
 
         if first_row:
           row = column
           first_row = False
         else:
+          print column.shape
           row = np.concatenate((row, column), axis=1)
 
       # save the merged image
