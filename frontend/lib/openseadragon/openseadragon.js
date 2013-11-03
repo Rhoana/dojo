@@ -392,6 +392,44 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
     };
 
 
+    /**
+     * Detect event model and create appropriate _addEvent/_removeEvent methods
+     */
+    if ( window.addEventListener ) {
+        $._addEvent = function ( element, eventName, handler, useCapture ) {
+            element = $.getElement( element );
+            element.addEventListener( eventName, handler, useCapture );
+        };
+    } else if ( window.attachEvent ) {
+        $._addEvent = function ( element, eventName, handler, useCapture ) {
+            element = $.getElement( element );
+            element.attachEvent( 'on' + eventName, handler );
+            if ( useCapture && element.setCapture ) {
+                element.setCapture();
+            }
+        };
+    } else {
+        throw new Error( "No known event model." );
+    }
+
+    if ( window.removeEventListener ) {
+        $._removeEvent = function ( element, eventName, handler, useCapture ) {
+            element = $.getElement( element );
+            element.removeEventListener( eventName, handler, useCapture );
+        };
+    } else if ( window.detachEvent ) {
+        $._removeEvent = function( element, eventName, handler, useCapture ) {
+            element = $.getElement( element );
+            element.detachEvent( 'on' + eventName, handler );
+            if ( useCapture && element.releaseCapture ) {
+                element.releaseCapture();
+            }
+        };
+    } else {
+        throw new Error( "No known event model." );
+    }
+
+
 }( OpenSeadragon ));
 
 /**
@@ -523,6 +561,7 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
             immediateRender:        false,
             minZoomImageRatio:      0.9, //-> closer to 0 allows zoom out to infinity
             maxZoomPixelRatio:      1.1, //-> higher allows 'over zoom' into pixels
+            pixelsPerWheelLine:     40,
 
             //DEFAULT CONTROL SETTINGS
             showSequenceControl:    true,  //SEQUENCE
@@ -1148,33 +1187,9 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
          * @param {String} eventName
          * @param {Function} handler
          * @param {Boolean} [useCapture]
-         * @throws {Error}
          */
         addEvent: function( element, eventName, handler, useCapture ) {
-            element = $.getElement( element );
-
-            //TODO: Why do this if/else on every method call instead of just
-            //      defining this function once based on the same logic
-            if ( element.addEventListener ) {
-                $.addEvent = function( element, eventName, handler, useCapture ){
-                    element = $.getElement( element );
-                    element.addEventListener( eventName, handler, useCapture );
-                };
-            } else if ( element.attachEvent ) {
-                $.addEvent = function( element, eventName, handler, useCapture ){
-                    element = $.getElement( element );
-                    element.attachEvent( "on" + eventName, handler );
-                    if ( useCapture && element.setCapture ) {
-                        element.setCapture();
-                    }
-                };
-            } else {
-                throw new Error(
-                    "Unable to attach event handler, no known technique."
-                );
-            }
-
-            return $.addEvent( element, eventName, handler, useCapture );
+            return $._addEvent( element, eventName, handler, useCapture );
         },
 
 
@@ -1187,32 +1202,9 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
          * @param {String} eventName
          * @param {Function} handler
          * @param {Boolean} [useCapture]
-         * @throws {Error}
          */
         removeEvent: function( element, eventName, handler, useCapture ) {
-            element = $.getElement( element );
-
-            //TODO: Why do this if/else on every method call instead of just
-            //      defining this function once based on the same logic
-            if ( element.removeEventListener ) {
-                $.removeEvent = function( element, eventName, handler, useCapture ) {
-                    element = $.getElement( element );
-                    element.removeEventListener( eventName, handler, useCapture );
-                };
-            } else if ( element.detachEvent ) {
-                $.removeEvent = function( element, eventName, handler, useCapture ) {
-                    element = $.getElement( element );
-                    element.detachEvent("on" + eventName, handler);
-                    if ( useCapture && element.releaseCapture ) {
-                        element.releaseCapture();
-                    }
-                };
-            } else {
-                throw new Error(
-                    "Unable to detach event handler, no known technique."
-                );
-            }
-            return $.removeEvent( element, eventName, handler, useCapture );
+            return $._removeEvent( element, eventName, handler, useCapture );
         },
 
 
@@ -2345,11 +2337,14 @@ $.EventSource.prototype = {
      *      A reference to an element or an element id for which the mouse
      *      events will be monitored.
      * @param {Number} options.clickTimeThreshold
-     *      The number of milliseconds within which mutliple mouse clicks
+     *      The number of milliseconds within which multiple mouse clicks
      *      will be treated as a single event.
      * @param {Number} options.clickDistThreshold
      *      The distance between mouse click within multiple mouse clicks
      *      will be treated as a single event.
+     * @param {Number} options.stopDelay
+     *      The number of milliseconds without mouse move before the mouse stop
+     *      event is fired.
      * @param {Function} options.enterHandler
      *      An optional handler for mouse enter.
      * @param {Function} options.exitHandler
@@ -2402,6 +2397,7 @@ $.EventSource.prototype = {
         this.clickTimeThreshold = options.clickTimeThreshold;
         this.clickDistThreshold = options.clickDistThreshold;
         this.userData           = options.userData       || null;
+        this.stopDelay          = options.stopDelay      || 50;
 
         this.enterHandler       = options.enterHandler   || null;
         this.exitHandler        = options.exitHandler    || null;
@@ -2411,6 +2407,7 @@ $.EventSource.prototype = {
         this.scrollHandler      = options.scrollHandler  || null;
         this.clickHandler       = options.clickHandler   || null;
         this.dragHandler        = options.dragHandler    || null;
+        this.stopHandler        = options.stopHandler    || null;
         this.keyHandler         = options.keyHandler     || null;
         this.focusHandler       = options.focusHandler   || null;
         this.blurHandler        = options.blurHandler    || null;
@@ -2443,8 +2440,10 @@ $.EventSource.prototype = {
             mouseup:               function ( event ) { onMouseUp( _this, event, false ); },
             mousemove:             function ( event ) { onMouseMove( _this, event ); },
             click:                 function ( event ) { onMouseClick( _this, event ); },
-            DOMMouseScroll:        function ( event ) { onMouseWheelSpin( _this, event, false ); },
-            mousewheel:            function ( event ) { onMouseWheelSpin( _this, event, false ); },
+            wheel:                 function ( event ) { onWheel( _this, event ); },
+            mousewheel:            function ( event ) { onMouseWheel( _this, event ); },
+            DOMMouseScroll:        function ( event ) { onMouseWheel( _this, event ); },
+            MozMousePixelScroll:   function ( event ) { onMouseWheel( _this, event ); },
             mouseupie:             function ( event ) { onMouseUpIE( _this, event ); },
             mousemovecapturedie:   function ( event ) { onMouseMoveCapturedIE( _this, event ); },
             mouseupcaptured:       function ( event ) { onMouseUpCaptured( _this, event ); },
@@ -2505,7 +2504,7 @@ $.EventSource.prototype = {
         },
 
         /**
-         * Implement or assign implmentation to these handlers during or after
+         * Implement or assign implementation to these handlers during or after
          * calling the constructor.
          * @function
          * @param {Object} event
@@ -2528,7 +2527,7 @@ $.EventSource.prototype = {
         enterHandler: function () { },
 
         /**
-         * Implement or assign implmentation to these handlers during or after
+         * Implement or assign implementation to these handlers during or after
          * calling the constructor.
          * @function
          * @param {Object} event
@@ -2551,7 +2550,7 @@ $.EventSource.prototype = {
         exitHandler: function () { },
 
         /**
-         * Implement or assign implmentation to these handlers during or after
+         * Implement or assign implementation to these handlers during or after
          * calling the constructor.
          * @function
          * @param {Object} event
@@ -2569,7 +2568,7 @@ $.EventSource.prototype = {
         pressHandler: function () { },
 
         /**
-         * Implement or assign implmentation to these handlers during or after
+         * Implement or assign implementation to these handlers during or after
          * calling the constructor.
          * @function
          * @param {Object} event
@@ -2592,7 +2591,7 @@ $.EventSource.prototype = {
         releaseHandler: function () { },
 
         /**
-         * Implement or assign implmentation to these handlers during or after
+         * Implement or assign implementation to these handlers during or after
          * calling the constructor.
          * @function
          * @param {Object} event
@@ -2610,7 +2609,7 @@ $.EventSource.prototype = {
         moveHandler: function () { },
 
         /**
-         * Implement or assign implmentation to these handlers during or after
+         * Implement or assign implementation to these handlers during or after
          * calling the constructor.
          * @function
          * @param {Object} event
@@ -2632,7 +2631,7 @@ $.EventSource.prototype = {
         scrollHandler: function () { },
 
         /**
-         * Implement or assign implmentation to these handlers during or after
+         * Implement or assign implementation to these handlers during or after
          * calling the constructor.
          * @function
          * @param {Object} event
@@ -2654,7 +2653,7 @@ $.EventSource.prototype = {
         clickHandler: function () { },
 
         /**
-         * Implement or assign implmentation to these handlers during or after
+         * Implement or assign implementation to these handlers during or after
          * calling the constructor.
          * @function
          * @param {Object} event
@@ -2676,7 +2675,25 @@ $.EventSource.prototype = {
         dragHandler: function () { },
 
         /**
-         * Implement or assign implmentation to these handlers during or after
+         * Implement or assign implementation to these handlers during or after
+         * calling the constructor.
+         * @function
+         * @param {Object} event
+         * @param {OpenSeadragon.MouseTracker} event.eventSource
+         *      A reference to the tracker instance.
+         * @param {OpenSeadragon.Point} event.position
+         *      The position of the event relative to the tracked element.
+         * @param {Boolean} event.isTouchEvent
+         *      True if the original event is a touch event, otherwise false.
+         * @param {Object} event.originalEvent
+         *      The original event object.
+         * @param {Object} event.userData
+         *      Arbitrary user-defined object.
+         */
+        stopHandler: function () { },
+
+        /**
+         * Implement or assign implementation to these handlers during or after
          * calling the constructor.
          * @function
          * @param {Object} event
@@ -2694,7 +2711,7 @@ $.EventSource.prototype = {
         keyHandler: function () { },
 
         /**
-         * Implement or assign implmentation to these handlers during or after
+         * Implement or assign implementation to these handlers during or after
          * calling the constructor.
          * @function
          * @param {Object} event
@@ -2708,7 +2725,7 @@ $.EventSource.prototype = {
         focusHandler: function () { },
 
         /**
-         * Implement or assign implmentation to these handlers during or after
+         * Implement or assign implementation to these handlers during or after
          * calling the constructor.
          * @function
          * @param {Object} event
@@ -2723,6 +2740,14 @@ $.EventSource.prototype = {
     };
 
     /**
+     * Detect available mouse wheel event.
+     */
+    $.MouseTracker.wheelEventName = ( $.Browser.vendor == $.BROWSERS.IE && $.Browser.version > 8 ) ||
+                                                ( 'onwheel' in document.createElement( 'div' ) ) ? 'wheel' : // Modern browsers support 'wheel'
+                                    document.onmousewheel !== undefined ? 'mousewheel' :                     // Webkit and IE support at least 'mousewheel'
+                                    'DOMMouseScroll';                                                        // Assume old Firefox
+
+    /**
      * Starts tracking mouse events on this element.
      * @private
      * @inner
@@ -2731,7 +2756,7 @@ $.EventSource.prototype = {
         var events = [
                 "mouseover", "mouseout", "mousedown", "mouseup", "mousemove",
                 "click",
-                "DOMMouseScroll", "mousewheel",
+                $.MouseTracker.wheelEventName,
                 "touchstart", "touchmove", "touchend",
                 "keypress",
                 "focus", "blur"
@@ -2739,6 +2764,11 @@ $.EventSource.prototype = {
             delegate = THIS[ tracker.hash ],
             event,
             i;
+
+        // Add 'MozMousePixelScroll' event handler for older Firefox
+        if( $.MouseTracker.wheelEventName == "DOMMouseScroll" ) {
+            events.push( "MozMousePixelScroll" );
+        }
 
         if ( !delegate.tracking ) {
             for ( i = 0; i < events.length; i++ ) {
@@ -2764,7 +2794,7 @@ $.EventSource.prototype = {
         var events = [
                 "mouseover", "mouseout", "mousedown", "mouseup", "mousemove",
                 "click",
-                "DOMMouseScroll", "mousewheel",
+                $.MouseTracker.wheelEventName,
                 "touchstart", "touchmove", "touchend",
                 "keypress",
                 "focus", "blur"
@@ -2772,6 +2802,11 @@ $.EventSource.prototype = {
             delegate = THIS[ tracker.hash ],
             event,
             i;
+
+        // Remove 'MozMousePixelScroll' event handler for older Firefox
+        if( $.MouseTracker.wheelEventName == "DOMMouseScroll" ) {
+            events.push( "MozMousePixelScroll" );
+        }
 
         if ( delegate.tracking ) {
             for ( i = 0; i < events.length; i++ ) {
@@ -3339,8 +3374,29 @@ $.EventSource.prototype = {
                 $.cancelEvent( event );
             }
         }
+        if ( tracker.stopHandler ) {
+            clearTimeout( tracker.stopTimeOut );
+            tracker.stopTimeOut = setTimeout( function() {
+                onMouseStop( tracker, event );
+            }, tracker.stopDelay );
+        }
     }
-
+    
+    /**
+     * @private
+     * @inner
+     */
+    function onMouseStop( tracker, originalMoveEvent ) {
+        if ( tracker.stopHandler ) {
+            tracker.stopHandler( {
+                eventSource: tracker,
+                position: getMouseRelative( originalMoveEvent, tracker.element ),
+                isTouchEvent: false,
+                originalEvent: originalMoveEvent,
+                userData: tracker.userData
+            } );
+        }
+    }
 
     /**
      * @private
@@ -3354,49 +3410,85 @@ $.EventSource.prototype = {
 
 
     /**
+     * Handler for 'wheel' events
+     *
      * @private
      * @inner
      */
-    function onMouseWheelSpin( tracker, event, isTouch ) {
+    function onWheel( tracker, event ) {
+        handleWheelEvent( tracker, event, event, false );
+    }
+
+
+    /**
+     * Handler for 'mousewheel', 'DOMMouseScroll', and 'MozMousePixelScroll' events
+     *
+     * @private
+     * @inner
+     */
+    function onMouseWheel( tracker, event ) {
+        // For legacy IE, access the global (window) event object
+        event = event || window.event;
+
+        // Simulate a 'wheel' event
+        var simulatedEvent = {
+            target:     event.target || event.srcElement,
+            type:       "wheel",
+            shiftKey:   event.shiftKey || false,
+            clientX:    event.clientX,
+            clientY:    event.clientY,
+            pageX:      event.pageX ? event.pageX : event.clientX,
+            pageY:      event.pageY ? event.pageY : event.clientY,
+            deltaMode:  event.type == "MozMousePixelScroll" ? 0 : 1, // 0=pixel, 1=line, 2=page
+            deltaX:     0,
+            deltaZ:     0
+        };
+
+        // Calculate deltaY
+        if ( $.MouseTracker.wheelEventName == "mousewheel" ) {
+            simulatedEvent.deltaY = - 1 / $.DEFAULT_SETTINGS.pixelsPerWheelLine * event.wheelDelta;
+        } else {
+            simulatedEvent.deltaY = event.detail;
+        }
+
+        handleWheelEvent( tracker, simulatedEvent, event, false );
+    }
+
+
+    /**
+     * Handles 'wheel' events. 
+     * The event may be simulated by the legacy mouse wheel event handler (onMouseWheel()) or onTouchMove().
+     *
+     * @private
+     * @inner
+     */
+    function handleWheelEvent( tracker, event, originalEvent, isTouch ) {
         var nDelta = 0,
             propagate;
 
         isTouch = isTouch || false;
 
-        if ( !event ) { // For IE, access the global (window) event object
-            event = window.event;
-        }
-
-        if ( event.wheelDelta ) { // IE and Opera
-            nDelta = event.wheelDelta;
-            if ( window.opera ) {  // Opera has the values reversed
-                nDelta = -nDelta;
-            }
-        } else if ( event.detail ) { // Mozilla FireFox
-            nDelta = -event.detail;
-        }
-        //The nDelta variable is gated to provide smooth z-index scrolling
-        //since the mouse wheel allows for substantial deltas meant for rapid
-        //y-index scrolling.
-        nDelta = nDelta > 0 ? 1 : -1;
+        // The nDelta variable is gated to provide smooth z-index scrolling
+        //   since the mouse wheel allows for substantial deltas meant for rapid
+        //   y-index scrolling.
+        // event.deltaMode: 0=pixel, 1=line, 2=page
+        // TODO: Deltas in pixel mode should be accumulated then a scroll value computed after $.DEFAULT_SETTINGS.pixelsPerWheelLine threshold reached
+        nDelta = event.deltaY < 0 ? 1 : -1;
 
         if ( tracker.scrollHandler ) {
             propagate = tracker.scrollHandler(
                 {
-                    eventSource: tracker,
-                    // Note: Ok to call getMouseRelative on passed event for isTouch==true since 
-                    //   event.pageX/event.pageY are added to the original touchmove event in
-                    //   onTouchMove().
-                    position: getMouseRelative( event, tracker.element ),
-                    scroll: nDelta,
-                    shift: event.shiftKey,
-                    isTouchEvent: isTouch,
-                    originalEvent: event,
-                    userData: tracker.userData
+                    eventSource:   tracker,
+                    position:      getMouseRelative( event, tracker.element ),
+                    scroll:        nDelta,
+                    shift:         event.shiftKey,
+                    isTouchEvent:  isTouch,
+                    originalEvent: originalEvent,
+                    userData:      tracker.userData
                 }
             );
             if ( propagate === false ) {
-                $.cancelEvent( event );
+                $.cancelEvent( originalEvent );
             }
         }
     }
@@ -3515,15 +3607,22 @@ $.EventSource.prototype = {
             if ( Math.abs( THIS[ tracker.hash ].lastPinchDelta - pinchDelta ) > 75 ) {
                 //$.console.debug( "pinch delta : " + pinchDelta + " | previous : " + THIS[ tracker.hash ].lastPinchDelta);
 
-                // Simulate a mouse wheel scroll event
+                // Simulate a 'wheel' event
                 var simulatedEvent = {
-                    shiftKey: event.shiftKey || false,
-                    pageX:    THIS[ tracker.hash ].pinchMidpoint.x,
-                    pageY:    THIS[ tracker.hash ].pinchMidpoint.y,
-                    detail:   ( THIS[ tracker.hash ].lastPinchDelta > pinchDelta ) ? 1 : -1
+                    target:     event.target || event.srcElement,
+                    type:       "wheel",
+                    shiftKey:   event.shiftKey || false,
+                    clientX:    THIS[ tracker.hash ].pinchMidpoint.x,
+                    clientY:    THIS[ tracker.hash ].pinchMidpoint.y,
+                    pageX:      THIS[ tracker.hash ].pinchMidpoint.x,
+                    pageY:      THIS[ tracker.hash ].pinchMidpoint.y,
+                    deltaMode:  1, // 0=pixel, 1=line, 2=page
+                    deltaX:     0,
+                    deltaY:     ( THIS[ tracker.hash ].lastPinchDelta > pinchDelta ) ? 1 : -1,
+                    deltaZ:     0
                 };
 
-                onMouseWheelSpin( tracker, simulatedEvent, true );
+                handleWheelEvent( tracker, simulatedEvent, event, true );
 
                 THIS[ tracker.hash ].lastPinchDelta = pinchDelta;
             }
@@ -4098,9 +4197,6 @@ $.Viewer = function( options ) {
         id:             options.id,
         hash:           options.hash || options.id,
 
-        // the stack index
-        z:              0,
-
         //dom nodes
         element:        null,
         canvas:         null,
@@ -4360,6 +4456,9 @@ $.Viewer = function( options ) {
 
     if ( initialTileSource ) {
         this.open( initialTileSource );
+        if (this.id[0] != 'n') {
+            this.open( this.tileSources[ this.initialPage+1 ],  true );
+        }
 
         if ( this.tileSources.length > 1 ) {
             this._updateSequenceButtons( this.initialPage );
@@ -4439,7 +4538,7 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
      * @param {String|Object|Function}
      * @return {OpenSeadragon.Viewer} Chainable.
      */
-    open: function ( tileSource ) {
+    open: function ( tileSource, prepare ) {
         var _this = this,
             customTileSource,
             readySource,
@@ -4462,7 +4561,7 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
             if ( $.type( tileSource ) == 'string') {
                 //If its still a string it means it must be a url at this point
                 tileSource = new $.TileSource( tileSource, function( event ){
-                    openTileSource( _this, event.tileSource );
+                    openTileSource( _this, event.tileSource, prepare );
                 });
                 tileSource.addHandler( 'open-failed', function ( event ) {
                     _this.raiseEvent( 'open-failed', event );
@@ -4473,7 +4572,7 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
                     //Custom tile source
                     customTileSource = new $.TileSource(tileSource);
                     customTileSource.getTileUrl = tileSource.getTileUrl;
-                    openTileSource( _this, customTileSource );
+                    openTileSource( _this, customTileSource, prepare );
                 } else {
                     //inline configuration
                     $TileSource = $.TileSource.determineType( _this, tileSource );
@@ -4486,15 +4585,26 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
                     }
                     options = $TileSource.prototype.configure.apply( _this, [ tileSource ]);
                     readySource = new $TileSource( options );
-                    openTileSource( _this, readySource );
+                    openTileSource( _this, readySource, prepare );
                 }
             } else {
                 //can assume it's already a tile source implementation
-                openTileSource( _this, tileSource );
+                openTileSource( _this, tileSource, prepare );
             }
         }, 1);
 
         return this;
+    },
+
+    open2: function(tileSource) {
+        var _this = this;
+            //If its still a string it means it must be a url at this point
+            tileSource = new $.TileSource( tileSource, function( event ){
+                prepareNextTileSource( _this, event.tileSource );
+            });
+            tileSource.addHandler( 'open-failed', function ( event ) {
+                _this.raiseEvent( 'open-failed', event );
+            });
     },
 
 
@@ -4529,7 +4639,7 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
         VIEWERS[ this.hash ] = null;
         delete VIEWERS[ this.hash ];
 
-        this.raiseEvent( 'close', {} );
+        this.raiseEvent( 'close' );
 
         return this;
     },
@@ -5116,7 +5226,17 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
 
             this._updateSequenceButtons( page );
 
-            this.open( this.tileSources[ page ] );
+            for(var i=0;i<19;i++) {
+                this.drawer2.update();
+            }
+
+            this.drawer2.draw = true;
+            this.drawer = this.drawer2;
+            this.drawer.update();
+
+            //this.open( this.tileSources[ page ] );
+
+            //this.open( this.tileSources[ this.initialPage+1 ],  true );
         }
 
         if( $.isFunction( this.onPageChange ) ){
@@ -5211,17 +5331,57 @@ function _getSafeElemSize (oElement) {
     );
 }
 
+function prepareNextTileSource(viewer, source) {
+
+    window.console.log('next ts');
+
+   var  _this = viewer;
+        if( source ){
+            _this.source = source;
+        } else {
+            return;
+                }
+    _this.drawer2 = new $.Drawer({
+        viewer:             _this,
+        source:             _this.source,
+        viewport:           _this.viewport,
+        element:            _this.canvas,
+        overlays:           [].concat( _this.overlays ).concat( _this.source.overlays ),
+        maxImageCacheCount: _this.maxImageCacheCount,
+        imageLoaderLimit:   _this.imageLoaderLimit,
+        minZoomImageRatio:  _this.minZoomImageRatio,
+        wrapHorizontal:     _this.wrapHorizontal,
+        wrapVertical:       _this.wrapVertical,
+        immediateRender:    _this.immediateRender,
+        blendTime:          _this.blendTime,
+        alwaysBlend:        _this.alwaysBlend,
+        minPixelRatio:      _this.collectionMode ? 0 : _this.minPixelRatio,
+        timeout:            _this.timeout,
+        debugMode:          _this.debugMode,
+        debugGridColor:     _this.debugGridColor
+    });
+}
+
 /**
  * @function
  * @private
  */
-function openTileSource( viewer, source ) {
+function openTileSource( viewer, source, prepare ) {
+
+
+    if (typeof prepare == 'undefined') {
+        prepare = false;
+    }
+
+
+    window.console.log("opentilesource", prepare);
+
     var _this = viewer,
         overlay,
         i;
 
     if ( _this.source ) {
-        _this.close( );
+        //_this.close( );
     }
 
     _this.canvas.innerHTML = "";
@@ -5278,11 +5438,38 @@ function openTileSource( viewer, source ) {
 
     _this.source.overlays = _this.source.overlays || [];
 
+    if (prepare) {
+    _this.drawer2 = new $.Drawer({
+        viewer:             _this,
+        source:             _this.source,
+        viewport:           _this.viewport,
+        element:            _this.canvas,
+        canvas:             _this.drawer.canvas,
+        overlays:           [].concat( _this.overlays ).concat( _this.source.overlays ),
+        maxImageCacheCount: _this.maxImageCacheCount,
+        imageLoaderLimit:   _this.imageLoaderLimit,
+        minZoomImageRatio:  _this.minZoomImageRatio,
+        wrapHorizontal:     _this.wrapHorizontal,
+        wrapVertical:       _this.wrapVertical,
+        draw: false,
+        immediateRender:    _this.immediateRender,
+        blendTime:          _this.blendTime,
+        alwaysBlend:        _this.alwaysBlend,
+        minPixelRatio:      _this.collectionMode ? 0 : _this.minPixelRatio,
+        timeout:            _this.timeout,
+        debugMode:          _this.debugMode,
+        debugGridColor:     _this.debugGridColor
+    });
+    return;
+    }
+    window.console.log(_this, 'creating drawer');
     _this.drawer = new $.Drawer({
         viewer:             _this,
         source:             _this.source,
         viewport:           _this.viewport,
         element:            _this.canvas,
+        draw: true,
+        canvas:             $.makeNeutralElement( "canvas" ),
         overlays:           [].concat( _this.overlays ).concat( _this.source.overlays ),
         maxImageCacheCount: _this.maxImageCacheCount,
         imageLoaderLimit:   _this.imageLoaderLimit,
@@ -5299,7 +5486,7 @@ function openTileSource( viewer, source ) {
     });
 
     //Instantiate a navigator if configured
-    if ( _this.showNavigator  && !_this.collectionMode ){
+    if ( _this.showNavigator  && !_this.collectionMode && !prepare){
         // Note: By passing the fully parsed source, the navigator doesn't
         // have to load it again.
         if ( _this.navigator ) {
@@ -5486,7 +5673,8 @@ function onCanvasClick( event ) {
         tracker: event.eventSource,
         position: event.position,
         quick: event.quick,
-        shift: event.shift
+        shift: event.shift,
+        originalEvent: event.originalEvent
     });
 }
 
@@ -5511,7 +5699,8 @@ function onCanvasDrag( event ) {
         tracker: event.eventSource,
         position: event.position,
         delta: event.delta,
-        shift: event.shift
+        shift: event.shift,
+        originalEvent: event.originalEvent
     });
 }
 
@@ -5523,7 +5712,8 @@ function onCanvasRelease( event ) {
         tracker: event.eventSource,
         position: event.position,
         insideElementPressed: event.insideElementPressed,
-        insideElementReleased: event.insideElementReleased
+        insideElementReleased: event.insideElementReleased,
+        originalEvent: event.originalEvent
     });
 }
 
@@ -5541,7 +5731,8 @@ function onCanvasScroll( event ) {
         tracker: event.eventSource,
         position: event.position,
         scroll: event.scroll,
-        shift: event.shift
+        shift: event.shift,
+        originalEvent: event.originalEvent
     });
     //cancels event
     return false;
@@ -5558,7 +5749,8 @@ function onContainerExit( event ) {
         tracker: event.eventSource,
         position: event.position,
         insideElementPressed: event.insideElementPressed,
-        buttonDownAny: event.buttonDownAny
+        buttonDownAny: event.buttonDownAny,
+        originalEvent: event.originalEvent
     });
 }
 
@@ -5573,7 +5765,8 @@ function onContainerRelease( event ) {
         tracker: event.eventSource,
         position: event.position,
         insideElementPressed: event.insideElementPressed,
-        insideElementReleased: event.insideElementReleased
+        insideElementReleased: event.insideElementReleased,
+        originalEvent: event.originalEvent
     });
 }
 
@@ -5584,7 +5777,8 @@ function onContainerEnter( event ) {
         tracker: event.eventSource,
         position: event.position,
         insideElementPressed: event.insideElementPressed,
-        buttonDownAny: event.buttonDownAny
+        buttonDownAny: event.buttonDownAny,
+        originalEvent: event.originalEvent
     });
 }
 
@@ -5637,13 +5831,13 @@ function updateOnce( viewer ) {
     }
 
     if ( animated ) {
-        viewer.drawer.update( viewer.z );
+        viewer.drawer.update();
         if( viewer.navigator ){
             viewer.navigator.update( viewer.viewport );
         }
         viewer.raiseEvent( "animation" );
     } else if ( THIS[ viewer.hash ].forceRedraw || viewer.drawer.needsUpdate() ) {
-        viewer.drawer.update( viewer.z );
+        viewer.drawer.update();
         if( viewer.navigator ){
             viewer.navigator.update( viewer.viewport );
         }
@@ -6731,6 +6925,9 @@ $.TileSource.prototype = {
         }
 
         callback = function( data ){
+            if( typeof(data) === "string" ) {
+                data = $.parseXml( data );
+            }
             var $TileSource = $.TileSource.determineType( _this, data, url );
             if ( !$TileSource ) {
                 _this.raiseEvent( 'open-failed', { message: "Unable to load TileSource", source: url } );
@@ -8707,7 +8904,7 @@ $.Button = function( options ) {
         enterHandler: function( event ) {
             if ( event.insideElementPressed ) {
                 inTo( _this, $.ButtonState.DOWN );
-                _this.raiseEvent( "enter", {} );
+                _this.raiseEvent( "enter", { originalEvent: event.originalEvent } );
             } else if ( !event.buttonDownAny ) {
                 inTo( _this, $.ButtonState.HOVER );
             }
@@ -8715,30 +8912,30 @@ $.Button = function( options ) {
 
         focusHandler: function ( event ) {
             this.enterHandler( event );
-            _this.raiseEvent( "focus", {} );
+            _this.raiseEvent( "focus", { originalEvent: event.originalEvent } );
         },
 
         exitHandler: function( event ) {
             outTo( _this, $.ButtonState.GROUP );
             if ( event.insideElementPressed ) {
-                _this.raiseEvent( "exit", {} );
+                _this.raiseEvent( "exit", { originalEvent: event.originalEvent } );
             }
         },
 
         blurHandler: function ( event ) {
             this.exitHandler( event );
-            _this.raiseEvent( "blur", {} );
+            _this.raiseEvent( "blur", { originalEvent: event.originalEvent } );
         },
 
         pressHandler: function ( event ) {
             inTo( _this, $.ButtonState.DOWN );
-            _this.raiseEvent( "press", {} );
+            _this.raiseEvent( "press", { originalEvent: event.originalEvent } );
         },
 
         releaseHandler: function( event ) {
             if ( event.insideElementPressed && event.insideElementReleased ) {
                 outTo( _this, $.ButtonState.HOVER );
-                _this.raiseEvent( "release", {} );
+                _this.raiseEvent( "release", { originalEvent: event.originalEvent } );
             } else if ( event.insideElementPressed ) {
                 outTo( _this, $.ButtonState.GROUP );
             } else {
@@ -8748,15 +8945,15 @@ $.Button = function( options ) {
 
         clickHandler: function( event ) {
             if ( event.quick ) {
-                _this.raiseEvent("click", {});
+                _this.raiseEvent("click", { originalEvent: event.originalEvent });
             }
         },
 
         keyHandler: function( event ){
             //console.log( "%s : handling key %s!", _this.tooltip, event.keyCode);
             if( 13 === event.keyCode ){
-                _this.raiseEvent( "click", {} );
-                _this.raiseEvent( "release", {} );
+                _this.raiseEvent( "click", { originalEvent: event.originalEvent } );
+                _this.raiseEvent( "release", { originalEvent: event.originalEvent } );
                 return false;
             }
             return true;
@@ -10102,8 +10299,9 @@ function transform( stiffness, x ) {
  *      this tile failed to load?
  * @property {String} url The URL of this tile's image.
  * @property {Boolean} loaded Is this tile loaded?
- * @property {Boolean} loading Is this tile loading
- * @property {Element} element The HTML element for this tile
+ * @property {Boolean} loading Is this tile loading?
+ * @property {Element} element The HTML div element for this tile
+ * @property {Element} imgElement The HTML img element for this tile
  * @property {Image} image The Image object for this tile
  * @property {String} style The alias of this.element.style.
  * @property {String} position This tile's position on screen, in pixels.
@@ -10115,8 +10313,7 @@ function transform( stiffness, x ) {
  * @property {Boolean} beingDrawn Whether this tile is currently being drawn
  * @property {Number} lastTouchTime Timestamp the tile was last touched.
  */
-$.Tile = function(z, level, x, y, bounds, exists, url) {
-    this.z = z;
+$.Tile = function(level, x, y, bounds, exists, url) {
     this.level   = level;
     this.x       = x;
     this.y       = y;
@@ -10127,6 +10324,7 @@ $.Tile = function(z, level, x, y, bounds, exists, url) {
     this.loading = false;
 
     this.element    = null;
+    this.imgElement = null;
     this.image      = null;
 
     this.style      = null;
@@ -10171,15 +10369,21 @@ $.Tile.prototype = {
         //               content during animation of the container size.
 
         if ( !this.element ) {
-            this.element              = $.makeNeutralElement("img");
-            this.element.src          = this.url;
-            this.element.style.msInterpolationMode = "nearest-neighbor";
+            this.element                              = $.makeNeutralElement( "div" );
+            this.imgElement                           = $.makeNeutralElement( "img" );
+            this.imgElement.src                       = this.url;
+            this.imgElement.style.msInterpolationMode = "nearest-neighbor";
+            this.imgElement.style.width               = "100%";
+            this.imgElement.style.height              = "100%";
 
             this.style                     = this.element.style;
             this.style.position            = "absolute";
         }
         if ( this.element.parentNode != container ) {
             container.appendChild( this.element );
+        }
+        if ( this.imgElement.parentNode != this.element ) {
+            this.element.appendChild( this.imgElement );
         }
 
         this.style.top     = this.position.y + "px";
@@ -10265,6 +10469,9 @@ $.Tile.prototype = {
      * @function
      */
     unload: function() {
+        if ( this.imgElement && this.imgElement.parentNode ) {
+            this.imgElement.parentNode.removeChild( this.imgElement );
+        }
         if ( this.element && this.element.parentNode ) {
             this.element.parentNode.removeChild( this.element );
         }
@@ -10272,10 +10479,11 @@ $.Tile.prototype = {
             delete TILE_CACHE[ this.url ];
         }
 
-        this.element = null;
-        this.image   = null;
-        this.loaded  = false;
-        this.loading = false;
+        this.element    = null;
+        this.imgElement = null;
+        this.image      = null;
+        this.loaded     = false;
+        this.loading    = false;
     }
 };
 
@@ -10673,7 +10881,8 @@ $.Drawer = function( options ) {
     }, options );
 
     this.container  = $.getElement( this.element );
-    this.canvas     = $.makeNeutralElement( USE_CANVAS ? "canvas" : "div" );
+    this.canvas     = $.getElement( this.canvas ); //$.makeNeutralElement( USE_CANVAS ? "canvas" : "div" );
+    //this.canvas = $.makeNeutralElement( USE_CANVAS ? "canvas" : "div" );
     this.context    = USE_CANVAS ? this.canvas.getContext( "2d" ) : null;
     this.normHeight = this.source.dimensions.y / this.source.dimensions.x;
     this.element    = this.container;
@@ -10689,7 +10898,11 @@ $.Drawer = function( options ) {
 
     // explicit left-align
     this.container.style.textAlign = "left";
-    this.container.appendChild( this.canvas );
+    //window.console.log('invisible', this.invisible);
+    //if (!this.invisible) {
+        this.container.appendChild( this.canvas );
+     //   window.console.log('appended child', this.container, this.canvas);
+    //}
 
     //create the correct type of overlay by convention if the overlays
     //are not already OpenSeadragon.Overlays
@@ -10876,13 +11089,10 @@ $.Drawer.prototype = {
      * @method
      * @return {OpenSeadragon.Drawer} Chainable.
      */
-    update: function(z) {
-
-        window.console.log(z);
-
+    update: function() {
         //this.profiler.beginUpdate();
         this.midUpdate = true;
-        updateViewport( z, this );
+        updateViewport( this );
         this.midUpdate = false;
         //this.profiler.endUpdate();
         return this;
@@ -11022,7 +11232,7 @@ $.Drawer.prototype = {
  * how each piece of this routine contributes to the drawing process.  That's
  * why there are so many TODO's inside this function.
  */
-function updateViewport( z, drawer ) {
+function updateViewport( drawer ) {
 
     drawer.updateAgain = false;
 
@@ -11072,14 +11282,16 @@ function updateViewport( z, drawer ) {
     }
 
     //TODO
-    drawer.canvas.innerHTML   = "";
-    if ( USE_CANVAS ) {
-        if( drawer.canvas.width  != viewportSize.x ||
-            drawer.canvas.height != viewportSize.y ){
-            drawer.canvas.width  = viewportSize.x;
-            drawer.canvas.height = viewportSize.y;
+    if (drawer.draw) {
+        drawer.canvas.innerHTML   = "";
+        if ( USE_CANVAS ) {
+            if( drawer.canvas.width  != viewportSize.x ||
+                drawer.canvas.height != viewportSize.y ){
+                drawer.canvas.width  = viewportSize.x;
+                drawer.canvas.height = viewportSize.y;
+            }
+            drawer.context.clearRect( 0, 0, viewportSize.x, viewportSize.y );
         }
-        drawer.context.clearRect( 0, 0, viewportSize.x, viewportSize.y );
     }
 
     //Change bounds for rotation
@@ -11159,7 +11371,6 @@ function updateViewport( z, drawer ) {
 
         //TODO
         best = updateLevel(
-            z,
             drawer,
             haveDrawn,
             drawLevel,
@@ -11172,17 +11383,17 @@ function updateViewport( z, drawer ) {
             best
         );
 
-        window.console.log(best);
-
         //TODO
-        if (  providesCoverage( drawer.coverage, level, z ) ) {
+        if (  providesCoverage( drawer.coverage, level ) ) {
             break;
         }
     }
 
     //TODO
-    drawTiles( drawer, drawer.lastDrawn );
-    drawOverlays( drawer.viewport, drawer.overlays, drawer.container );
+    if (drawer.draw) {
+        drawTiles( drawer, drawer.lastDrawn );
+        drawOverlays( drawer.viewport, drawer.overlays, drawer.container );
+    }
 
     //TODO
     if ( best ) {
@@ -11194,7 +11405,7 @@ function updateViewport( z, drawer ) {
 }
 
 
-function updateLevel( z, drawer, haveDrawn, drawLevel, level, levelOpacity, levelVisibility, viewportTL, viewportBR, currentTime, best ){
+function updateLevel( drawer, haveDrawn, drawLevel, level, levelOpacity, levelVisibility, viewportTL, viewportBR, currentTime, best ){
 
     var x, y,
         tileTL,
@@ -11219,10 +11430,9 @@ function updateLevel( z, drawer, haveDrawn, drawLevel, level, levelOpacity, leve
     //OK, a new drawing so do your calculations
     tileTL    = drawer.source.getTileAtPoint( level, viewportTL );
     tileBR    = drawer.source.getTileAtPoint( level, viewportBR );
-    window.console.log(tileTL, tileBR);
     numberOfTiles  = drawer.source.getNumTiles( level );
 
-    resetCoverage( drawer.coverage, level, z );
+    resetCoverage( drawer.coverage, level );
 
     if ( !drawer.wrapHorizontal ) {
         tileBR.x = Math.min( tileBR.x, numberOfTiles.x - 1 );
@@ -11238,7 +11448,7 @@ function updateLevel( z, drawer, haveDrawn, drawLevel, level, levelOpacity, leve
                 drawer,
                 drawLevel,
                 haveDrawn,
-                z, x, y,
+                x, y,
                 level,
                 levelOpacity,
                 levelVisibility,
@@ -11254,10 +11464,10 @@ function updateLevel( z, drawer, haveDrawn, drawLevel, level, levelOpacity, leve
     return best;
 }
 
-function updateTile( drawer, drawLevel, haveDrawn, z, x, y, level, levelOpacity, levelVisibility, viewportCenter, numberOfTiles, currentTime, best){
+function updateTile( drawer, drawLevel, haveDrawn, x, y, level, levelOpacity, levelVisibility, viewportCenter, numberOfTiles, currentTime, best){
 
     var tile = getTile(
-            z, x, y,
+            x, y,
             level,
             drawer.source,
             drawer.tilesMatrix,
@@ -11273,15 +11483,15 @@ function updateTile( drawer, drawLevel, haveDrawn, z, x, y, level, levelOpacity,
         });
     }
 
-    setCoverage( drawer.coverage, level, z, x, y, false );
+    setCoverage( drawer.coverage, level, x, y, false );
 
     if ( !tile.exists ) {
         return best;
     }
 
     if ( haveDrawn && !drawTile ) {
-        if ( isCovered( drawer.coverage, level, z, x, y ) ) {
-            setCoverage( drawer.coverage, level, z, x, y, true );
+        if ( isCovered( drawer.coverage, level, x, y ) ) {
+            setCoverage( drawer.coverage, level, x, y, true );
         } else {
             drawTile = true;
         }
@@ -11303,7 +11513,7 @@ function updateTile( drawer, drawLevel, haveDrawn, z, x, y, level, levelOpacity,
         var needsUpdate = blendTile(
             drawer,
             tile,
-            z, x, y,
+            x, y,
             level,
             levelOpacity,
             currentTime
@@ -11322,8 +11532,7 @@ function updateTile( drawer, drawLevel, haveDrawn, z, x, y, level, levelOpacity,
     return best;
 }
 
-function getTile( z, x, y, level, tileSource, tilesMatrix, time, numTiles, normHeight ) {
-
+function getTile( x, y, level, tileSource, tilesMatrix, time, numTiles, normHeight ) {
     var xMod,
         yMod,
         bounds,
@@ -11331,28 +11540,24 @@ function getTile( z, x, y, level, tileSource, tilesMatrix, time, numTiles, normH
         url,
         tile;
 
-    if ( !tilesMatrix[ z ] ) {
-        tilesMatrix[ z ] = {};
+    if ( !tilesMatrix[ level ] ) {
+        tilesMatrix[ level ] = {};
     }
-    if ( !tilesMatrix[ z ][ level ] ) {
-        tilesMatrix[ z ][ level ] = {};
-    }
-    if ( !tilesMatrix[ z ][ level ][ x ] ) {
-        tilesMatrix[ z ][ level ][ x ] = {};
+    if ( !tilesMatrix[ level ][ x ] ) {
+        tilesMatrix[ level ][ x ] = {};
     }
 
-    if ( !tilesMatrix[ z ][ level ][ x ][ y ] ) {
+    if ( !tilesMatrix[ level ][ x ][ y ] ) {
         xMod    = ( numTiles.x + ( x % numTiles.x ) ) % numTiles.x;
         yMod    = ( numTiles.y + ( y % numTiles.y ) ) % numTiles.y;
-        bounds  = tileSource.getTileBounds( z, level, xMod, yMod );
-        exists  = tileSource.tileExists( z, level, xMod, yMod );
-        url     = tileSource.getTileUrl( z, level, xMod, yMod );
+        bounds  = tileSource.getTileBounds( level, xMod, yMod );
+        exists  = tileSource.tileExists( level, xMod, yMod );
+        url     = tileSource.getTileUrl( level, xMod, yMod );
 
         bounds.x += 1.0 * ( x - xMod ) / numTiles.x;
         bounds.y += normHeight * ( y - yMod ) / numTiles.y;
 
-        tilesMatrix[ z ][ level ][ x ][ y ] = new $.Tile(
-            z,
+        tilesMatrix[ level ][ x ][ y ] = new $.Tile(
             level,
             x,
             y,
@@ -11362,7 +11567,7 @@ function getTile( z, x, y, level, tileSource, tilesMatrix, time, numTiles, normH
         );
     }
 
-    tile = tilesMatrix[ z ][ level ][ x ][ y ];
+    tile = tilesMatrix[ level ][ x ][ y ];
     tile.lastTouchTime = time;
 
     return tile;
@@ -11478,7 +11683,7 @@ function positionTile( tile, overlap, viewport, viewportCenter, levelVisibility 
 }
 
 
-function blendTile( drawer, tile, z, x, y, level, levelOpacity, currentTime ){
+function blendTile( drawer, tile, x, y, level, levelOpacity, currentTime ){
     var blendTimeMillis = 1000 * drawer.blendTime,
         deltaTime,
         opacity;
@@ -11499,7 +11704,7 @@ function blendTile( drawer, tile, z, x, y, level, levelOpacity, currentTime ){
     drawer.lastDrawn.push( tile );
 
     if ( opacity == 1 ) {
-        setCoverage( drawer.coverage, level, z, x, y, true );
+        setCoverage( drawer.coverage, level, x, y, true );
     } else if ( deltaTime < blendTimeMillis ) {
         return true;
     }
@@ -11524,21 +11729,17 @@ function clearTiles( drawer ) {
  * there's no content that they would need to cover. Tiles at non-existent
  * levels that are within the image bounds, however, do not.
  */
-function providesCoverage( coverage, level, z, x, y ) {
+function providesCoverage( coverage, level, x, y ) {
     var rows,
         cols,
         i, j;
 
-    if ( !coverage[ z ]) {
-        return false;
-    }
-
-    if ( !coverage[ z ][ level ] ) {
+    if ( !coverage[ level ] ) {
         return false;
     }
 
     if ( x === undefined || y === undefined ) {
-        rows = coverage[ z ][ level ];
+        rows = coverage[ level ];
         for ( i in rows ) {
             if ( rows.hasOwnProperty( i ) ) {
                 cols = rows[ i ];
@@ -11554,9 +11755,9 @@ function providesCoverage( coverage, level, z, x, y ) {
     }
 
     return (
-        coverage[ z ][ level ][ x] === undefined ||
-        coverage[ z ][ level ][ x ][ y ] === undefined ||
-        coverage[ z ][ level ][ x ][ y ] === true
+        coverage[ level ][ x] === undefined ||
+        coverage[ level ][ x ][ y ] === undefined ||
+        coverage[ level ][ x ][ y ] === true
     );
 }
 
@@ -11567,15 +11768,15 @@ function providesCoverage( coverage, level, z, x, y ) {
  * tiles of higher resolution representing the same content. If neither x
  * nor y is given, returns true if the entire visible level is covered.
  */
-function isCovered( coverage, level, z, x, y ) {
+function isCovered( coverage, level, x, y ) {
     if ( x === undefined || y === undefined ) {
-        return providesCoverage( coverage, level + 1, z );
+        return providesCoverage( coverage, level + 1 );
     } else {
         return (
-             providesCoverage( coverage, level + 1, z, 2 * x, 2 * y ) &&
-             providesCoverage( coverage, level + 1, z, 2 * x, 2 * y + 1 ) &&
-             providesCoverage( coverage, level + 1, z, 2 * x + 1, 2 * y ) &&
-             providesCoverage( coverage, level + 1, z, 2 * x + 1, 2 * y + 1 )
+             providesCoverage( coverage, level + 1, 2 * x, 2 * y ) &&
+             providesCoverage( coverage, level + 1, 2 * x, 2 * y + 1 ) &&
+             providesCoverage( coverage, level + 1, 2 * x + 1, 2 * y ) &&
+             providesCoverage( coverage, level + 1, 2 * x + 1, 2 * y + 1 )
         );
     }
 }
@@ -11585,8 +11786,8 @@ function isCovered( coverage, level, z, x, y ) {
  * @inner
  * Sets whether the given tile provides coverage or not.
  */
-function setCoverage( coverage, level, z, x, y, covers ) {
-    if ( !coverage[ z ][ level ] ) {
+function setCoverage( coverage, level, x, y, covers ) {
+    if ( !coverage[ level ] ) {
         $.console.warn(
             "Setting coverage for a tile before its level's coverage has been reset: %s",
             level
@@ -11594,11 +11795,11 @@ function setCoverage( coverage, level, z, x, y, covers ) {
         return;
     }
 
-    if ( !coverage[ z ][ level ][ x ] ) {
-        coverage[ z ][ level ][ x ] = {};
+    if ( !coverage[ level ][ x ] ) {
+        coverage[ level ][ x ] = {};
     }
 
-    coverage[ z ][ level ][ x ][ y ] = covers;
+    coverage[ level ][ x ][ y ] = covers;
 }
 
 /**
@@ -11608,10 +11809,8 @@ function setCoverage( coverage, level, z, x, y, covers ) {
  * after every draw routine. Note that at the beginning of the next draw
  * routine, coverage for every visible tile should be explicitly set.
  */
-function resetCoverage( coverage, level, z ) {
-
-    coverage[ z ] = {};
-    coverage[ z ][ level ] = {};
+function resetCoverage( coverage, level ) {
+    coverage[ level ] = {};
 }
 
 /**
@@ -12808,19 +13007,41 @@ $.Viewport.prototype = {
         return viewerCoordinates.plus(
                 OpenSeadragon.getElementPosition( this.viewer.element ));
     },
-
+    
     /**
-     * Get the zoom ratio of the image. 1 means original image size, 0.5 half size...
+     * Convert a viewport zoom to an image zoom.
+     * Image zoom: ratio of the original image size to displayed image size.
+     * 1 means original image size, 0.5 half size...
+     * Viewport zoom: ratio of the displayed image's width to viewport's width.
+     * 1 means identical width, 2 means image's width is twice the viewport's width...
      * @function
-     * @param {Boolean} current If true gives the current zoom otherwise gives the
+     * @param {Number} viewportZoom The viewport zoom
      * target zoom.
-     * @returns {Number}
+     * @returns {Number} imageZoom The image zoom
      */
-    getImageZoomRatio: function( current ) {
+    viewportToImageZoom: function( viewportZoom ) {
         var imageWidth = this.viewer.source.dimensions.x;
         var containerWidth = this.getContainerSize().x;
-        var zoomToZoomLevelRatio = containerWidth / imageWidth;
-        return this.getZoom( current ) * zoomToZoomLevelRatio;
+        var viewportToImageZoomRatio = containerWidth / imageWidth;
+        return viewportZoom * viewportToImageZoomRatio;
+    },
+    
+    /**
+     * Convert an image zoom to a viewport zoom.
+     * Image zoom: ratio of the original image size to displayed image size.
+     * 1 means original image size, 0.5 half size...
+     * Viewport zoom: ratio of the displayed image's width to viewport's width.
+     * 1 means identical width, 2 means image's width is twice the viewport's width...
+     * @function
+     * @param {Number} imageZoom The image zoom
+     * target zoom.
+     * @returns {Number} viewportZoom The viewport zoom
+     */
+    imageToViewportZoom: function( imageZoom ) {
+        var imageWidth = this.viewer.source.dimensions.x;
+        var containerWidth = this.getContainerSize().x;
+        var viewportToImageZoomRatio = imageWidth / containerWidth;
+        return imageZoom * viewportToImageZoomRatio;
     }
 };
 

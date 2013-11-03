@@ -20,17 +20,13 @@
       
       viewer = OpenSeadragon({id: "sd1",
         showNavigator: true,
-        tileSources: {
-          height: 25600,
-          width: 25600,
-          tileSize: 256,
-          getTileUrl: function( z, level, x, y ) {
-            
-            return SEQUENCE_URL_PREFIX + IMAGES[z] + '.tif_files/' + level + '/' + x + '_' + y + '.jpg';
-            
-          }
-
-        }
+        preserveViewport: true,
+        tileSources: [
+          SEQUENCE_URL_PREFIX+'sec051.tif.dzi',
+          SEQUENCE_URL_PREFIX+'sec052.tif.dzi',
+          SEQUENCE_URL_PREFIX+'sec053.tif.dzi',
+          SEQUENCE_URL_PREFIX+'sec058.tif.dzi'
+        ]
 
 
 
@@ -39,17 +35,22 @@
       });
 
 
+
     window.onkeypress = function(e) {
       if (e.charCode == 113) {
 
-        CUR_IMAGE++;
+        viewer.goToPage(viewer.currentPage()+1);
 
-        if (CUR_IMAGE == IMAGES.length) CUR_IMAGE = 0;
+      } else if (e.charCode == 97) {
 
-        viewer.drawer.reset();
+        viewer.goToPage(viewer.currentPage()-1);
 
       }
+
+      //viewer.drawer.reset();
+
     }
+
 
     };
 
