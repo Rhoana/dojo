@@ -7,6 +7,7 @@
 import os
 import re
 import sys
+import h5py
 import numpy as np
 
 import tifffile as tif
@@ -28,13 +29,28 @@ class ImportLogic():
 
     zstack_regex = re.compile('z=\d+')
 
+    colormap_regex = re.compile('colorMap.hdf5')
+
     zoomlevels = []
+    colormap = None
+    found_colormap = False
+    colors = 0
 
     for root, dirs, files in os.walk(directory):
 
       for d in dirs:
         if zoomlevel_regex.match(d):
           zoomlevels.append(os.path.join(root, d))
+
+      for f in files:
+        if colormap_regex.match(f):
+          print 'Found color map', f
+          found_colormap = True
+          hdf5_file = h5py.File(os.path.join(root,f), 'r')
+          list_of_names = []
+          hdf5_file.visit(list_of_names.append) 
+          colormap = hdf5_file[list_of_names[0]].value
+          colors = len(colormap)
 
     # sort all zoomlevels
     zoomlevels.sort()
@@ -63,10 +79,25 @@ class ImportLogic():
             exec(l[0]+'=int("'+l[1]+'")')
           # we now have x and y defined
 
-          # load the tif
+          # load the image
           if not x in tile:
             tile[x] = {}
-          tile[x][y] = tif.imread(os.path.join(zoomlevels[0],d,i))
+          if os.path.splitext(i)[1] == '.tif':
+            # print 'Found TIFF format'
+            tile[x][y] = tif.imread(os.path.join(zoomlevels[0],d,i))
+          elif os.path.splitext(i)[1] == '.hdf5':
+            # print 'Found HDF5 format'
+            hdf5_file = h5py.File(os.path.join(zoomlevels[0],d,i))
+            list_of_names = []
+            hdf5_file.visit(list_of_names.append)
+            tile[x][y] = hdf5_file[list_of_names[0]].value # always grab the first
+
+            if found_colormap:
+              # run through array and replace values with the color
+              for (u,v), value in np.ndenumerate(tile[x][y]):
+                #print u,v,value
+                rgb = colormap[value % colors]
+                tile[x][y][u][v] = rgb[0] # replace with red channel for now
 
           if tile[x][y].ndim > 2:
             # hack: if rgb dataset, only take 1 channel
