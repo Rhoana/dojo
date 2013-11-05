@@ -27,6 +27,8 @@ class ConvertLogic():
       for f in fullpaths:
         d_name = os.path.split(f)[0]
         f_name = os.path.split(f)[1]
+        if f_name.startswith('p_'):
+          continue
         print '>>> converting ' + f_name + ' to ' + 'p_' + f_name
         os.system('convert '+f+' -define tiff:tile-geometry='+SIZE+' ptif:'+os.path.join(d_name, 'p_' + f_name))
         print '>>> converted ' + f_name + ' to ' + 'p_' + f_name
