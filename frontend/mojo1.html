@@ -1,54 +1,42 @@
 <html>
 <head>
-  <script type='text/javascript' src='openseadragon.js'></script>
+  <script type='text/javascript' src='lib/openseadragon/openseadragon.js'></script>
 
   <script type="text/javascript">
     
-    var SEQUENCE_URL_PREFIX = 'http://monster.krash.net/iipsrv/iipsrv.fcgi?DeepZoom=mojo1/';
+    var SEQUENCE_URL_PREFIX = 'http://monster.krash.net/iipsrv/iipsrv.fcgi?DeepZoom=mojo1/p_';
 
-    CUR_IMAGE = 0;
     window.onload = function() {
 
-      // var viewer = OpenSeadragon({id: "sd1",
-      //   showNavigator: true,
-      //   tileSources: [SEQUENCE_URL_PREFIX + 'sec051.tif.dzi',
-      //                 SEQUENCE_URL_PREFIX + 'sec058.tif.dzi']
-      // });
-      
-      viewer = OpenSeadragon({id: "sd1", z:0,
-        showNavigator: true,
-        maxZoomPixelRatio: 4,
-        tileSources: {
-          height: 1024,
-          width: 1024,
-          tileSize: 256,
-          getTileUrl: function( level, x, y ) {
-            
-            return SEQUENCE_URL_PREFIX + 'p_'+ CUR_IMAGE + '.tif_files/' + level + '/' + x + '_' + y + '.jpg';
-          }
 
-        }
+      var tileSources = [];
+      for(var i=0; i<75; i++) {
+        tileSources.push(SEQUENCE_URL_PREFIX+i+'.tif.dzi');
+      }
+
+      viewer = OpenSeadragon({id: "sd1",
+        blendTime: 0,
+        showNavigator: true,
+        maxZoomPixelRatio: 4,  
+        zCacheSize: 10,      
+        preserveViewport: true,
+        tileSources: tileSources
       });
+
 
 
     window.onkeypress = function(e) {
       if (e.charCode == 113) {
 
-        CUR_IMAGE++;
-
-        if (CUR_IMAGE == 75) CUR_IMAGE = 0;
+        viewer.goToPage(viewer.currentPage()+1);
 
       } else if (e.charCode == 97) {
 
-        CUR_IMAGE--;
-
-        if (CUR_IMAGE == 0) CUR_IMAGE = 74;
+        viewer.goToPage(viewer.currentPage()-1);
 
       }
-
-      viewer.drawer.reset();
-
     }
+
 
     };
 
