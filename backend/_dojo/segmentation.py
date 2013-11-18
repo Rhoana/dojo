@@ -1,5 +1,8 @@
+import h5py
 import os
 import re
+import zlib
+import StringIO
 from datasource import Datasource
 
 class Segmentation(Datasource):
@@ -15,11 +18,32 @@ class Segmentation(Datasource):
 
     super(Segmentation, self).__init__(mojo_dir, query, input_format, output_format, sub_dir)
 
+  def get_tile(self, file):
+    '''
+    '''
+    super(Segmentation, self).get_tile(file)
+
+    hdf5_file = h5py.File(file)
+    list_of_names = []
+    hdf5_file.visit(list_of_names.append)
+    image_data = hdf5_file[list_of_names[0]].value
+    c_image_data = zlib.compress(image_data)
+
+    output = StringIO.StringIO()
+    output.write(c_image_data)
+
+    content = output.getvalue()
+    content_type = 'application/octstream'
+
+    return content, content_type
+
   def handle(self, request):
     '''
     @override
     '''
     content_type = 'text/html'
     content = 'Error 404'
+
+    # any possible other request like persist can go here
 
     super(Segmentation, self).handle(request, content, content_type)

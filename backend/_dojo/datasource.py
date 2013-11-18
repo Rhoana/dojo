@@ -1,3 +1,4 @@
+import math
 import os
 import re
 
@@ -42,7 +43,7 @@ class Datasource(object):
     '''
 
     # parse the mojo directory
-    for root, dirs, files in os.walk(self.__mojo_dir):
+    for root, dirs, files in os.walk(self.__mojo_dir):  
 
       for f in files:
 
@@ -51,6 +52,12 @@ class Datasource(object):
           tree = ET.parse(os.path.join(root,f))
           xml_root = tree.getroot()
           self.__info = xml_root.attrib
+          # set the max deepzoom zoom level
+          self.__max_deepzoom_level = int(math.log(int(self.__info['numVoxelsX']), 2))
+          # set the max mojo zoom level
+          self.__max_mojozoom_level = int(math.ceil( math.log(float(self.__info['numVoxelsPerTileX'])/float(self.__info['numVoxelsX']), 0.5) ))
+
+          print self.__max_mojozoom_level, self.__max_deepzoom_level
 
         # colormap
         elif self.__colormap_file_regex.match(os.path.join(root,f)):
@@ -69,17 +76,46 @@ class Datasource(object):
 
     return xml_info
 
+  def get_tile(self, file):
+    '''
+    '''
+    pass
+
   def handle(self, request, content, content_type):
     '''
     React to a HTTP request.
     '''
-    
+
+    # tilesource info
     if self.__query_tilesource_regex.match(request.uri):
       content_type = 'text/html'
       content = self.get_info_xml()
+
+    # colormap
     elif self.__query_colormap_regex.match(request.uri) and self.__has_colormap:
       content_type = 'text/html'
       content = json.dumps(self.__colormap.tolist())
+
+    # tile
+    elif self.__query_tile_regex.match(request.uri):
+
+      request_splitted = request.uri.split('/')
+      tile_x_y = request_splitted[-1].split('.')[0]
+      tile_x = tile_x_y.split('_')[0]
+      tile_y = tile_x_y.split('_')[1]
+
+      zoomlevel = int(request_splitted[-2])
+      # re-map zoomlevel
+      zoomlevel = min(self.__max_mojozoom_level, self.__max_deepzoom_level - zoomlevel)
+
+      slice_number = request_splitted[-3]
+
+      tile_file = os.path.join(self.__mojo_dir, self.__sub_dir, 'tiles', 'w='+str(zoomlevel).zfill(8), 'z='+slice_number.zfill(8), 'y='+tile_y.zfill(8)+','+'x='+tile_x.zfill(8)+'.'+self.__input_format)
+
+      if os.path.exists(tile_file):
+
+        content, content_type = self.get_tile(tile_file)
+
 
     request.add_output_header('Access-Control-Allow-Origin', '*')
     request.add_output_header('Content-Type', content_type)

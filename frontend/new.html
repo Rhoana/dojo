@@ -21,9 +21,9 @@
 
       Colormap = [];
 
-      $.ajax({url:'http://localhost:1337/colormap'}).done( function(e) {
+      $.ajax({url:'http://localhost:1337/segmentation/colormap'}).done( function(e) {
 
-        //Colormap = JSON.parse(e);
+        Colormap = JSON.parse(e);
 
         var tileSources = [];
         for(var i=0; i<20; i++) {
@@ -36,7 +36,8 @@
           maxZoomPixelRatio: 4,  
           zCacheSize: 1,
           preserveViewport: true,
-          tileSources: tileSources
+          tileSources: tileSources,
+          compressedRawData: true
         });
 
       });

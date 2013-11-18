@@ -1,6 +1,8 @@
 import os
 import re
+import StringIO
 from datasource import Datasource
+from PIL import Image
 
 class Image(Datasource):
 
@@ -11,9 +13,23 @@ class Image(Datasource):
     query = 'image'
     input_format = 'tif'
     output_format = 'jpg'
-    sub_dir = 'tiles'
+    sub_dir = 'images'
 
     super(Image, self).__init__(mojo_dir, query, input_format, output_format, sub_dir)
+
+  def get_tile(self, file):
+    '''
+    '''
+    super(Segmentation, self).get_tile(file)
+
+    image_data = Image.open(tif_file)
+    output = StringIO.StringIO()
+    image_data.save(output, 'JPEG')
+
+    content_type = 'image/jpeg'
+    content = output.getvalue()
+
+    return content, content_type
 
   def handle(self, request):
     '''
