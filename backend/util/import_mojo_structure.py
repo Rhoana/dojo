@@ -42,15 +42,15 @@ class ImportLogic():
         if zoomlevel_regex.match(d):
           zoomlevels.append(os.path.join(root, d))
 
-      for f in files:
-        if colormap_regex.match(f):
-          print 'Found color map', f
-          found_colormap = True
-          hdf5_file = h5py.File(os.path.join(root,f), 'r')
-          list_of_names = []
-          hdf5_file.visit(list_of_names.append) 
-          colormap = hdf5_file[list_of_names[0]].value
-          colors = len(colormap)
+      # for f in files:
+        # if colormap_regex.match(f):
+        #   print 'Found color map', f
+        #   found_colormap = True
+        #   hdf5_file = h5py.File(os.path.join(root,f), 'r')
+        #   list_of_names = []
+        #   hdf5_file.visit(list_of_names.append) 
+        #   colormap = hdf5_file[list_of_names[0]].value
+        #   colors = len(colormap)
 
     # sort all zoomlevels
     zoomlevels.sort()
@@ -92,12 +92,12 @@ class ImportLogic():
             hdf5_file.visit(list_of_names.append)
             tile[x][y] = hdf5_file[list_of_names[0]].value # always grab the first
 
-            if found_colormap:
-              # run through array and replace values with the color
-              for (u,v), value in np.ndenumerate(tile[x][y]):
-                #print u,v,value
-                rgb = colormap[value % colors]
-                tile[x][y][u][v] = rgb[0] # replace with red channel for now
+            # if found_colormap:
+            #   # run through array and replace values with the color
+            #   for (u,v), value in np.ndenumerate(tile[x][y]):
+            #     #print u,v,value
+            #     rgb = colormap[value % colors]
+            #     tile[x][y][u][v] = rgb[0] # replace with red channel for now
 
           if tile[x][y].ndim > 2:
             # hack: if rgb dataset, only take 1 channel
