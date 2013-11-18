@@ -42,8 +42,8 @@ class Segmentation(Datasource):
     @override
     '''
     content_type = 'text/html'
-    content = 'Error 404'
+    content = None
 
     # any possible other request like persist can go here
 
-    super(Segmentation, self).handle(request, content, content_type)
+    return super(Segmentation, self).handle(request, content, content_type)

@@ -34,9 +34,18 @@ class ServerLogic:
     '''
     '''
     # let the data sources handle the request
-    self.__segmentation.handle(request)
-    self.__image.handle(request)
+    content, content_type = self.__segmentation.handle(request)
 
+    if not content:
+      content, content_type = self.__image.handle(request)
+
+    if not content:
+      content = 'Error 404'
+
+    request.add_output_header('Access-Control-Allow-Origin', '*')
+    request.add_output_header('Content-Type', content_type)
+
+    request.send_reply(200, "OK", content)
 
 def print_help( scriptName ):
   '''

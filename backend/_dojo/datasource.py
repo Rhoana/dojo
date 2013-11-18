@@ -21,7 +21,13 @@ class Datasource(object):
 
     # {'numBytesPerVoxel': '4', 'numVoxelsPerTileZ': '1', 'numVoxelsX': '1024', 'numVoxelsPerTileY': '512', 'numVoxelsPerTileX': '512', 'dxgiFormat': 'R32_UInt', 'numTilesX': '2', 'numTilesY': '2', 'numTilesZ': '20', 'fileExtension': 'hdf5', 'numTilesW': '2', 'numVoxelsZ': '20', 'numVoxelsY': '1024', 'isSigned': 'false'}
     self.__info = None
+
+    # this is required to connect the deepzoom protocol to mojo zoom
+    self.__max_deepzoom_level = 0.0
+    self.__max_mojozoom_level = 0.0
     
+    self.__max_z_tiles = 0
+
     self.__has_colormap = False
     self.__colormap = None
 
@@ -56,8 +62,8 @@ class Datasource(object):
           self.__max_deepzoom_level = int(math.log(int(self.__info['numVoxelsX']), 2))
           # set the max mojo zoom level
           self.__max_mojozoom_level = int(math.ceil( math.log(float(self.__info['numVoxelsPerTileX'])/float(self.__info['numVoxelsX']), 0.5) ))
-
-          print self.__max_mojozoom_level, self.__max_deepzoom_level
+          # get the max number of Z tiles
+          self.__max_z_tiles = int(self.__info['numTilesZ'])
 
         # colormap
         elif self.__colormap_file_regex.match(os.path.join(root,f)):
@@ -86,8 +92,13 @@ class Datasource(object):
     React to a HTTP request.
     '''
 
+    # table of contents
+    if self.__query_toc_regex.match(request.uri):
+      content_type = 'text/html'
+      content = '{max_z_tiles:' + str(self.__max_z_tiles) + ', colormap:' + str(self.__has_colormap).lower() + '}';
+
     # tilesource info
-    if self.__query_tilesource_regex.match(request.uri):
+    elif self.__query_tilesource_regex.match(request.uri):
       content_type = 'text/html'
       content = self.get_info_xml()
 
@@ -117,10 +128,6 @@ class Datasource(object):
         content, content_type = self.get_tile(tile_file)
 
 
-    request.add_output_header('Access-Control-Allow-Origin', '*')
-    request.add_output_header('Content-Type', content_type)
+    return content, content_type
 
-    request.send_reply(200, "OK", content)
-
-    pass
 

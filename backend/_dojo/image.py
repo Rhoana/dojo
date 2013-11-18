@@ -36,7 +36,7 @@ class Image(Datasource):
     @override
     '''
     content_type = 'text/html'
-    content = 'Error 404'
+    content = None
 
-    super(Image, self).handle(request, content, content_type)
+    return super(Image, self).handle(request, content, content_type)
 
