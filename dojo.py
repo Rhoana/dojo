@@ -6,6 +6,7 @@
 
 import json
 import os
+import socket
 import sys
 
 from gevent import http
@@ -30,8 +31,16 @@ class ServerLogic:
     # and the viewer
     self.__viewer = _dojo.Viewer()
 
-    print 'Serving on 1337'
-    http.HTTPServer(('0.0.0.0', 1337), self.handle).serve_forever()
+    port = 1337
+    ip = socket.gethostbyname(socket.gethostname())
+
+
+    print '*'*80
+    print '*', '\033[93m'+'DOJO RUNNING', '\033[0m'
+    print '*'
+    print '*', 'open', '\033[92m'+'http://' + ip + ':' + str(port) + '/dojo/' + '\033[0m'
+    print '*'*80
+    http.HTTPServer(('0.0.0.0', port), self.handle).serve_forever()
 
   def handle( self, request ):
     '''

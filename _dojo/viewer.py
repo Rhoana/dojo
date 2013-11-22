@@ -7,7 +7,7 @@ class Viewer(object):
   def __init__(self):
     '''
     '''
-    self.__query_viewer_regex = re.compile('^/dojo.*$')
+    self.__query_viewer_regex = re.compile('^/dojo/.*$')
 
     self.__web_dir = '_web'
 
@@ -29,9 +29,18 @@ class Viewer(object):
       # this is not a valid request for the viewer
       return None, None
 
+    url = request.uri
+
+    # check if a request goes straight to a folder
+    if url.split('/')[-1] == '':
+      # add index.html
+      url += 'index.html'
+
     # get filename from query
-    requested_file = self.__web_dir + request.uri.replace('/dojo', '')
+    requested_file = self.__web_dir + url.replace('/dojo', '')
     extension = os.path.splitext(requested_file)[1]
+
+
 
     if not os.path.exists(requested_file):
       return 'Error 404', 'text/html'
