@@ -95,7 +95,7 @@ class Datasource(object):
     # table of contents
     if self.__query_toc_regex.match(request.uri):
       content_type = 'text/html'
-      content = '{max_z_tiles:' + str(self.__max_z_tiles) + ', colormap:' + str(self.__has_colormap).lower() + '}';
+      content = '{"max_z_tiles":' + str(self.__max_z_tiles) + ', "colormap":' + str(self.__has_colormap).lower() + '}';
 
     # tilesource info
     elif self.__query_tilesource_regex.match(request.uri):

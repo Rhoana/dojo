@@ -2,7 +2,7 @@ import os
 import re
 import StringIO
 from datasource import Datasource
-from PIL import Image
+from PIL import Image as PILImage
 
 class Image(Datasource):
 
@@ -20,9 +20,9 @@ class Image(Datasource):
   def get_tile(self, file):
     '''
     '''
-    super(Segmentation, self).get_tile(file)
+    super(Image, self).get_tile(file)
 
-    image_data = Image.open(tif_file)
+    image_data = PILImage.open(file)
     output = StringIO.StringIO()
     image_data.save(output, 'JPEG')
 
@@ -37,6 +37,6 @@ class Image(Datasource):
     '''
     content_type = 'text/html'
     content = None
-    
+
     return super(Image, self).handle(request, content, content_type)
 
