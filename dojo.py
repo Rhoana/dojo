@@ -27,20 +27,32 @@ class ServerLogic:
     self.__segmentation = _dojo.Segmentation(mojo_dir)
     self.__image = _dojo.Image(mojo_dir)
 
+    # and the viewer
+    self.__viewer = _dojo.Viewer()
+
     print 'Serving on 1337'
     http.HTTPServer(('0.0.0.0', 1337), self.handle).serve_forever()
 
   def handle( self, request ):
     '''
     '''
+
+    content = None
+
+    # the access to the viewer
+    content, content_type = self.__viewer.handle(request)
+
     # let the data sources handle the request
-    content, content_type = self.__segmentation.handle(request)
+    if not content:
+      content, content_type = self.__segmentation.handle(request)
 
     if not content:
       content, content_type = self.__image.handle(request)
 
+    # invalid request
     if not content:
       content = 'Error 404'
+      content_type = 'text/html'
 
     request.add_output_header('Access-Control-Allow-Origin', '*')
     request.add_output_header('Content-Type', content_type)

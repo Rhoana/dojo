@@ -36,10 +36,10 @@ class Datasource(object):
     self.__colormap_file_regex = re.compile('.*' + self.__sub_dir + '/colorMap.hdf5$')
 
     # handler regex
-    self.__query_toc_regex = re.compile('/' + self.__query + '/contents$')
-    self.__query_tilesource_regex = re.compile('/' + self.__query + '/\d+/$')
-    self.__query_tile_regex = re.compile('/' + self.__query + '/\d+/\d+/\d+_\d+.' + self.__output_format + '$')
-    self.__query_colormap_regex = re.compile('/' + self.__query + '/colormap$')
+    self.__query_toc_regex = re.compile('^/' + self.__query + '/contents$')
+    self.__query_tilesource_regex = re.compile('^/' + self.__query + '/\d+/$')
+    self.__query_tile_regex = re.compile('^/' + self.__query + '/\d+/\d+/\d+_\d+.' + self.__output_format + '$')
+    self.__query_colormap_regex = re.compile('^/' + self.__query + '/colormap$')
 
     self.__setup()
 

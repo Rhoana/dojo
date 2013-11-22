@@ -37,6 +37,6 @@ class Image(Datasource):
     '''
     content_type = 'text/html'
     content = None
-
+    
     return super(Image, self).handle(request, content, content_type)
 
