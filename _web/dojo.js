@@ -8,6 +8,9 @@ DOJO.viewer = null;
 DOJO.tileSources = [];
 DOJO.overlayTileSources = [];
 DOJO.colormap = null;
+DOJO.idmap = {};
+DOJO.first_id = null;
+DOJO.second_id = null;
 
 DOJO.init = function() {
 
@@ -100,7 +103,8 @@ DOJO.create_viewer = function() {
     preserveViewport: true,
     tileSources: DOJO.tileSources,
     overlayTileSources: DOJO.overlayTileSources,
-    colormap: DOJO.colormap
+    colormap: DOJO.colormap,
+    idmap: DOJO.idmap
   });
 
   DOJO.setup_interaction();
@@ -111,6 +115,39 @@ DOJO.create_viewer = function() {
  *
  */
 DOJO.setup_interaction = function() {
+
+  DOJO.viewer.addHandler('canvas-click', function(e){
+    
+    console.log('Trying the merge');
+
+    var image_coords = DOJO.viewer.viewport.viewportToImageCoordinates(DOJO.viewer.viewport.pointFromPixel(e.position, true));
+
+    var x = Math.floor(image_coords.x/2);
+    var y = Math.floor(image_coords.y/2);
+
+    var image = new Uint32Array(DOJO.viewer.overlayDrawer.tilesMatrix[9][0][0].image.buffer);
+        
+    if (!image) {
+      console.log('error');
+      return;
+    }
+
+    var id = image[y*512 + x];
+
+    if (!DOJO.first_id) {
+      DOJO.first_id = id;
+    } else if (DOJO.first_id != DOJO.second_id) {
+      DOJO.second_id = id;
+      DOJO.idmap[DOJO.first_id] = DOJO.second_id;
+      console.log('Merging', DOJO.first_id, DOJO.second_id);
+      DOJO.first_id = null;
+      DOJO.second_id = null;
+    } else {
+      DOJO.first_id = null;
+      DOJO.second_id = null;      
+    }
+
+  });
 
   window.onkeypress = function(e) {
     if (e.charCode == 113) {

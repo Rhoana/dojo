@@ -23,6 +23,8 @@ class Image(Datasource):
     super(Image, self).get_tile(file)
 
     image_data = PILImage.open(file)
+    if image_data.mode != "RGB":
+      image_data = image_data.convert("RGB")
     output = StringIO.StringIO()
     image_data.save(output, 'JPEG')
 
