@@ -4227,9 +4227,18 @@ $.Viewer = function( options ) {
         drawerPrev:     [],
         drawerNext:     [],
         zCacheSize:     1,
-        compressedRawData: false,
         viewport:       null,
         navigator:      null,
+
+        // DOJO specific
+        overlayDrawer:  null,
+        overlayDrawerNew: null,
+        overlayDrawerPrev: [],
+        overlayDrawerNext: [],
+        colormap:       null,
+
+        tileSourceLimit:        1,
+        tileSourcePairs:       [],
 
         //A collection viewport is a seperate viewport used to provide
         //simultanious rendering of sets of tiless
@@ -4324,6 +4333,38 @@ $.Viewer = function( options ) {
             initialTileSource = this.tileSources;
         }
     }
+
+    //Deal with tile sources
+    var initialOverlayTileSource;
+
+    if ( this.overlayTileSources ){
+        // tileSources is a complex option...
+        //
+        // It can be a string, object, or an array of any of strings and objects.
+        // At this point we only care about if it is an Array or not.
+        //
+        if( $.isArray( this.overlayTileSources ) && this.overlayTileSources.length > 0) {
+            
+            if (this.tileSources.length != this.overlayTileSources.length) {
+                throw new Error('The number of overlays must match the number of tileSources.');
+            }
+            
+            initialOverlayTileSource = this.overlayTileSources[ this.initialPage ];
+            
+
+            // we def. have to fetch 2 items before activating the drawer
+            this.tileSourceLimit = 2;
+
+            for (var x=0; x<this.tileSources.length; x++) {
+                this.tileSourcePairs[x] = {};
+            }
+
+        } else {
+            initialOverlayTileSource = this.overlayTileSources;
+        }
+
+    }
+    
 
     this.element              = this.element || document.getElementById( this.id );
     this.canvas               = $.makeNeutralElement( "div" );
@@ -4462,29 +4503,39 @@ $.Viewer = function( options ) {
 
     if ( initialTileSource ) {
         // open the first tile source (j=0)
-        this.open( initialTileSource, 0 );
+        this.open( initialTileSource, 0, false );
         
         if (this.tileSources.length > 1) {
 
             // if there are multiple tilesources, open as many as zCacheSize states
             for(var j=this.zCacheSize; j>0; --j) {
-                this.open( this.tileSources[ this.initialPage + j ], j );
+                this.open( this.tileSources[ this.initialPage + j ], j, false );
             }
 
         }
 
-        // if (this.id[0] != 'n') {
-        //     this.open( this.tileSources[ this.initialPage+1 ],  true );
-        // }
-
         if ( this.tileSources.length > 1 ) {
 
             // setup sequence preloading for smooth transitioning between images
-            
-
             this._updateSequenceButtons( this.initialPage );
         }
     }
+
+    if ( initialOverlayTileSource ) {
+        // open the first tile source (j=0)
+        this.open( initialOverlayTileSource, 0, true );
+        
+        if (this.overlayTileSources.length > 1) {
+
+            // if there are multiple tilesources, open as many as zCacheSize states
+            for(var k=this.zCacheSize; k>0; --k) {
+                this.open( this.overlayTileSources[ this.initialPage + k ], k, true );
+            }
+
+        }
+
+    }
+
 
     for ( i = 0; i < this.customControls.length; i++ ) {
         this.addControl(
@@ -4559,7 +4610,7 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
      * @param {String|Object|Function}
      * @return {OpenSeadragon.Viewer} Chainable.
      */
-    open: function ( tileSource, i ) {
+    open: function ( tileSource, i, overlay ) {
         var _this = this,
             customTileSource,
             readySource,
@@ -4582,7 +4633,31 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
             if ( $.type( tileSource ) == 'string') {
                 //If its still a string it means it must be a url at this point
                 tileSource = new $.TileSource( tileSource, function( event ){
-                    openTileSource( _this, event.tileSource, i );
+
+                    if (_this.tileSourceLimit == 1) {
+                        // we do not need to wait
+                        openTileSource( _this, event.tileSource, null, i);
+                    } else {
+
+                        // here, we have to wait for both tilesources
+                        // a) the image
+                        // b) the segmentation
+
+                        var pair = _this.tileSourcePairs[i];
+
+                        if (!overlay) {
+                            pair.image = event.tileSource;
+                        } else {
+                            pair.segmentation = event.tileSource;
+                        }
+
+
+                        if (pair.hasOwnProperty('image') && pair.hasOwnProperty('segmentation')) {
+                            // now we have a) and b) so we can open the tile source
+                            openTileSource( _this, pair.image, pair.segmentation, i );
+                        }
+                    }
+                    
                 });
                 tileSource.addHandler( 'open-failed', function ( event ) {
                     _this.raiseEvent( 'open-failed', event );
@@ -4593,7 +4668,7 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
                     //Custom tile source
                     customTileSource = new $.TileSource(tileSource);
                     customTileSource.getTileUrl = tileSource.getTileUrl;
-                    openTileSource( _this, customTileSource, i );
+                    openTileSource( _this, customTileSource, i, overlay );
                 } else {
                     //inline configuration
                     $TileSource = $.TileSource.determineType( _this, tileSource );
@@ -4606,11 +4681,11 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
                     }
                     options = $TileSource.prototype.configure.apply( _this, [ tileSource ]);
                     readySource = new $TileSource( options );
-                    openTileSource( _this, readySource, i );
+                    openTileSource( _this, readySource, i, overlay );
                 }
             } else {
                 //can assume it's already a tile source implementation
-                openTileSource( _this, tileSource, i );
+                openTileSource( _this, tileSource, i, overlay );
             }
         }, 1);
 
@@ -5247,6 +5322,7 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
 
         // the drawerStack depends on which direction we move in the sequence strip
         var drawerStack = forward ? this.drawerNext : this.drawerPrev;
+        var overlayDrawerStack = forward ? this.overlayDrawerNext : this.overlayDrawerPrev;
 
         // install the handler to listen to a single update-done event
         // which gets fired once the next or previous drawer has
@@ -5261,16 +5337,21 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
 
             // activate drawing for the new drawer
             _this.drawerNew.draw = true;
+            _this.overlayDrawerNew.draw = true;
 
             // update the opposite drawerStack with the current drawer
             var antiDrawerStack = forward ? _this.drawerPrev : _this.drawerNext;
+            var antiOverlayDrawerStack = forward ? _this.overlayDrawerPrev : _this.overlayDrawerNext;
             _this.drawer.updateAgain = true;
+            _this.overlayDrawer.updateAgain = true;
             antiDrawerStack.splice(0,1);
             antiDrawerStack.push( _this.drawer );
+            antiOverlayDrawerStack.splice(0,1);
+            antiOverlayDrawerStack.push( _this.overlayDrawer );
 
             // and replace it with the new one
             _this.drawer = _this.drawerNew;
-
+            _this.overlayDrawer = _this.overlayDrawerNew;
             
 
             //window.console.log('4 beforeTileSource',page, _this.tileSources.length);
@@ -5293,7 +5374,8 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
             var newPage = forward ? page + 1 : page - 1;
             if (_this.tileSources.length > newPage && newPage >= 0) {
                 // window.console.log('5 shown', page, 'request', newPage);
-                _this.open( _this.tileSources[ newPage ], newPage );
+                _this.open( _this.tileSources[ newPage ], newPage, false );
+                _this.open( _this.overlayTileSources[ newPage ], newPage, true );
             }
 
         });
@@ -5304,12 +5386,14 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
         if ( drawerStack.length > 0 ) {
 
             this.drawerNew = drawerStack.pop();
+            this.overlayDrawerNew = overlayDrawerStack.pop();
 
             //window.console.log('2 updateAgainTrue', this.drawerNew.updateAgain);
 
             // and start loading the tiles
             while(this.drawerNew.updateAgain) {
                 this.drawerNew.update();
+                this.overlayDrawerNew.update();
             }
 
             //window.console.log('6 updateAgainFalse', this.drawerNew.updateAgain);
@@ -5414,15 +5498,16 @@ function _getSafeElemSize (oElement) {
  * @function
  * @private
  */
-function openTileSource( viewer, source, j ) {
+function openTileSource( viewer, source, overlaySource, j ) {
 
 
     if (typeof j == 'undefined') {
         j = 0;
     }
 
-
-    // window.console.log("opentilesource", j);
+    if (typeof overlaySource == 'undefined') {
+        overlaySource = null;
+    }
 
     var _this = viewer,
         overlay,
@@ -5463,6 +5548,10 @@ function openTileSource( viewer, source, j ) {
         if( source ){
             _this.source = source;
         }
+        if( overlaySource ){
+            _this.overlaySource = overlaySource;
+        }
+
         _this.viewport = _this.viewport ? _this.viewport : new $.Viewport({
             containerSize:      THIS[ _this.hash ].prevContainerSize,
             contentSize:        _this.source.dimensions,
@@ -5514,10 +5603,36 @@ function openTileSource( viewer, source, j ) {
             minPixelRatio:      _this.collectionMode ? 0 : _this.minPixelRatio,
             timeout:            _this.timeout,
             debugMode:          _this.debugMode,
-            debugGridColor:     _this.debugGridColor,
-            rawData:            _this.compressedRawData
+            debugGridColor:     _this.debugGridColor
         }) );
     
+        // the drawerStack depends on which direction we move in the sequence strip
+        drawerStack = forward ? _this.overlayDrawerNext : _this.overlayDrawerPrev;
+
+        // create a new drawer and push it to our drawerNext stack
+        drawerStack.push( new $.Drawer({
+            viewer:             _this,
+            source:             _this.overlaySource,
+            viewport:           _this.viewport,
+            element:            _this.canvas,
+            canvas:             _this.drawer.canvas,
+            overlays:           [].concat( _this.overlays ).concat( _this.source.overlays ),
+            maxImageCacheCount: _this.maxImageCacheCount,
+            imageLoaderLimit:   _this.imageLoaderLimit,
+            minZoomImageRatio:  _this.minZoomImageRatio,
+            wrapHorizontal:     _this.wrapHorizontal,
+            wrapVertical:       _this.wrapVertical,
+            draw: false,
+            immediateRender:    _this.immediateRender,
+            blendTime:          _this.blendTime,
+            alwaysBlend:        _this.alwaysBlend,
+            minPixelRatio:      _this.collectionMode ? 0 : _this.minPixelRatio,
+            timeout:            _this.timeout,
+            debugMode:          _this.debugMode,
+            debugGridColor:     _this.debugGridColor,
+            colormap:           _this.colormap
+        }) );
+
         // now we exit since we don't want to draw right now
         return;
 
@@ -5528,7 +5643,7 @@ function openTileSource( viewer, source, j ) {
         source:             _this.source,
         viewport:           _this.viewport,
         element:            _this.canvas,
-        draw: true,
+        draw:               true,
         canvas:             $.makeNeutralElement( "canvas" ),
         overlays:           [].concat( _this.overlays ).concat( _this.source.overlays ),
         maxImageCacheCount: _this.maxImageCacheCount,
@@ -5542,9 +5657,33 @@ function openTileSource( viewer, source, j ) {
         minPixelRatio:      _this.collectionMode ? 0 : _this.minPixelRatio,
         timeout:            _this.timeout,
         debugMode:          _this.debugMode,
-        debugGridColor:     _this.debugGridColor,
-        rawData:            _this.compressedRawData
+        debugGridColor:     _this.debugGridColor
     });
+
+    if (_this.overlaySource) {
+        _this.overlayDrawer = new $.Drawer({
+            viewer:             _this,
+            source:             _this.overlaySource,
+            viewport:           _this.viewport,
+            element:            _this.canvas,
+            draw:               true,
+            canvas:             _this.drawer.canvas,
+            overlays:           [].concat( _this.overlays ).concat( _this.source.overlays ),
+            maxImageCacheCount: _this.maxImageCacheCount,
+            imageLoaderLimit:   _this.imageLoaderLimit,
+            minZoomImageRatio:  _this.minZoomImageRatio,
+            wrapHorizontal:     _this.wrapHorizontal,
+            wrapVertical:       _this.wrapVertical,
+            immediateRender:    _this.immediateRender,
+            blendTime:          _this.blendTime,
+            alwaysBlend:        _this.alwaysBlend,
+            minPixelRatio:      _this.collectionMode ? 0 : _this.minPixelRatio,
+            timeout:            _this.timeout,
+            debugMode:          _this.debugMode,
+            debugGridColor:     _this.debugGridColor,
+            colormap:           _this.colormap
+        });
+    }
 
     //Instantiate a navigator if configured
     if ( _this.showNavigator  && !_this.collectionMode && j!==0){
@@ -5892,13 +6031,21 @@ function updateOnce( viewer ) {
     }
 
     if ( animated ) {
-        viewer.drawer.update();
+        viewer.drawer.update(true);
+        if (viewer.overlayDrawer) {
+            viewer.overlayDrawer.update(false);
+        }
+   
         if( viewer.navigator ){
             viewer.navigator.update( viewer.viewport );
         }
         viewer.raiseEvent( "animation" );
     } else if ( THIS[ viewer.hash ].forceRedraw || viewer.drawer.needsUpdate() ) {
-        viewer.drawer.update();
+        viewer.drawer.update(true);
+        if (viewer.overlayDrawer) {
+            viewer.overlayDrawer.update(false);
+        }
+
         if( viewer.navigator ){
             viewer.navigator.update( viewer.viewport );
         }
@@ -10374,7 +10521,7 @@ function transform( stiffness, x ) {
  * @property {Boolean} beingDrawn Whether this tile is currently being drawn
  * @property {Number} lastTouchTime Timestamp the tile was last touched.
  */
-$.Tile = function(level, x, y, bounds, exists, url) {
+$.Tile = function(level, x, y, bounds, exists, url, rawData, rawWidth, rawHeight, rawColormap, rawAlpha) {
     this.level   = level;
     this.x       = x;
     this.y       = y;
@@ -10398,6 +10545,12 @@ $.Tile = function(level, x, y, bounds, exists, url) {
 
     this.beingDrawn     = false;
     this.lastTouchTime  = 0;
+
+    this.rawData = rawData;
+    this.rawWidth = rawWidth;
+    this.rawHeight = rawHeight;
+    this.rawColormap = rawColormap;
+    this.rawAlpha = rawAlpha;
 };
 
 $.Tile.prototype = {
@@ -10496,23 +10649,18 @@ $.Tile.prototype = {
 
         if( !TILE_CACHE[ this.url ] ){
             canvas = document.createElement( 'canvas' );
-            canvas.width = 512;//this.image.width;
-            canvas.height = 512;//this.image.height;
+            canvas.width = this.rawWidth;
+            canvas.height = this.rawHeight;
             rendered = canvas.getContext('2d');
 
+            if (this.rawData) {
 
-            //rendered.drawImage( this.image, 0, 0 );
-
-            var colormap = window.DOJO.colormap;
-
-            if (colormap) {
-
-                var data = rendered.createImageData(canvas.width, canvas.height);
-
+                // this is pixel data
+                var data = rendered.createImageData(this.rawWidth, this.rawHeight);
 
                 // loop through pixel data
                 var pos = 0;
-                var max_colors = colormap ? colormap.length : 0;
+                var max_colors = this.rawColormap ? this.rawColormap.length : 0;
                 for (var v=0;v<canvas.height;v++) {
                     for (var u=0;u<canvas.width;u++) {
 
@@ -10520,7 +10668,7 @@ $.Tile.prototype = {
 
                         if (max_colors > 0) {
 
-                            color = colormap[this.image[pos] % max_colors];
+                            color = this.rawColormap[this.image[pos] % max_colors];
 
                         } else {
 
@@ -10531,14 +10679,17 @@ $.Tile.prototype = {
                         data.data[pos++] = color[0];
                         data.data[pos++] = color[1];
                         data.data[pos++] = color[2];
-                        data.data[pos++] = 255;
+                        data.data[pos++] = this.rawAlpha;
                     }
                 }
 
                 rendered.putImageData(data, 0, 0);
 
             } else {
+
+                // standard image case
                 rendered.drawImage( this.image, 0, 0 );
+
             }
 
             TILE_CACHE[ this.url ] = rendered;
@@ -10979,7 +11130,10 @@ $.Drawer = function( options ) {
         minPixelRatio:      $.DEFAULT_SETTINGS.minPixelRatio,
         debugMode:          $.DEFAULT_SETTINGS.debugMode,
         timeout:            $.DEFAULT_SETTINGS.timeout,
-        rawData:            false
+
+        // DOJO specific
+        colormap:           null,
+        opacity:            100
 
     }, options );
 
@@ -11192,10 +11346,11 @@ $.Drawer.prototype = {
      * @method
      * @return {OpenSeadragon.Drawer} Chainable.
      */
-    update: function() {
+    update: function(clear) {
+
         //this.profiler.beginUpdate();
         this.midUpdate = true;
-        updateViewport( this );
+        updateViewport( this, clear );
         this.midUpdate = false;
         //this.profiler.endUpdate();
         return this;
@@ -11404,7 +11559,7 @@ $.Drawer.prototype = {
  * how each piece of this routine contributes to the drawing process.  That's
  * why there are so many TODO's inside this function.
  */
-function updateViewport( drawer ) {
+function updateViewport( drawer, clear ) {
 
     drawer.updateAgain = false;
 
@@ -11456,7 +11611,7 @@ function updateViewport( drawer ) {
     }
 
     //TODO
-    if (drawer.draw) {
+    if (drawer.draw && clear) {
         drawer.canvas.innerHTML   = "";
         if ( USE_CANVAS ) {
             if( drawer.canvas.width  != viewportSize.x ||
@@ -11656,7 +11811,9 @@ function updateTile( drawer, drawLevel, haveDrawn, x, y, level, levelOpacity, le
             drawer.tilesMatrix,
             currentTime,
             numberOfTiles,
-            drawer.normHeight
+            drawer.normHeight,
+            drawer.colormap,
+            drawer.opacity
         ),
         drawTile = drawLevel;
 
@@ -11715,7 +11872,7 @@ function updateTile( drawer, drawLevel, haveDrawn, x, y, level, levelOpacity, le
     return best;
 }
 
-function getTile( x, y, level, tileSource, tilesMatrix, time, numTiles, normHeight ) {
+function getTile( x, y, level, tileSource, tilesMatrix, time, numTiles, normHeight, colormap, opacity ) {
     var xMod,
         yMod,
         bounds,
@@ -11746,7 +11903,13 @@ function getTile( x, y, level, tileSource, tilesMatrix, time, numTiles, normHeig
             y,
             bounds,
             exists,
-            url
+            url,
+            // DOJO specific starting here
+            tileSource.fileFormat == "raw",
+            tileSource.tileSize,
+            tileSource.tileSize,
+            colormap,
+            opacity
         );
     }
 
@@ -11763,7 +11926,7 @@ function loadTile( drawer, tile, time ) {
         onTileLoad( drawer, tile, time );
     } else {
         // either load raw data or an image
-        if (drawer.rawData) {
+        if (drawer.source.fileFormat == "raw") {
             tile.loading = drawer.loadRaw(
                 tile.url,
                 function( image ){

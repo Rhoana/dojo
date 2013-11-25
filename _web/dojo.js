@@ -6,6 +6,7 @@ var DOJO = DOJO || {};
 DOJO.toc = {'images':null,'segmentations':null};
 DOJO.viewer = null;
 DOJO.tileSources = [];
+DOJO.overlayTileSources = [];
 DOJO.colormap = null;
 
 DOJO.init = function() {
@@ -60,7 +61,7 @@ DOJO.build_tilesources = function() {
 
   for (var s=0; s<no_segmentations; s++) {
 
-    //DOJO.tileSources.push('/segmentation/'+pad(s,8)+'/');
+    DOJO.overlayTileSources.push('/segmentation/'+pad(s,8)+'/');
 
   }  
 
@@ -76,7 +77,7 @@ DOJO.get_colormap = function() {
 
   $.ajax({url:'/segmentation/colormap'}).done( function(e) {
 
-    //DOJO.colormap = JSON.parse(e);
+    DOJO.colormap = JSON.parse(e);
 
     DOJO.create_viewer();
 
@@ -98,7 +99,8 @@ DOJO.create_viewer = function() {
     zCacheSize: 1,
     preserveViewport: true,
     tileSources: DOJO.tileSources,
-    //compressedRawData: true
+    overlayTileSources: DOJO.overlayTileSources,
+    colormap: DOJO.colormap
   });
 
   DOJO.setup_interaction();
