@@ -1,0 +1,4 @@
+DOJO.viewer = function() {
+  
+};
+
