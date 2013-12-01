@@ -107,7 +107,9 @@ DOJO.create_viewer = function() {
   //   idmap: DOJO.idmap
   // });
 
-  DOJO.setup_interaction();
+  DOJO.viewer = new DOJO.renderer('dojo1');
+  DOJO.viewer.open(DOJO.tileSources);
+  // DOJO.setup_interaction();
 
 };
 
