@@ -10738,6 +10738,8 @@ $.Tile.prototype = {
 
                 var rawData = new Uint32Array(this.image.buffer);
 
+                window.console.log('drawing');
+
                 // loop through pixel data
                 var pos = 0;
                 var i = 0;

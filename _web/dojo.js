@@ -118,7 +118,7 @@ DOJO.setup_interaction = function() {
 
   DOJO.viewer.addHandler('canvas-click', function(e){
     
-    console.log('Trying the merge');
+    if (!e.shift) return;
 
     var image_coords = DOJO.viewer.viewport.viewportToImageCoordinates(DOJO.viewer.viewport.pointFromPixel(e.position, true));
 
@@ -138,10 +138,27 @@ DOJO.setup_interaction = function() {
       DOJO.first_id = id;
     } else if (DOJO.first_id != DOJO.second_id) {
       DOJO.second_id = id;
-      DOJO.idmap[DOJO.first_id] = DOJO.second_id;
+      DOJO.idmap[DOJO.second_id] = DOJO.first_id;
       console.log('Merging', DOJO.first_id, DOJO.second_id);
       DOJO.first_id = null;
       DOJO.second_id = null;
+
+      // need to redraw
+      for (t in DOJO.viewer.overlayDrawer.tilesLoaded) { 
+        t = DOJO.viewer.overlayDrawer.tilesLoaded[t]; t.unload(); 
+      }
+      DOJO.viewer.addHandler( 'update-done', function(event) {
+        DOJO.viewer.removeAllHandlers( 'update-done' );
+        console.log('yo');
+        
+        setTimeout(function() {DOJO.viewer.overlayDrawer.update(false);},500);
+      });
+
+      DOJO.viewer.drawer.update(true);
+
+      
+
+
     } else {
       DOJO.first_id = null;
       DOJO.second_id = null;      
