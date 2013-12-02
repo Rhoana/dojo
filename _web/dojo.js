@@ -147,6 +147,9 @@ DOJO.setup_interaction = function() {
       for (t in DOJO.viewer.overlayDrawer.tilesLoaded) { 
         t = DOJO.viewer.overlayDrawer.tilesLoaded[t]; t.unload(); 
       }
+
+      DOJO.viewer.viewport.forceUpdate = true;
+
       DOJO.viewer.addHandler( 'update-done', function(event) {
         DOJO.viewer.removeAllHandlers( 'update-done' );
         console.log('yo');
@@ -170,10 +173,12 @@ DOJO.setup_interaction = function() {
     if (e.charCode == 113) {
 
       DOJO.viewer.goToPage(DOJO.viewer.currentPage()+1);
+      
 
     } else if (e.charCode == 97) {
 
       DOJO.viewer.goToPage(DOJO.viewer.currentPage()-1);
+
 
     }
   }

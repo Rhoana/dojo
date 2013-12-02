@@ -6102,7 +6102,12 @@ function updateOnce( viewer ) {
         }
         viewer.raiseEvent( "animation" );
     } else if ( THIS[ viewer.hash ].forceRedraw || viewer.drawer.needsUpdate() ) {
+
         viewer.drawer.update(true);
+        if (viewer.overlayDrawer) {
+            viewer.overlayDrawer.update(false);
+        }        
+        // viewer.drawer.update(true);
 
         // install the handler to listen to a single update-done event
         // which gets fired once the next or previous drawer has
@@ -6114,7 +6119,7 @@ function updateOnce( viewer ) {
         //     _this.removeAllHandlers( 'update-done' );
 
         //     if (viewer.overlayDrawer) {
-                viewer.overlayDrawer.update(false);
+                // viewer.overlayDrawer.update(false);
         //     }
 
         // });
@@ -7221,6 +7226,7 @@ $.TileSource.prototype = {
 
             options = $TileSource.prototype.configure.apply( _this, [ data, url ]);
             readySource = new $TileSource( options );
+            readySource.minLevel = 9;
             _this.ready = true;
             _this.raiseEvent( 'ready', { tileSource: readySource } );
         };
@@ -12633,6 +12639,8 @@ $.Viewport = function( options ) {
         zoomPoint:          null,
         viewer:           null,
 
+        forceUpdate:      false,
+
         //configurable options
         springStiffness:    $.DEFAULT_SETTINGS.springStiffness,
         animationTime:      $.DEFAULT_SETTINGS.animationTime,
@@ -13201,6 +13209,12 @@ $.Viewport.prototype = {
      * @function
      */
     update: function() {
+
+        if (this.forceUpdate) {
+            this.forceUpdate = false;
+            return true;
+        }
+
         var oldCenterX = this.centerSpringX.current.value,
             oldCenterY = this.centerSpringY.current.value,
             oldZoom    = this.zoomSpring.current.value,
