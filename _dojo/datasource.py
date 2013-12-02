@@ -100,6 +100,7 @@ class Datasource(object):
       content['colormap'] = str(self.__has_colormap).lower()
       content['width'] = self.__info['numVoxelsX']
       content['height'] = self.__info['numVoxelsY']
+      content['zoomlevel_count'] = self.__info['numTilesW']
       content = json.dumps(content)
 
     # tilesource info
@@ -122,7 +123,7 @@ class Datasource(object):
 
       zoomlevel = int(request_splitted[-2])
       # re-map zoomlevel
-      zoomlevel = min(self.__max_mojozoom_level, self.__max_deepzoom_level - zoomlevel)
+      #zoomlevel = min(self.__max_mojozoom_level, self.__max_deepzoom_level - zoomlevel)
 
       slice_number = request_splitted[-3]
 

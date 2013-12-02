@@ -107,8 +107,8 @@ DOJO.create_viewer = function() {
   //   idmap: DOJO.idmap
   // });
 
-  DOJO.viewer = new DOJO.renderer('dojo1');
-  DOJO.viewer.open(DOJO.tileSources);
+  DOJO.viewer = new DOJO.canvas('dojo1');
+  
   // DOJO.setup_interaction();
 
 };
