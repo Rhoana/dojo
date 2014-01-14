@@ -1,4 +1,6 @@
-DOJO.canvas = function(container) {
+var J = J || {};
+
+J.viewer = function(container) {
 
   var _container = document.getElementById(container);
 
@@ -17,16 +19,15 @@ DOJO.canvas = function(container) {
   //_container.appendChild(this._image_buffer);
   this._image_buffer_context = this._image_buffer.getContext('2d');
 
-  // a c e
-  // b d f
-  // 0 0 1
-  this._view = [2, 0, 0, 0, 2, 0, 0, 0, 1];
+  this._zoom_level = 1;
+
+  this._camera = new J.camera(this);
 
   this.init();
 
 };
 
-DOJO.canvas.prototype.init = function() {
+J.viewer.prototype.init = function() {
 
   // get contents
   $.ajax({url:'/image/contents'}).done(function(res) {
@@ -52,7 +53,7 @@ DOJO.canvas.prototype.init = function() {
 
 };
 
-DOJO.canvas.prototype.load_image = function(x, y, z, w) {
+J.viewer.prototype.load_image = function(x, y, z, w) {
 
   console.log('Loading',x,y,z,w);
 
@@ -61,13 +62,15 @@ DOJO.canvas.prototype.load_image = function(x, y, z, w) {
   i.onload = function() {
     this.draw_image(x,y,z,w,i);
 
+    this._camera.reset();
+
     this.render();
 
   }.bind(this);
 
 };
 
-DOJO.canvas.prototype.draw_image = function(x,y,z,w,i) {
+J.viewer.prototype.draw_image = function(x,y,z,w,i) {
 
   console.log('Drawing',x,y,z,w);
 
@@ -75,7 +78,8 @@ DOJO.canvas.prototype.draw_image = function(x,y,z,w,i) {
 
 };
 
-DOJO.canvas.prototype.render = function() {
+
+J.viewer.prototype.render = function() {
 
   var _width = this._width;
   var _height = this._height;
@@ -84,7 +88,7 @@ DOJO.canvas.prototype.render = function() {
   this._context.clearRect(-_width, -_height, 2 * _width, 2 * _height);
   this._context.restore();
 
-  this._context.setTransform(this._view[0], this._view[1], this._view[3], this._view[4], this._view[6], this._view[7]);
+  this._context.setTransform(this._camera._view[0], this._camera._view[1], this._camera._view[3], this._camera._view[4], this._camera._view[6], this._camera._view[7]);
 
   // put image buffer
   this._context.drawImage(this._image_buffer, 0, 0);
@@ -93,7 +97,3 @@ DOJO.canvas.prototype.render = function() {
 
 };
 
-DOJO.canvas.prototype.zoom = function(level) {
-  this._view[0] = level;
-  this._view[4] = level;
-}
