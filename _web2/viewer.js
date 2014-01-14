@@ -22,6 +22,7 @@ J.viewer = function(container) {
   this._zoom_level = 1;
 
   this._camera = new J.camera(this);
+  this._interactor = new J.interactor(this);
 
   this.init();
 
