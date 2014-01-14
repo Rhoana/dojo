@@ -19,8 +19,13 @@ J.interactor.prototype.init = function() {
 
 J.interactor.prototype.onmousewheel = function(e) {
 
-  console.log(e);
+  if (e.wheelDeltaY < 0) {
+    this._viewer._camera.zoom_out();
+  } else {
+    this._viewer._camera.zoom_in();
+  }
 
+  this._viewer._camera.center();
 
 };
 

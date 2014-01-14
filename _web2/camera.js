@@ -41,7 +41,12 @@ J.camera.prototype.reset = function() {
 
 ///
 
-J.camera.prototype.zoom = function(level) {
-  this._view[0] = level;
-  this._view[4] = level;
+J.camera.prototype.zoom_in = function() {
+  this._view[0]++;
+  this._view[4]++;
 };
+
+J.camera.prototype.zoom_out = function() {
+  this._view[0]--;
+  this._view[4]--;
+}
