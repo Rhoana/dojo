@@ -49,4 +49,9 @@ J.camera.prototype.zoom_in = function() {
 J.camera.prototype.zoom_out = function() {
   this._view[0]--;
   this._view[4]--;
-}
+};
+
+J.camera.prototype.pan = function(dx, dy) {
+  this._view[6] += dx;
+  this._view[7] += dy;
+};

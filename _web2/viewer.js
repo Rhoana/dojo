@@ -98,3 +98,19 @@ J.viewer.prototype.render = function() {
 
 };
 
+J.viewer.prototype.xy2uv = function(x, y) {
+
+  var u = x - this._canvas.offsetLeft - this._camera._view[6];
+  var v = y - this._canvas.offsetTop - this._camera._view[7];
+
+  if (u < 0 || u >= this._camera._view[0] * this._zoom_level*512) {
+    u = -1;
+  }
+
+  if (v < 0 || v >= this._camera._view[4] * this._zoom_level*512) {
+    v = -1;
+  }
+
+  return [u, v];
+
+};
