@@ -100,8 +100,8 @@ J.viewer.prototype.render = function() {
 
 J.viewer.prototype.xy2uv = function(x, y) {
 
-  var u = x - this._canvas.offsetLeft - this._camera._view[6];
-  var v = y - this._canvas.offsetTop - this._camera._view[7];
+  var u = x - this._camera._view[6];
+  var v = y - this._camera._view[7];
 
   if (u < 0 || u >= this._camera._view[0] * this._zoom_level*512) {
     u = -1;
@@ -112,5 +112,26 @@ J.viewer.prototype.xy2uv = function(x, y) {
   }
 
   return [u, v];
+
+};
+
+J.viewer.prototype.xy2ij = function(x, y) {
+
+  var u_v = this.xy2uv(x, y);
+
+  if (u_v[0] == -1 || u_v[1] == -1) {
+    return [-1, -1];
+  }
+
+  return [(u_v[0]/(this._camera._view[0])), (u_v[1]/(this._camera._view[4]))];
+
+};
+
+J.viewer.prototype.ij2xy = function(i, j) {
+
+  var x = this._camera._view[6] + (i * this._camera._view[0]);
+  var y = this._camera._view[7] + (j * this._camera._view[4]);
+
+  return [x, y];
 
 };
