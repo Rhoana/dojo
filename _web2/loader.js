@@ -63,5 +63,42 @@ J.loader.prototype.get_image = function(x, y, z, w, callback) {
 
   });
 
+};
+
+J.loader.prototype.load_tile = function(x, y, z, w, w_new) {
+
+  var mojo_w_new = this._viewer._zoom_level_count - w_new;
+
+  if (mojo_w_new < 0) {
+    return;
+  }
+
+  console.log('loading', x, y, z, w, w_new);
+
+  // todo check which sub-tiles to load
+
+  this.get_image(0, 0, z, mojo_w_new, function(i) {
+
+    console.log(i);
+
+  });
+
+  this.get_image(0, 1, z, mojo_w_new, function(i) {
+
+    console.log(i);
+
+  });
+
+  this.get_image(1, 0, z, mojo_w_new, function(i) {
+
+    console.log(i);
+
+  });  
+
+  this.get_image(1, 1, z, mojo_w_new, function(i) {
+
+    console.log(i);
+
+  });  
 
 };

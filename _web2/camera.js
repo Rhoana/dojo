@@ -3,6 +3,9 @@ var J = J || {};
 J.camera = function(viewer) {
 
   this._viewer = viewer;
+  this._loader = this._viewer._loader;
+
+  this._z = 0;
 
   // a c e
   // b d f
@@ -57,11 +60,8 @@ J.camera.prototype.zoom = function(x, y, delta) {
   // clamp zooming
   if (future_zoom_level <= 0 || future_zoom_level > 20) return;
 
-  // check if we need to load tiles
-  if (future_zoom_level % 2 == 0) {
-    // yes
-    console.log('need loading', future_zoom_level, this._view[0]);
-  }
+  // trigger tile loading
+  this._loader.load_tile(x, y, this._z, this._view[0], future_zoom_level);
 
   var old_scale = this._view[0];
 

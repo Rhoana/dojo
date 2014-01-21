@@ -20,10 +20,11 @@ J.viewer = function(container) {
   this._image_buffer_context = this._image_buffer.getContext('2d');
 
   this._zoom_level = 1;
+  this._zoom_level_count = 1;
 
+  this._loader = new J.loader(this);
   this._camera = new J.camera(this);
   this._interactor = new J.interactor(this);
-  this._loader = new J.loader(this);
 
   this.init();
 
@@ -39,6 +40,11 @@ J.viewer.prototype.init = function() {
     // type cast some stuff
     this._image.width = parseInt(this._image.width, 10);
     this._image.height = parseInt(this._image.height, 10);
+
+    this._image.zoomlevel_count = parseInt(this._image.zoomlevel_count, 10);
+    this._zoom_level_count = this._image.zoomlevel_count;
+
+    this._image.max_z_tiles = parseInt(this._image.max_z_tiles, 10);
 
     this._image_buffer.width = this._image.width;
     this._image_buffer.height = this._image.height;
