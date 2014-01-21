@@ -60,7 +60,7 @@ J.camera.prototype.zoom = function(x, y, delta) {
   // check if we need to load tiles
   if (future_zoom_level % 2 == 0) {
     // yes
-    console.log('need loading', future_zoom_level);
+    console.log('need loading', future_zoom_level, this._view[0]);
   }
 
   var old_scale = this._view[0];

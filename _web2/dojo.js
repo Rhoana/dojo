@@ -15,7 +15,7 @@ DOJO.second_id = null;
 DOJO.init = function() {
 
   // start the async chain by getting the contents from the server
-  DOJO.get_contents();
+  DOJO.create_viewer();
 
 };
 

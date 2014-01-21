@@ -23,6 +23,7 @@ J.viewer = function(container) {
 
   this._camera = new J.camera(this);
   this._interactor = new J.interactor(this);
+  this._loader = new J.loader(this);
 
   this.init();
 
@@ -31,9 +32,9 @@ J.viewer = function(container) {
 J.viewer.prototype.init = function() {
 
   // get contents
-  $.ajax({url:'/image/contents'}).done(function(res) {
+  this._loader.load_json('/image/contents', function(res) {
 
-    this._image = JSON.parse(res);
+    this._image = JSON.parse(res.response);
 
     // type cast some stuff
     this._image.width = parseInt(this._image.width, 10);
@@ -42,11 +43,23 @@ J.viewer.prototype.init = function() {
     this._image_buffer.width = this._image.width;
     this._image_buffer.height = this._image.height;
 
-    $.ajax({url:'/segmentation/contents'}).done(function(res) {
+    this._loader.load_json('/segmentation/contents', function(res) {    
 
-      this._segmentation = JSON.parse(res);
+      this._segmentation = JSON.parse(res.response);
 
-      this.load_image(0,0,0,parseInt(this._image.zoomlevel_count,10)-1);
+      var x = 0;
+      var y = 0;
+      var z = 0;
+      var w = parseInt(this._image.zoomlevel_count,10)-1;
+      this._loader.get_image(x, y, z, w, function(i) {
+
+        this.draw_image(x, y, z, w, i);
+
+        this._camera.reset();
+
+        this.render();
+
+      }.bind(this));
 
     }.bind(this));
 
@@ -54,26 +67,9 @@ J.viewer.prototype.init = function() {
 
 };
 
-J.viewer.prototype.load_image = function(x, y, z, w) {
-
-  console.log('Loading',x,y,z,w);
-
-  var i = new Image();
-  i.src = '/image/'+pad(z,8)+'/'+w+'/'+x+'_'+y+'.jpg';
-  i.onload = function() {
-    this.draw_image(x,y,z,w,i);
-
-    this._camera.reset();
-
-    this.render();
-
-  }.bind(this);
-
-};
-
 J.viewer.prototype.draw_image = function(x,y,z,w,i) {
 
-  console.log('Drawing',x,y,z,w);
+  console.log('Drawing',x,y,z,w, i);
 
   this._image_buffer_context.drawImage(i,0,0,512,512,x*512,y*512,512,512);
 
