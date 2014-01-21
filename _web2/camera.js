@@ -24,7 +24,7 @@ J.camera.prototype.auto_scale = function() {
   var _w_scale = this._viewer._width / 512*this._viewer._zoom_level;
   var _h_scale = this._viewer._height / 512*this._viewer._zoom_level;
 
-  var _auto_scale = Math.min(_w_scale, _h_scale);
+  var _auto_scale = parseInt(Math.min(_w_scale, _h_scale),10);
 
   this._view[0] = _auto_scale;
   this._view[4] = _auto_scale;
