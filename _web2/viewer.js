@@ -19,12 +19,11 @@ J.viewer = function(container) {
   //_container.appendChild(this._image_buffer);
   this._image_buffer_context = this._image_buffer.getContext('2d');
 
-  this._zoom_level = 1;
-  this._zoom_level_count = 1;
+  this._image = null;
+  this._segmentation = null;
 
   this._loader = new J.loader(this);
   this._camera = new J.camera(this);
-  this._interactor = new J.interactor(this);
 
   this.init();
 
@@ -40,11 +39,15 @@ J.viewer.prototype.init = function() {
     // type cast some stuff
     this._image.width = parseInt(this._image.width, 10);
     this._image.height = parseInt(this._image.height, 10);
-
     this._image.zoomlevel_count = parseInt(this._image.zoomlevel_count, 10);
-    this._zoom_level_count = this._image.zoomlevel_count;
-
     this._image.max_z_tiles = parseInt(this._image.max_z_tiles, 10);
+
+    this._image.zoom_levels = this.calc_zoomlevels();
+
+    // set to default zoom level (smallest in MOJO notation)
+    this._camera._zoom_level = this._image.zoomlevel_count - 1;
+
+    this._interactor = new J.interactor(this);
 
     this._image_buffer.width = this._image.width;
     this._image_buffer.height = this._image.height;
@@ -73,23 +76,55 @@ J.viewer.prototype.init = function() {
 
 };
 
+J.viewer.prototype.calc_zoomlevels = function() {
+
+  var zoom_levels = [];
+
+  // largest zoom level
+  zoom_levels[0] = [Math.ceil(this._image.width/512), Math.ceil(this._image.height/512)];
+
+  var _width = this._image.width/2;
+  var _height = this._image.height/2;
+
+  for (var w=1; w<this._image.zoomlevel_count; w++) {
+    
+    var level_x_count = Math.ceil(_width / 512);
+    var level_y_count = Math.ceil(_height / 512);
+
+    zoom_levels[w] = [level_x_count, level_y_count];
+
+    _width /= 2;
+    _height /= 2;
+
+  }
+
+  return zoom_levels;
+
+};
+
 J.viewer.prototype.draw_image = function(x,y,z,w,i) {
 
-  console.log('Drawing',x,y,z,w, i);
+  //console.log('Drawing',x,y,z,w, i);
 
   this._image_buffer_context.drawImage(i,0,0,512,512,x*512,y*512,512,512);
 
 };
 
-
-J.viewer.prototype.render = function() {
+J.viewer.prototype.clear = function() {
 
   var _width = this._width;
   var _height = this._height;
 
   this._context.save();
-  this._context.clearRect(-_width, -_height, 2 * _width, 2 * _height);
+  this._context.setTransform(1, 0, 0, 1, 0, 0);
+  this._context.clearRect(0, 0, _width, _height);
   this._context.restore();
+
+};
+
+J.viewer.prototype.render = function() {
+
+  this.clear();
 
   this._context.setTransform(this._camera._view[0], this._camera._view[1], this._camera._view[3], this._camera._view[4], this._camera._view[6], this._camera._view[7]);
 
@@ -104,12 +139,14 @@ J.viewer.prototype.xy2uv = function(x, y) {
 
   var u = x - this._camera._view[6];
   var v = y - this._camera._view[7];
-
-  if (u < 0 || u >= this._camera._view[0] * this._zoom_level*512) {
+  // console.log(u, this._camera._view[6], x, this._image.zoom_levels[this._camera._zoom_level][0])
+  //if (u < 0 || u >= this._camera._view[0] * this._zoom_level*512) {
+  if (u < 0 || u >= this._image.zoom_levels[this._camera._zoom_level][0] *512) {
     u = -1;
   }
 
-  if (v < 0 || v >= this._camera._view[4] * this._zoom_level*512) {
+  //if (v < 0 || v >= this._camera._view[4] * this._zoom_level*512) {
+  if (v < 0 || v >= this._image.zoom_levels[this._camera._zoom_level][1] *512) {
     v = -1;
   }
 

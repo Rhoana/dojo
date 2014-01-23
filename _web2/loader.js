@@ -42,7 +42,7 @@ J.loader.prototype.get_image = function(x, y, z, w, callback) {
       if (this._image_cache[z][w][x]) {
         if (this._image_cache[z][w][x][y]) {
           // we have it cached
-          console.log('cache hit', z, w, x, y);
+          //console.log('cache hit', z, w, x, y);
           return this._image_cache[z][w][x][y];
         }
       }
@@ -67,38 +67,31 @@ J.loader.prototype.get_image = function(x, y, z, w, callback) {
 
 J.loader.prototype.load_tile = function(x, y, z, w, w_new) {
 
-  var mojo_w_new = this._viewer._zoom_level_count - w_new;
+
+
+  var mojo_w_new = w_new;//this._viewer._image.zoomlevel_count - 1 - w_new;
 
   if (mojo_w_new < 0) {
     return;
   }
 
-  console.log('loading', x, y, z, w, w_new);
+  //console.log('loading', x, y, z, w, w_new);
 
   // todo check which sub-tiles to load
 
-  this.get_image(0, 0, z, mojo_w_new, function(i) {
+  var tilescount_x = this._viewer._image.zoom_levels[mojo_w_new][0];
+  var tilescount_y = this._viewer._image.zoom_levels[mojo_w_new][1];
 
-    console.log(i);
+  for (var y=0; y<tilescount_y; y++) {
+    for (var x=0; x<tilescount_x; x++) {
 
-  });
+      this.get_image(x, y, z, mojo_w_new, function(x, y, z, mojo_w_new, i) {
 
-  this.get_image(0, 1, z, mojo_w_new, function(i) {
+        this._viewer.draw_image(x, y, z, mojo_w_new, i);
 
-    console.log(i);
+      }.bind(this, x, y, z, mojo_w_new));
 
-  });
-
-  this.get_image(1, 0, z, mojo_w_new, function(i) {
-
-    console.log(i);
-
-  });  
-
-  this.get_image(1, 1, z, mojo_w_new, function(i) {
-
-    console.log(i);
-
-  });  
+    }
+  }
 
 };
