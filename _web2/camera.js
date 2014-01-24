@@ -85,8 +85,6 @@ J.camera.prototype.zoom = function(x, y, delta) {
   var new_scale_w = this._viewer._image.zoom_levels[this._zoom_level][2];
   var new_scale_h = this._viewer._image.zoom_levels[this._zoom_level][3];
 
-  console.log('ZL', this._zoom_level,this._viewer._image.zoom_levels[this._zoom_level][0])
-
   // var u_new = u_v[0] * new_scale;
   // var v_new = u_v[1] * new_scale;
   // if (old_scale != 0) {

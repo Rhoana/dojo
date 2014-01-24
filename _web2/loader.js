@@ -30,6 +30,13 @@ J.loader.prototype.load_image = function(x, y, z, w, callback) {
 
 J.loader.prototype.load_segmentation = function(x, y, z, w, callback) {
 
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', '/segmentation/'+pad(z,8)+'/'+w+'/'+x+'_'+y+'.raw', true);
+  xhr.responseType = 'arraybuffer';
+
+  xhr.onload = callback.bind(this, xhr);
+
+  xhr.send(null);
 
 };
 
@@ -69,6 +76,46 @@ J.loader.prototype.get_image = function(x, y, z, w, callback) {
 
 };
 
+J.loader.prototype.get_segmentation = function(x, y, z, w, callback) {
+
+  // check if we have a cached version
+  if (this._segmentation_cache[z]) {
+
+    if (this._segmentation_cache[z][w]) {
+      if (this._segmentation_cache[z][w][x]) {
+        if (this._segmentation_cache[z][w][x][y]) {
+          // we have it cached
+          // console.log('cache hit', z, w, x, y);
+          var i = this._segmentation_cache[z][w][x][y];
+
+          callback(i);
+
+          return;
+        }
+      }
+    }
+
+  }
+
+  this.load_segmentation(x, y, z, w, function(s) {
+
+    // uncompress
+    var compressed = new Zlib.Inflate(new Uint8Array(s.response));
+    s = compressed.decompress();
+
+    // cache this image
+    this._segmentation_cache[z] = this._segmentation_cache[z] ? this._segmentation_cache[z] : [];
+    this._segmentation_cache[z][w] = this._segmentation_cache[z][w] ? this._segmentation_cache[z][w] : [];
+    this._segmentation_cache[z][w][x] = this._segmentation_cache[z][w][x] ? this._segmentation_cache[z][w][x] : [];
+    this._segmentation_cache[z][w][x][y] = s;
+
+    // call real callback
+    callback(s);
+
+  });
+
+};
+
 J.loader.prototype.load_tiles = function(x, y, z, w, w_new) {
 
 
@@ -94,7 +141,11 @@ J.loader.prototype.load_tiles = function(x, y, z, w, w_new) {
 
       this.get_image(x, y, z, mojo_w_new, function(x, y, z, mojo_w_new, i) {
 
-        this._viewer.draw_image(x, y, z, mojo_w_new, i);
+        this.get_segmentation(x, y, z, mojo_w_new, function(x, y, z, mojo_w_new, s) {
+
+          this._viewer.draw_image(x, y, z, mojo_w_new, i, s);
+
+        }.bind(this, x, y, z, mojo_w_new));
 
       }.bind(this, x, y, z, mojo_w_new));
 

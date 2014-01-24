@@ -19,8 +19,16 @@ J.viewer = function(container) {
   //_container.appendChild(this._image_buffer);
   this._image_buffer_context = this._image_buffer.getContext('2d');
 
+  this._segmentation_buffer = document.createElement('canvas');
+  this._segmentation_buffer_context = this._segmentation_buffer.getContext('2d');
+  this._pixel_data_buffer = this._segmentation_buffer_context.createImageData(512, 512);
+
+
   this._image = null;
   this._segmentation = null;
+
+  this._colormap = null;
+  this._max_colors = 0;
 
   this._loader = new J.loader(this);
   this._camera = new J.camera(this);
@@ -52,27 +60,39 @@ J.viewer.prototype.init = function() {
     this._image_buffer.width = this._image.width;
     this._image_buffer.height = this._image.height;
 
-    this._loader.load_json('/segmentation/contents', function(res) {    
+    this._loader.load_json('/segmentation/contents', function(res) {
 
       this._segmentation = JSON.parse(res.response);
 
-      var x = 0;
-      var y = 0;
-      var z = 0;
-      var w = parseInt(this._image.zoomlevel_count,10)-1;
-      this._loader.get_image(x, y, z, w, function(i) {
+      // TODO support if we don't have a segmentation
+      this._loader.load_json('/segmentation/colormap', function(res) {
 
-        this.draw_image(x, y, z, w, i);
+        this._colormap = JSON.parse(res.response);
+        this._max_colors = this._colormap.length;
 
-        this._camera.reset();
+        var x = 0;
+        var y = 0;
+        var z = 0;
+        var w = parseInt(this._image.zoomlevel_count,10)-1;
+        this._loader.get_image(x, y, z, w, function(i) {
 
-        this.render();
+          this._loader.get_segmentation(x, y, z, w, function(x, y, z, w, s) {
+
+            this.draw_image(x, y, z, w, i, s);
+
+          }.bind(this, x, y, z, w)); // load first segmentation
+
+          this._camera.reset();
+
+          this.render();
+
+        }.bind(this)); // load first image
 
       }.bind(this));
 
-    }.bind(this));
+    }.bind(this)); // load /segmentation/contents
 
-  }.bind(this));
+  }.bind(this)); // load /image/contents
 
 };
 
@@ -102,11 +122,45 @@ J.viewer.prototype.calc_zoomlevels = function() {
 
 };
 
-J.viewer.prototype.draw_image = function(x,y,z,w,i) {
+J.viewer.prototype.draw_image = function(x,y,z,w,i,s) {
 
-  // console.log('Drawing',x,y,z,w, i);
+  console.log('Drawing', x,y,z,w,i,s, s.length)
 
   this._image_buffer_context.drawImage(i,0,0,512,512,x*512,y*512,512,512);
+
+  // draw segmentation
+  var pixel_data = this._pixel_data_buffer;
+  var pixel_data_data = pixel_data.data;
+  var segmentation_data = new Uint32Array(s.buffer);
+
+  var pos = 0; // running pixel (rgba) index, increases by 4
+  var max_colors = this._max_colors;
+  var colormap = this._colormap;
+
+  // run through all 512*512 bytes
+  for (var p=0; p<262144; p++) {
+
+    var id = segmentation_data[p];
+
+    //if (id >= max_colors) {
+      //id = id % max_colors;
+    //}
+
+    var color = colormap[id % max_colors];
+
+    if (color[0] == 0) {
+      console.log(color, id, segmentation_data[p], p);
+    }
+
+    pixel_data_data[pos++] = color[0];
+    pixel_data_data[pos++] = color[1];
+    pixel_data_data[pos++] = color[2];
+    pixel_data_data[pos++] = 150;
+
+  }
+
+  this._segmentation_buffer_context.putImageData(pixel_data, 0, 0);
+  this._image_buffer_context.drawImage(this._segmentation_buffer,0,0,512,512,x*512,y*512,512,512);
 
 };
 
