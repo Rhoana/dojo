@@ -81,7 +81,7 @@ J.viewer.prototype.calc_zoomlevels = function() {
   var zoom_levels = [];
 
   // largest zoom level
-  zoom_levels[0] = [Math.ceil(this._image.width/512), Math.ceil(this._image.height/512)];
+  zoom_levels[0] = [Math.ceil(this._image.width/512), Math.ceil(this._image.height/512), this._image.width/512, this._image.height/512];
 
   var _width = this._image.width/2;
   var _height = this._image.height/2;
@@ -91,7 +91,7 @@ J.viewer.prototype.calc_zoomlevels = function() {
     var level_x_count = Math.ceil(_width / 512);
     var level_y_count = Math.ceil(_height / 512);
 
-    zoom_levels[w] = [level_x_count, level_y_count];
+    zoom_levels[w] = [level_x_count, level_y_count, _width / 512, _height / 512];
 
     _width /= 2;
     _height /= 2;
@@ -148,12 +148,12 @@ J.viewer.prototype.xy2uv = function(x, y) {
   var v = y - this._camera._view[7];
   // console.log(u, this._camera._view[6], x, this._image.zoom_levels[this._camera._zoom_level][0])
   //if (u < 0 || u >= this._camera._view[0] * this._zoom_level*512) {
-  if (u < 0 || u >= this._image.zoom_levels[this._camera._zoom_level][0] *512) {
+  if (u < 0 || u >= this._image.zoom_levels[this._camera._zoom_level][2] *512) {
     u = -1;
   }
 
   //if (v < 0 || v >= this._camera._view[4] * this._zoom_level*512) {
-  if (v < 0 || v >= this._image.zoom_levels[this._camera._zoom_level][1] *512) {
+  if (v < 0 || v >= this._image.zoom_levels[this._camera._zoom_level][3] *512) {
     v = -1;
   }
 

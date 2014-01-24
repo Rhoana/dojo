@@ -73,7 +73,8 @@ J.camera.prototype.zoom = function(x, y, delta) {
   this._loader.load_tiles(x, y, this._z, this._zoom_level, future_zoom_level);
 
   //var old_scale = this._view[0];
-  var old_scale = this._viewer._image.zoom_levels[this._zoom_level][0];//this._zoom_level;
+  var old_scale_w = this._viewer._image.zoom_levels[this._zoom_level][2];//this._zoom_level;
+  var old_scale_h = this._viewer._image.zoom_levels[this._zoom_level][3];
 
   // perform zooming
   //this._view[0] += wheel_sign;
@@ -81,7 +82,8 @@ J.camera.prototype.zoom = function(x, y, delta) {
   this._zoom_level -= wheel_sign;
 
   //var new_scale = this._view[0];
-  var new_scale = this._viewer._image.zoom_levels[this._zoom_level][0];
+  var new_scale_w = this._viewer._image.zoom_levels[this._zoom_level][2];
+  var new_scale_h = this._viewer._image.zoom_levels[this._zoom_level][3];
 
   console.log('ZL', this._zoom_level,this._viewer._image.zoom_levels[this._zoom_level][0])
 
@@ -89,8 +91,8 @@ J.camera.prototype.zoom = function(x, y, delta) {
   // var v_new = u_v[1] * new_scale;
   // if (old_scale != 0) {
 
-    u_new = u_v[0]/old_scale * new_scale;
-    v_new = u_v[1]/old_scale * new_scale;
+    u_new = u_v[0]/old_scale_w * new_scale_w;
+    v_new = u_v[1]/old_scale_h * new_scale_h;
 
   // }
 
