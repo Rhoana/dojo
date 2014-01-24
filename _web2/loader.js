@@ -42,8 +42,12 @@ J.loader.prototype.get_image = function(x, y, z, w, callback) {
       if (this._image_cache[z][w][x]) {
         if (this._image_cache[z][w][x][y]) {
           // we have it cached
-          //console.log('cache hit', z, w, x, y);
-          return this._image_cache[z][w][x][y];
+          // console.log('cache hit', z, w, x, y);
+          var i = this._image_cache[z][w][x][y];
+
+          callback(i);
+
+          return;
         }
       }
     }
@@ -65,7 +69,7 @@ J.loader.prototype.get_image = function(x, y, z, w, callback) {
 
 };
 
-J.loader.prototype.load_tile = function(x, y, z, w, w_new) {
+J.loader.prototype.load_tiles = function(x, y, z, w, w_new) {
 
 
 
@@ -74,6 +78,9 @@ J.loader.prototype.load_tile = function(x, y, z, w, w_new) {
   if (mojo_w_new < 0) {
     return;
   }
+
+  // clear old tiles
+  this._viewer.clear_buffer(this._viewer._image.zoom_levels[w][0]*512, this._viewer._image.zoom_levels[w][1]*512);
 
   //console.log('loading', x, y, z, w, w_new);
 

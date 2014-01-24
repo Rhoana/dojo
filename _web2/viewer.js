@@ -104,9 +104,16 @@ J.viewer.prototype.calc_zoomlevels = function() {
 
 J.viewer.prototype.draw_image = function(x,y,z,w,i) {
 
-  //console.log('Drawing',x,y,z,w, i);
+  // console.log('Drawing',x,y,z,w, i);
 
   this._image_buffer_context.drawImage(i,0,0,512,512,x*512,y*512,512,512);
+
+};
+
+J.viewer.prototype.clear_buffer = function(width, height) {
+
+  console.log('clearing', width, height);
+  this._image_buffer_context.clearRect(0, 0, width, height);
 
 };
 

@@ -70,7 +70,7 @@ J.camera.prototype.zoom = function(x, y, delta) {
 
   // trigger tile loading
   //this._loader.load_tile(x, y, this._z, this._view[0], future_zoom_level);
-  this._loader.load_tile(x, y, this._z, this._zoom_level, future_zoom_level);
+  this._loader.load_tiles(x, y, this._z, this._zoom_level, future_zoom_level);
 
   //var old_scale = this._view[0];
   var old_scale = this._viewer._image.zoom_levels[this._zoom_level][0];//this._zoom_level;
@@ -83,7 +83,7 @@ J.camera.prototype.zoom = function(x, y, delta) {
   //var new_scale = this._view[0];
   var new_scale = this._viewer._image.zoom_levels[this._zoom_level][0];
 
-  console.log('ZL', this._zoom_level)
+  console.log('ZL', this._zoom_level,this._viewer._image.zoom_levels[this._zoom_level][0])
 
   // var u_new = u_v[0] * new_scale;
   // var v_new = u_v[1] * new_scale;
