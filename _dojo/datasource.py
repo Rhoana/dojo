@@ -100,7 +100,8 @@ class Datasource(object):
       content['colormap'] = str(self.__has_colormap).lower()
       content['width'] = self.__info['numVoxelsX']
       content['height'] = self.__info['numVoxelsY']
-      content['max_zoom_level'] = self.__max_mojozoom_level
+      content['zoomlevel_count'] = self.__info['numTilesW']
+
       content = json.dumps(content)
 
     # tilesource info
@@ -123,12 +124,12 @@ class Datasource(object):
 
       zoomlevel = int(request_splitted[-2])
       # re-map zoomlevel
-      zoomlevel = min(self.__max_mojozoom_level, self.__max_deepzoom_level - zoomlevel)
+      #zoomlevel = min(self.__max_mojozoom_level, self.__max_deepzoom_level - zoomlevel)
 
       slice_number = request_splitted[-3]
 
       tile_file = os.path.join(self.__mojo_dir, self.__sub_dir, 'tiles', 'w='+str(zoomlevel).zfill(8), 'z='+slice_number.zfill(8), 'y='+tile_y.zfill(8)+','+'x='+tile_x.zfill(8)+'.'+self.__input_format)
-
+      #print 'Requested', tile_file
       if os.path.exists(tile_file):
 
         content, content_type = self.get_tile(tile_file)
