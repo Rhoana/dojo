@@ -128,7 +128,7 @@ class Datasource(object):
       slice_number = request_splitted[-3]
 
       tile_file = os.path.join(self.__mojo_dir, self.__sub_dir, 'tiles', 'w='+str(zoomlevel).zfill(8), 'z='+slice_number.zfill(8), 'y='+tile_y.zfill(8)+','+'x='+tile_x.zfill(8)+'.'+self.__input_format)
-      print 'Requested', tile_file
+      #print 'Requested', tile_file
       if os.path.exists(tile_file):
 
         content, content_type = self.get_tile(tile_file)

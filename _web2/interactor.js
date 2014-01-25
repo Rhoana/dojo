@@ -28,7 +28,8 @@ J.interactor.prototype.init = function() {
   // mouse wheel
   this._viewer._canvas.onmousewheel = this.onmousewheel.bind(this);
 
-
+  // keyboard
+  window.onkeydown = this.onkeydown.bind(this);
 
 };
 
@@ -80,4 +81,18 @@ J.interactor.prototype.onmousewheel = function(e) {
 
 };
 
+J.interactor.prototype.onkeydown = function(e) {
+  
+  if (!this._viewer._image_buffer_ready) return;
 
+  if (e.keyCode == 81) {
+  
+    this._camera.slice_up();
+
+  } else if (e.keyCode == 65) {
+  
+    this._camera.slice_down();
+
+  }
+
+};

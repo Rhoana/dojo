@@ -5,14 +5,15 @@ J.camera = function(viewer) {
   this._viewer = viewer;
   this._loader = this._viewer._loader;
 
+  this._x = 0;
+  this._y = 0;
   this._z = 0;
+  this._w = 1;
 
   // a c e
   // b d f
   // 0 0 1
   this._view = [1, 0, 0, 0, 1, 0, 0, 0, 1];
-
-  this._zoom_level = 1;
 
 };
 
@@ -49,7 +50,7 @@ J.camera.prototype.reset = function() {
 ///
 
 J.camera.prototype.zoom = function(x, y, delta) {
-  
+
   var u_v = this._viewer.xy2uv(x,y);
 
   //console.log('zoom')
@@ -60,30 +61,37 @@ J.camera.prototype.zoom = function(x, y, delta) {
     return;
   }  
 
+  this._viewer.loading(true);
+
   var wheel_sign = sign(delta/120);
 
   //var future_zoom_level = this._view[0] + wheel_sign;
-  var future_zoom_level = this._zoom_level - wheel_sign;
+  var future_zoom_level = this._w - wheel_sign;
 
   // clamp zooming
-  if (future_zoom_level < 0 || future_zoom_level == this._viewer._image.zoomlevel_count) return;
+  if (future_zoom_level < 0 || future_zoom_level == this._viewer._image.zoomlevel_count) {
+    this._viewer.loading(false);
+    return;
+  }
 
   // trigger tile loading
   //this._loader.load_tile(x, y, this._z, this._view[0], future_zoom_level);
-  this._loader.load_tiles(x, y, this._z, this._zoom_level, future_zoom_level);
+  this._loader.load_tiles(x, y, this._z, this._w, future_zoom_level);
 
   //var old_scale = this._view[0];
-  var old_scale_w = this._viewer._image.zoom_levels[this._zoom_level][2];//this._zoom_level;
-  var old_scale_h = this._viewer._image.zoom_levels[this._zoom_level][3];
+  var old_scale_w = this._viewer._image.zoom_levels[this._w][2];//this._zoom_level;
+  var old_scale_h = this._viewer._image.zoom_levels[this._w][3];
 
   // perform zooming
   //this._view[0] += wheel_sign;
   //this._view[4] += wheel_sign;
-  this._zoom_level -= wheel_sign;
+  this._x = x;
+  this._y = y;
+  this._w -= wheel_sign;
 
   //var new_scale = this._view[0];
-  var new_scale_w = this._viewer._image.zoom_levels[this._zoom_level][2];
-  var new_scale_h = this._viewer._image.zoom_levels[this._zoom_level][3];
+  var new_scale_w = this._viewer._image.zoom_levels[this._w][2];
+  var new_scale_h = this._viewer._image.zoom_levels[this._w][3];
 
   // var u_new = u_v[0] * new_scale;
   // var v_new = u_v[1] * new_scale;
@@ -104,5 +112,23 @@ J.camera.prototype.pan = function(dx, dy) {
 
   this._view[6] += dx;
   this._view[7] += dy;
+
+};
+
+J.camera.prototype.slice_up = function() {
+
+  if (this._z == this._viewer._image.max_z_tiles-1) return;
+
+  this._viewer.loading(true);
+  this._loader.load_tiles(this._x, this._y, ++this._z, this._w, this._w);
+
+};
+
+J.camera.prototype.slice_down = function() {
+
+  if (this._z == 0) return;
+
+  this._viewer.loading(true);
+  this._loader.load_tiles(this._x, this._y, --this._z, this._w, this._w);
 
 };

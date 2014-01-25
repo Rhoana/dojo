@@ -123,6 +123,7 @@ J.loader.prototype.load_tiles = function(x, y, z, w, w_new) {
   var mojo_w_new = w_new;//this._viewer._image.zoomlevel_count - 1 - w_new;
 
   if (mojo_w_new < 0) {
+    this._viewer.loading(false);
     return;
   }
 
@@ -136,6 +137,8 @@ J.loader.prototype.load_tiles = function(x, y, z, w, w_new) {
   var tilescount_x = this._viewer._image.zoom_levels[mojo_w_new][0];
   var tilescount_y = this._viewer._image.zoom_levels[mojo_w_new][1];
 
+  var to_draw = tilescount_x*tilescount_y;
+
   for (var y=0; y<tilescount_y; y++) {
     for (var x=0; x<tilescount_x; x++) {
 
@@ -144,6 +147,11 @@ J.loader.prototype.load_tiles = function(x, y, z, w, w_new) {
         this.get_segmentation(x, y, z, mojo_w_new, function(x, y, z, mojo_w_new, s) {
 
           this._viewer.draw_image(x, y, z, mojo_w_new, i, s);
+          to_draw--;
+
+          if (to_draw == 0) {
+            this._viewer.loading(false);
+          }
 
         }.bind(this, x, y, z, mojo_w_new));
 

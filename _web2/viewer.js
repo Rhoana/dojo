@@ -18,6 +18,7 @@ J.viewer = function(container) {
   this._image_buffer = document.createElement('canvas');
   //_container.appendChild(this._image_buffer);
   this._image_buffer_context = this._image_buffer.getContext('2d');
+  this._image_buffer_ready = false;
 
   this._segmentation_buffer = document.createElement('canvas');
   this._segmentation_buffer.width = 512;
@@ -55,7 +56,7 @@ J.viewer.prototype.init = function() {
     this._image.zoom_levels = this.calc_zoomlevels();
 
     // set to default zoom level (smallest in MOJO notation)
-    this._camera._zoom_level = this._image.zoomlevel_count - 1;
+    this._camera._w = this._image.zoomlevel_count - 1;
 
     this._interactor = new J.interactor(this);
 
@@ -81,6 +82,7 @@ J.viewer.prototype.init = function() {
           this._loader.get_segmentation(x, y, z, w, function(x, y, z, w, s) {
 
             this.draw_image(x, y, z, w, i, s);
+            this._image_buffer_ready = true;
 
           }.bind(this, x, y, z, w)); // load first segmentation
 
@@ -125,10 +127,6 @@ J.viewer.prototype.calc_zoomlevels = function() {
 };
 
 J.viewer.prototype.draw_image = function(x,y,z,w,i,s) {
-
-  // console.log('Drawing', x,y,z,w,i,s, s.length)
-
-  DOJODATA = s;
 
   this._image_buffer_context.drawImage(i,0,0,512,512,x*512,y*512,512,512);
 
@@ -186,14 +184,20 @@ J.viewer.prototype.clear = function() {
 
 };
 
-J.viewer.prototype.render = function() {
+J.viewer.prototype.loading = function(value) {
+  // console.log('loading', value)
+  this._image_buffer_ready = !value;
+};
 
-  this.clear();
+J.viewer.prototype.render = function() {
 
   this._context.setTransform(this._camera._view[0], this._camera._view[1], this._camera._view[3], this._camera._view[4], this._camera._view[6], this._camera._view[7]);
 
-  // put image buffer
-  this._context.drawImage(this._image_buffer, 0, 0);
+  if (this._image_buffer_ready) {
+    this.clear();
+    // put image buffer
+    this._context.drawImage(this._image_buffer, 0, 0);
+  }
 
   this._AnimationFrameID = window.requestAnimationFrame(this.render.bind(this));
 
@@ -205,12 +209,12 @@ J.viewer.prototype.xy2uv = function(x, y) {
   var v = y - this._camera._view[7];
   // console.log(u, this._camera._view[6], x, this._image.zoom_levels[this._camera._zoom_level][0])
   //if (u < 0 || u >= this._camera._view[0] * this._zoom_level*512) {
-  if (u < 0 || u >= this._image.zoom_levels[this._camera._zoom_level][2] *512) {
+  if (u < 0 || u >= this._image.zoom_levels[this._camera._w][2] *512) {
     u = -1;
   }
 
   //if (v < 0 || v >= this._camera._view[4] * this._zoom_level*512) {
-  if (v < 0 || v >= this._image.zoom_levels[this._camera._zoom_level][3] *512) {
+  if (v < 0 || v >= this._image.zoom_levels[this._camera._w][3] *512) {
     v = -1;
   }
 
