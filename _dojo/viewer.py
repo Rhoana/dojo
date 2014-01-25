@@ -9,7 +9,7 @@ class Viewer(object):
     '''
     self.__query_viewer_regex = re.compile('^/dojo/.*$')
 
-    self.__web_dir = '_web2/'
+    self.__web_dir = '_web/'
 
   def content_type(self, extension):
     '''
