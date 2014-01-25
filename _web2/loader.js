@@ -101,16 +101,16 @@ J.loader.prototype.get_segmentation = function(x, y, z, w, callback) {
 
     // uncompress
     var compressed = new Zlib.Inflate(new Uint8Array(s.response));
-    s = compressed.decompress();
+    var raw_s = compressed.decompress();
 
     // cache this image
     this._segmentation_cache[z] = this._segmentation_cache[z] ? this._segmentation_cache[z] : [];
     this._segmentation_cache[z][w] = this._segmentation_cache[z][w] ? this._segmentation_cache[z][w] : [];
     this._segmentation_cache[z][w][x] = this._segmentation_cache[z][w][x] ? this._segmentation_cache[z][w][x] : [];
-    this._segmentation_cache[z][w][x][y] = s;
+    this._segmentation_cache[z][w][x][y] = raw_s;
 
     // call real callback
-    callback(s);
+    callback(raw_s);
 
   });
 

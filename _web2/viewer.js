@@ -20,6 +20,8 @@ J.viewer = function(container) {
   this._image_buffer_context = this._image_buffer.getContext('2d');
 
   this._segmentation_buffer = document.createElement('canvas');
+  this._segmentation_buffer.width = 512;
+  this._segmentation_buffer.height = 512;
   this._segmentation_buffer_context = this._segmentation_buffer.getContext('2d');
   this._pixel_data_buffer = this._segmentation_buffer_context.createImageData(512, 512);
 
@@ -124,7 +126,9 @@ J.viewer.prototype.calc_zoomlevels = function() {
 
 J.viewer.prototype.draw_image = function(x,y,z,w,i,s) {
 
-  console.log('Drawing', x,y,z,w,i,s, s.length)
+  // console.log('Drawing', x,y,z,w,i,s, s.length)
+
+  DOJODATA = s;
 
   this._image_buffer_context.drawImage(i,0,0,512,512,x*512,y*512,512,512);
 
@@ -148,9 +152,9 @@ J.viewer.prototype.draw_image = function(x,y,z,w,i,s) {
 
     var color = colormap[id % max_colors];
 
-    if (color[0] == 0) {
-      console.log(color, id, segmentation_data[p], p);
-    }
+    // if (color[0] == 0) {
+    //   console.log(color, id, segmentation_data[p], p);
+    // }
 
     pixel_data_data[pos++] = color[0];
     pixel_data_data[pos++] = color[1];
@@ -166,7 +170,6 @@ J.viewer.prototype.draw_image = function(x,y,z,w,i,s) {
 
 J.viewer.prototype.clear_buffer = function(width, height) {
 
-  console.log('clearing', width, height);
   this._image_buffer_context.clearRect(0, 0, width, height);
 
 };
