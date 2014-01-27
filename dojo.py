@@ -8,8 +8,10 @@ import json
 import os
 import socket
 import sys
+import threading
 
 from gevent import http
+from gevent import monkey
 
 import _dojo
 
@@ -23,6 +25,8 @@ class ServerLogic:
   def run( self, mojo_dir ):
     '''
     '''
+
+    monkey.patch_thread()
 
     # register two data sources
     self.__segmentation = _dojo.Segmentation(mojo_dir)
@@ -43,8 +47,11 @@ class ServerLogic:
     print '*'
     print '*', 'open', '\033[92m'+'http://' + ip + ':' + str(port) + '/dojo/' + '\033[0m'
     print '*'*80
-    http.HTTPServer(('0.0.0.0', port), self.handle).start()
-
+    http_server = http.HTTPServer(('0.0.0.0', port), self.handle)
+    t = threading.Thread(target=http_server.serve_forever)
+    t.setDaemon(True)
+    t.start()
+    print 'aaa'
 
 
   def handle( self, request ):
