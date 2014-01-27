@@ -31,6 +31,9 @@ class ServerLogic:
     # and the viewer
     self.__viewer = _dojo.Viewer()
 
+    # websockets
+    self.__websockets = _dojo.Websockets()
+
     port = 1337
     ip = socket.gethostbyname(socket.gethostname())
 
@@ -40,13 +43,20 @@ class ServerLogic:
     print '*'
     print '*', 'open', '\033[92m'+'http://' + ip + ':' + str(port) + '/dojo/' + '\033[0m'
     print '*'*80
-    http.HTTPServer(('0.0.0.0', port), self.handle).serve_forever()
+    http.HTTPServer(('0.0.0.0', port), self.handle).start()
+
+
 
   def handle( self, request ):
     '''
     '''
 
     content = None
+
+    if request.find_input_header('upgrade'):
+      # special case for websockets
+      self.__websockets.handle(request)
+      return
 
     # the access to the viewer
     content, content_type = self.__viewer.handle(request)
@@ -57,6 +67,7 @@ class ServerLogic:
 
     if not content:
       content, content_type = self.__image.handle(request)
+
 
     # invalid request
     if not content:
