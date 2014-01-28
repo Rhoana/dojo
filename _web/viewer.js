@@ -253,11 +253,11 @@ J.viewer.prototype.ij2xy = function(i, j) {
 
 J.viewer.prototype.get_segmentation_id = function(i, j, callback) {
 
-  var x = Math.floor((i / (this._image.zoom_levels[0][2] * 512)) * this._image.zoomlevel_count);
-  var y = Math.floor((j / (this._image.zoom_levels[0][3] * 512)) * this._image.zoomlevel_count);
+  var x = Math.floor(i / 512);
+  var y = Math.floor(j / 512);
   var z = this._camera._z;
   var w = 0;
-
+  
   this._loader.get_segmentation(x, y, z, w, function(s) {
 
     var pixel_data = new Uint32Array(s.buffer);
