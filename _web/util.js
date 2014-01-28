@@ -17,7 +17,7 @@ function connect(){
     try{  
   
     var socket;  
-    var host = "ws://monster.krash.net:1337/dojo/";  
+    var host = "ws://"+window.location.hostname+":31337/";  
     var socket = new WebSocket(host);  
   
         console.log('<p class="event">Socket Status: '+socket.readyState);  
