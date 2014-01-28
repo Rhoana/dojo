@@ -38,3 +38,8 @@ function connect(){
          console.log('<p>Error'+exception);  
     }  
 }  
+
+// from http://stackoverflow.com/a/5624139/1183453
+function rgbToHex(r, g, b) {
+  return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+}

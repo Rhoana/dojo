@@ -45,6 +45,9 @@ J.interactor.prototype.onmousemove = function(e) {
   } else if (this._right_down) {
     // pan
     this._camera.pan(x-this._last_mouse[0], y-this._last_mouse[1]);    
+  } else {
+    // show current label
+    DOJO.update_label(x, y);
   }
 
   this._last_mouse = [x, y];

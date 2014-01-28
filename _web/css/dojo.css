@@ -28,8 +28,16 @@ body {
 
 #slicenumber {
   font-weight: bold;
+  float: left;
+}
+
+#label {
+  margin-left: 25px;
+  font-weight: bold;
+  white-space: nowrap;
 }
 
 .tool {
   cursor: pointer;
 }
+

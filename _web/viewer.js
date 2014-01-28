@@ -148,7 +148,7 @@ J.viewer.prototype.draw_image = function(x,y,z,w,i,s) {
       //id = id % max_colors;
     //}
 
-    var color = colormap[id % max_colors];
+    var color = this.get_color(id);//colormap[id % max_colors];
 
     // if (color[0] == 0) {
     //   console.log(color, id, segmentation_data[p], p);
@@ -163,6 +163,12 @@ J.viewer.prototype.draw_image = function(x,y,z,w,i,s) {
 
   this._segmentation_buffer_context.putImageData(pixel_data, 0, 0);
   this._image_buffer_context.drawImage(this._segmentation_buffer,0,0,512,512,x*512,y*512,512,512);
+
+};
+
+J.viewer.prototype.get_color = function(id) {
+
+  return this._colormap[id % this._max_colors];
 
 };
 
@@ -255,6 +261,8 @@ J.viewer.prototype.get_segmentation_id = function(i, j, callback) {
   this._loader.get_segmentation(x, y, z, w, function(s) {
 
     var pixel_data = new Uint32Array(s.buffer);
+
+    // TODO have to incorporate merge table
 
     callback(pixel_data[(j % 512) * 512 + (i % 512)]);
 

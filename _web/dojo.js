@@ -64,3 +64,25 @@ DOJO.update_slice_number = function(n) {
   slicenumber.innerHTML = n+'/'+DOJO.viewer._image.max_z_tiles;
 
 };
+
+DOJO.update_label = function(x, y) {
+
+  var i_j = DOJO.viewer.xy2ij(x,y);
+
+  var label = document.getElementById('label');
+
+  if (i_j[0] == -1) {
+    label.innerHTML = 'Label n/a';
+    return;
+  }
+
+  DOJO.viewer.get_segmentation_id(i_j[0], i_j[1], function(id) {
+
+    var color = DOJO.viewer.get_color(id);
+    var color_hex = rgbToHex(color[0], color[1], color[2]);
+
+    label.innerHTML = 'Label <font color="' + color_hex + '">' + id + '</font>';
+
+  });
+
+};
