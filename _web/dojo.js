@@ -11,6 +11,11 @@ DOJO.modes = {
 DOJO.init = function() {
 
   DOJO.viewer = new J.viewer('dojo1');
+  DOJO.viewer.init(function() {
+
+    DOJO.update_slice_number(1);
+
+  });
 
   DOJO.setup_buttons();
 
@@ -51,3 +56,9 @@ DOJO.onleftclick = function(x, y) {
 
 };
 
+DOJO.update_slice_number = function(n) {
+
+  var slicenumber = document.getElementById('slicenumber');
+  slicenumber.innerHTML = n+'/'+DOJO.viewer._image.max_z_tiles;
+
+};

@@ -122,6 +122,8 @@ J.camera.prototype.slice_up = function() {
   this._viewer.loading(true);
   this._loader.load_tiles(this._x, this._y, ++this._z, this._w, this._w);
 
+  DOJO.update_slice_number(this._z+1);
+
 };
 
 J.camera.prototype.slice_down = function() {
@@ -130,5 +132,7 @@ J.camera.prototype.slice_down = function() {
 
   this._viewer.loading(true);
   this._loader.load_tiles(this._x, this._y, --this._z, this._w, this._w);
+
+  DOJO.update_slice_number(this._z+1);
 
 };

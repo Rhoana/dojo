@@ -36,11 +36,9 @@ J.viewer = function(container) {
   this._loader = new J.loader(this);
   this._camera = new J.camera(this);
 
-  this.init();
-
 };
 
-J.viewer.prototype.init = function() {
+J.viewer.prototype.init = function(callback) {
 
   // get contents
   this._loader.load_json('/image/contents', function(res) {
@@ -89,6 +87,8 @@ J.viewer.prototype.init = function() {
           this._camera.reset();
 
           this.render();
+
+          callback();
 
         }.bind(this)); // load first image
 
