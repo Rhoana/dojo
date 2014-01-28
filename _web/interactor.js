@@ -41,7 +41,7 @@ J.interactor.prototype.onmousemove = function(e) {
   var u_v = this._viewer.xy2uv(x, y);
 
   if (this._left_down) {
-    
+
   } else if (this._right_down) {
     // pan
     this._camera.pan(x-this._last_mouse[0], y-this._last_mouse[1]);    
@@ -53,9 +53,15 @@ J.interactor.prototype.onmousemove = function(e) {
 
 J.interactor.prototype.onmousedown = function(e) {
 
+  var x = e.clientX;
+  var y = e.clientY;
+
   if (e.button == 0) {
     // left
     this._left_down = true;
+
+    DOJO.onleftclick(x, y);
+
   } else if (e.button == 2) {
     // right
     this._right_down = true;

@@ -222,6 +222,7 @@ J.viewer.prototype.xy2uv = function(x, y) {
 
 };
 
+// returns the pixel coordinates looking at the largest image
 J.viewer.prototype.xy2ij = function(x, y) {
 
   var u_v = this.xy2uv(x, y);
@@ -230,15 +231,33 @@ J.viewer.prototype.xy2ij = function(x, y) {
     return [-1, -1];
   }
 
-  return [(u_v[0]/(this._camera._view[0])), (u_v[1]/(this._camera._view[4]))];
+  return [(u_v[0]/this._image.zoom_levels[this._camera._w][2])*this._image.zoom_levels[0][2], 
+          (u_v[1]/this._image.zoom_levels[this._camera._w][3])*this._image.zoom_levels[0][3]];
 
 };
 
 J.viewer.prototype.ij2xy = function(i, j) {
 
-  var x = this._camera._view[6] + (i * this._camera._view[0]);
-  var y = this._camera._view[7] + (j * this._camera._view[4]);
+  var x = this._camera._view[6] + (i * this._image.zoom_levels[this._camera._w][2]);
+  var y = this._camera._view[7] + (j * this._image.zoom_levels[this._camera._w][3]);
 
   return [x, y];
+
+};
+
+J.viewer.prototype.get_segmentation_id = function(i, j, callback) {
+
+  var x = Math.round(i / (this._image.zoom_levels[0][2] * 512));
+  var y = Math.round(j / (this._image.zoom_levels[0][3] * 512));
+  var z = this._camera._z;
+  var w = 0;
+
+  this._loader.get_segmentation(x, y, z, w, function(s) {
+
+    var pixel_data = new Uint32Array(s.buffer);
+
+    callback(pixel_data[(i - (x*512)) + ((j - (y*512))*512)]);
+
+  }.bind(this));
 
 };

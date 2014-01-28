@@ -39,3 +39,15 @@ DOJO.setup_buttons = function() {
   };
 
 };
+
+DOJO.onleftclick = function(x, y) {
+
+  // get pixel coordinates
+  var i_j = DOJO.viewer.xy2ij(x,y);
+  
+  DOJO.viewer.get_segmentation_id(i_j[0], i_j[1], function(id) {
+    console.log(i_j, id);
+  });
+
+};
+
