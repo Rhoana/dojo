@@ -18,7 +18,8 @@ class Viewer(object):
       '.js': 'text/javascript',
       '.html': 'text/html',
       '.png': 'image/png',
-      '.map': 'text/html'
+      '.map': 'text/html',
+      '.css': 'text/css'
     }[extension]
 
   def handle(self, request):
