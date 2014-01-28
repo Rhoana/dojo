@@ -49,6 +49,8 @@ DOJO.onleftclick = function(x, y) {
 
   // get pixel coordinates
   var i_j = DOJO.viewer.xy2ij(x,y);
+
+  if (i_j[0] == -1) return;
   
   DOJO.viewer.get_segmentation_id(i_j[0], i_j[1], function(id) {
     console.log(i_j, id);
