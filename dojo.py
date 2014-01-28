@@ -8,8 +8,13 @@ import json
 import os
 import socket
 import sys
+import threading
 
 from gevent import http
+from gevent import monkey
+
+import multiprocessing
+from multiprocessing import Process
 
 import _dojo
 
@@ -24,6 +29,8 @@ class ServerLogic:
     '''
     '''
 
+    #monkey.patch_thread()
+
     # register two data sources
     self.__segmentation = _dojo.Segmentation(mojo_dir)
     self.__image = _dojo.Image(mojo_dir)
@@ -32,6 +39,7 @@ class ServerLogic:
     self.__viewer = _dojo.Viewer()
 
     port = 1337
+    port_websocket = 31337
     ip = socket.gethostbyname(socket.gethostname())
 
 
@@ -40,13 +48,29 @@ class ServerLogic:
     print '*'
     print '*', 'open', '\033[92m'+'http://' + ip + ':' + str(port) + '/dojo/' + '\033[0m'
     print '*'*80
-    http.HTTPServer(('0.0.0.0', port), self.handle).serve_forever()
+
+    # start the http server as the main thread
+    http_server = http.HTTPServer(('0.0.0.0', port), self.handle)
+    
+    # start the websocket server as a separate process
+    websocket_server = _dojo.websockets.WSServer(('0.0.0.0', port_websocket), _dojo.websockets.Handler)
+    websocket_server_process = Process( target = websocket_server.serve_forever)
+    websocket_server_process.start()
+    
+    # start serving HTTP
+    http_server.serve_forever()
+
 
   def handle( self, request ):
     '''
     '''
-
+    
     content = None
+
+    if request.find_input_header('upgrade'):
+      # special case for websockets
+      self.__websockets.handle(request)
+      return
 
     # the access to the viewer
     content, content_type = self.__viewer.handle(request)
@@ -57,6 +81,7 @@ class ServerLogic:
 
     if not content:
       content, content_type = self.__image.handle(request)
+
 
     # invalid request
     if not content:

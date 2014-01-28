@@ -12,3 +12,29 @@ function pad(i,n) {
 function sign (x) {
   return typeof x === 'number' ? x ? x < 0 ? -1 : 1 : x === x ? 0 : NaN : NaN;
 }
+
+function connect(){  
+    try{  
+  
+    var socket;  
+    var host = "ws://"+window.location.hostname+":31337/";  
+    var socket = new WebSocket(host);  
+  
+        console.log('<p class="event">Socket Status: '+socket.readyState);  
+  
+        socket.onopen = function(){  
+             console.log('<p class="event">Socket Status: '+socket.readyState+' (open)');  
+        }  
+  
+        socket.onmessage = function(msg){  
+             console.log('<p class="message">Received: '+msg.data);  
+        }  
+  
+        socket.onclose = function(){  
+             console.log('<p class="event">Socket Status: '+socket.readyState+' (Closed)');  
+        }             
+  
+    } catch(exception){  
+         console.log('<p>Error'+exception);  
+    }  
+}  

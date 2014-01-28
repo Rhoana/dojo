@@ -28,6 +28,7 @@ class Segmentation(Datasource):
     list_of_names = []
     hdf5_file.visit(list_of_names.append)
     image_data = hdf5_file[list_of_names[0]].value
+    hdf5_file.close()
 
     c_image_data = zlib.compress(image_data)
 
