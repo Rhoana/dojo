@@ -1,0 +1,23 @@
+body {
+  margin:0px;
+  overflow:hidden;
+  font-family: sans-serif;
+}
+
+.viewer {
+  width:100%;
+  height:100%;
+  background-color:black;
+}
+
+.toolbar {
+  width:200px;
+  height:200px;
+  position:absolute;
+  top:10px;
+  left:10px;
+}
+
+.tool {
+  cursor: pointer;
+}
