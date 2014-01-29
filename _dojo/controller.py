@@ -45,3 +45,7 @@ class Controller(object):
       self.__merge_table = input['value']
 
       self.send_merge_table(input['origin'])
+
+    elif input['name'] == 'LOG':
+      # just echo it
+      self.__websocket.send_message(json.dumps(input))

@@ -187,6 +187,12 @@ J.viewer.prototype.get_color = function(id) {
 
 };
 
+J.viewer.prototype.get_color_before_merge = function(id) {
+
+  return this._colormap[id % this._max_colors];
+
+};
+
 J.viewer.prototype.clear_buffer = function(width, height) {
 
   this._image_buffer_context.clearRect(0, 0, width, height);

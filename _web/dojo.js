@@ -120,3 +120,14 @@ DOJO.update_label = function(x, y) {
   });
 
 };
+
+DOJO.update_log = function(message) {
+
+  var log = document.getElementById('log');
+
+  // add timestamp
+  message = timestamp() + ' ' + message;
+
+  log.innerHTML = message + '<br>' + log.innerHTML;
+
+};
