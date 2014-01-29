@@ -83,6 +83,8 @@ DOJO.onleftclick = function(x, y) {
 
     if (DOJO.mode == DOJO.modes.threeD) {
       threeD_window = window.open("3d/?id=" + id,"","location=no,width=800,height=600");
+    } else if (DOJO.mode == DOJO.modes.merge) {
+      DOJO.viewer._controller.merge(id);
     }
     
 

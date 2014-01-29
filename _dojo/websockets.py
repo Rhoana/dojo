@@ -1,3 +1,5 @@
+from controller import Controller
+
 import struct
 import SocketServer
 from base64 import b64encode
@@ -7,6 +9,7 @@ from StringIO import StringIO
 
 class Handler(SocketServer.StreamRequestHandler):
   magic = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
+  controller = Controller()
 
   def setup(self):
     SocketServer.StreamRequestHandler.setup(self)
@@ -38,10 +41,10 @@ class Handler(SocketServer.StreamRequestHandler):
     if length <= 125:
       self.request.send(chr(length))
     elif length >= 126 and length <= 65535:
-      self.request.send(126)
+      self.request.send(chr(126))
       self.request.send(struct.pack(">H", length))
     else:
-      self.request.send(127)
+      self.request.send(chr(127))
       self.request.send(struct.pack(">Q", length))
     self.request.send(message)
 
@@ -59,8 +62,10 @@ class Handler(SocketServer.StreamRequestHandler):
     response += 'Sec-WebSocket-Accept: %s\r\n\r\n' % digest
     self.handshake_done = self.request.send(response)
 
+    self.controller.handshake(self)
+
   def on_message(self, message):
-    print message
+    self.controller.on_message(message)
 
 
 class WSServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):

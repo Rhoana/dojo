@@ -35,6 +35,8 @@ J.viewer = function(container) {
 
   this._loader = new J.loader(this);
   this._camera = new J.camera(this);
+  this._websocket = new J.websocket(this);
+  this._controller = new J.controller(this);
 
 };
 
