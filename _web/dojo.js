@@ -5,7 +5,8 @@ var DOJO = DOJO || {};
 DOJO.mode = null;
 DOJO.modes = {
   pan_zoom:0, 
-  merge:1
+  merge:1,
+  threeD:2
 };
 
 DOJO.init = function() {
@@ -27,6 +28,8 @@ DOJO.setup_buttons = function() {
 
   merge.onclick = function() {
 
+    threed.style.border = '';
+
     if (DOJO.mode != DOJO.modes.merge) {
 
       merge.style.border = '1px solid white';
@@ -36,6 +39,28 @@ DOJO.setup_buttons = function() {
     } else {
 
       merge.style.border = '';
+
+      DOJO.mode = DOJO.modes.pan_zoom;
+
+    }
+
+  };
+
+  var threed = document.getElementById('3d');
+
+  threed.onclick = function() {
+
+    merge.style.border = '';
+
+    if (DOJO.mode != DOJO.modes.threeD) {
+
+      threed.style.border = '1px solid white';
+
+      DOJO.mode = DOJO.modes.threeD;
+
+    } else {
+
+      threed.style.border = '';
 
       DOJO.mode = DOJO.modes.pan_zoom;
 
@@ -53,7 +78,14 @@ DOJO.onleftclick = function(x, y) {
   if (i_j[0] == -1) return;
   
   DOJO.viewer.get_segmentation_id(i_j[0], i_j[1], function(id) {
-    console.log(i_j, id);
+    
+    // now we have the segmentation id
+
+    if (DOJO.mode == DOJO.modes.threeD) {
+      threeD_window = window.open("3d/?id=" + id,"","location=no,width=800,height=600");
+    }
+    
+
   });
 
 };
