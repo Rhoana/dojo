@@ -1,72 +1,42 @@
 from controller import Controller
 
-import struct
-import SocketServer
-from base64 import b64encode
-from hashlib import sha1
-from mimetools import Message
-from StringIO import StringIO
+from SimpleWebSocketServer import WebSocket, SimpleWebSocketServer
 
-class Handler(SocketServer.StreamRequestHandler):
-  magic = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
+class WebSocketHandler(WebSocket):
+
   controller = Controller()
 
-  def setup(self):
-    SocketServer.StreamRequestHandler.setup(self)
-    print "connection established", self.client_address
-    self.handshake_done = False
+  def handleMessage(self):
+    if self.data is None:
+        self.data = ''
 
-  def handle(self):
-    while True:
-      if not self.handshake_done:
-        self.handshake()
+    print 'received', self.data
+
+    self.controller.on_message(str(self.data))
+
+  def handleConnected(self):
+    print self.address, 'connected' 
+    for client in self.server.connections.itervalues():
+      if client != self:
+        
+        try:
+          client.sendMessage(str('aaaa'))  
+        except Exception as e:
+          print e    #self.controller.handshake(self)
       else:
-        self.read_next_message()
+        print 'self'
 
-  def read_next_message(self):
-    length = ord(self.rfile.read(2)[1]) & 127
-    if length == 126:
-        length = struct.unpack(">H", self.rfile.read(2))[0]
-    elif length == 127:
-        length = struct.unpack(">Q", self.rfile.read(8))[0]
-    masks = [ord(byte) for byte in self.rfile.read(4)]
-    decoded = ""
-    for char in self.rfile.read(length):
-        decoded += chr(ord(char) ^ masks[len(decoded) % 4])
-    self.on_message(decoded)
+  def handleClose(self):
+    for client in self.server.connections.itervalues():
+      if client != self:
+        print client, 'closed'
 
-  def send_message(self, message):
-    self.request.send(chr(129))
-    length = len(message)
-    if length <= 125:
-      self.request.send(chr(length))
-    elif length >= 126 and length <= 65535:
-      self.request.send(chr(126))
-      self.request.send(struct.pack(">H", length))
-    else:
-      self.request.send(chr(127))
-      self.request.send(struct.pack(">Q", length))
-    self.request.send(message)
+  def send(self, message):
+    print 'sending', message
+    for client in self.server.connections.itervalues():
+      if client != self:
+        try:
+          client.sendMessage(str(message))  
+        except Exception as e:
+          print e
 
-  def handshake(self):
-    data = self.request.recv(1024).strip()
-    headers = Message(StringIO(data.split('\r\n', 1)[1]))
-    if headers.get("Upgrade", None) != "websocket":
-        return
-    print 'Handshaking...'
-    key = headers['Sec-WebSocket-Key']
-    digest = b64encode(sha1(key + self.magic).hexdigest().decode('hex'))
-    response = 'HTTP/1.1 101 Switching Protocols\r\n'
-    response += 'Upgrade: websocket\r\n'
-    response += 'Connection: Upgrade\r\n'
-    response += 'Sec-WebSocket-Accept: %s\r\n\r\n' % digest
-    self.handshake_done = self.request.send(response)
-
-    self.controller.handshake(self)
-
-  def on_message(self, message):
-    self.controller.on_message(message)
-
-
-class WSServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
-  allow_reuse_address = True
