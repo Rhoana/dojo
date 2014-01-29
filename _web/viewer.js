@@ -128,6 +128,15 @@ J.viewer.prototype.calc_zoomlevels = function() {
 
 };
 
+J.viewer.prototype.redraw = function() {
+
+  // trigger re-draw
+  this.loading(true);
+
+  this._loader.load_tiles(this._camera._x, this._camera._y, this._camera._z, this._camera._w, this._camera._w);
+
+};
+
 J.viewer.prototype.draw_image = function(x,y,z,w,i,s) {
 
   this._image_buffer_context.drawImage(i,0,0,512,512,x*512,y*512,512,512);
@@ -169,6 +178,10 @@ J.viewer.prototype.draw_image = function(x,y,z,w,i,s) {
 };
 
 J.viewer.prototype.get_color = function(id) {
+
+  if (id in this._controller._merge_table) {
+    return this._colormap[this._controller._merge_table[id] % this._max_colors];
+  }
 
   return this._colormap[id % this._max_colors];
 

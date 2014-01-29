@@ -53,6 +53,8 @@ J.controller.prototype.update_merge_table = function(data) {
 
   this._merge_table = data;
 
+  this._viewer.redraw();
+
 };
 
 J.controller.prototype.send_merge_table = function() {
@@ -80,6 +82,8 @@ J.controller.prototype.merge = function(id) {
   }
 
   this._merge_table[id].push(this._last_id);
+
+  this._viewer.redraw();
 
   this.send_merge_table();
 
