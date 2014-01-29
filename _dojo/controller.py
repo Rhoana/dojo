@@ -31,6 +31,8 @@ class Controller(object):
     output['origin'] = origin
     output['value'] = self.get_merge_table()
 
+    print 'sending', output
+
     self.__websocket.send_message(json.dumps(output))
 
   def on_message(self, message):
