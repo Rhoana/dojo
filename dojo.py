@@ -8,15 +8,24 @@ import json
 import os
 import socket
 import sys
-import threading
 
-from gevent import http
-from gevent import monkey
-
-import multiprocessing
-from multiprocessing import Process
+from tornado import websocket, web, ioloop
 
 import _dojo
+
+class IndexHandler(web.RequestHandler):
+  def get(self):
+    self.render("index.html")
+
+class SocketHandler(websocket.WebSocketHandler):
+
+  def open(self):
+    if self not in cl:
+      cl.append(self)
+
+  def on_close(self):
+    if self in cl:
+      cl.remove(self)
 
 class ServerLogic:
 
@@ -49,16 +58,32 @@ class ServerLogic:
     print '*', 'open', '\033[92m'+'http://' + ip + ':' + str(port) + '/dojo/' + '\033[0m'
     print '*'*80
 
-    # start the http server as the main thread
-    http_server = http.HTTPServer(('0.0.0.0', port), self.handle)
+    app = web.Application([
+      # viewer
+      (r'/', web.RedirectHandler, {'url':'/dojo/'}),
+      (r'/dojo', web.RedirectHandler, {'url':'/dojo/'}),
+      (r'/dojo/(.*)', web.StaticFileHandler, {'path': './_web'}),
+
+      # image
+      (r'/image/', web.RequestHandler, )
+
+      (r'/ws', SocketHandler)
+    ])
+
+    app.listen(port)
+    ioloop.IOLoop.instance().start()
+
+
+    # # start the http server as the main thread
+    # http_server = http.HTTPServer(('0.0.0.0', port), self.handle)
     
-    # start the websocket server as a separate process
-    websocket_server = _dojo.websockets.WSServer(('0.0.0.0', port_websocket), _dojo.websockets.Handler)
-    websocket_server_process = Process( target = websocket_server.serve_forever)
-    websocket_server_process.start()
+    # # start the websocket server as a separate process
+    # websocket_server = _dojo.websockets.WSServer(('0.0.0.0', port_websocket), _dojo.websockets.Handler)
+    # websocket_server_process = Process( target = websocket_server.serve_forever)
+    # websocket_server_process.start()
     
-    # start serving HTTP
-    http_server.serve_forever()
+    # # start serving HTTP
+    # http_server.serve_forever()
 
 
   def handle( self, request ):
