@@ -21,7 +21,9 @@ class Handler(SocketServer.StreamRequestHandler):
       if not self.handshake_done:
         self.handshake()
       else:
+        print self.client_address
         self.read_next_message()
+        print 'done'
 
   def read_next_message(self):
     length = ord(self.rfile.read(2)[1]) & 127

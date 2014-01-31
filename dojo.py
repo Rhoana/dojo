@@ -55,6 +55,7 @@ class ServerLogic:
     # start the websocket server as a separate process
     websocket_server = _dojo.websockets.WSServer(('0.0.0.0', port_websocket), _dojo.websockets.Handler)
     websocket_server_process = Process( target = websocket_server.serve_forever)
+    websocket_server_process.daemon = True
     websocket_server_process.start()
     
     # start serving HTTP
