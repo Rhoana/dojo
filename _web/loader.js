@@ -133,7 +133,6 @@ J.loader.prototype.load_tiles = function(x, y, z, w, w_new) {
   //console.log('loading', x, y, z, w, w_new);
 
   // todo check which sub-tiles to load
-
   var tilescount_x = this._viewer._image.zoom_levels[mojo_w_new][0];
   var tilescount_y = this._viewer._image.zoom_levels[mojo_w_new][1];
 

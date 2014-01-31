@@ -27,6 +27,8 @@ J.interactor.prototype.init = function() {
 
   // mouse wheel
   this._viewer._canvas.onmousewheel = this.onmousewheel.bind(this);
+  // for firefox
+  this._viewer._canvas.addEventListener('DOMMouseScroll', this.onmousewheel.bind(this), false);
 
   // keyboard
   window.onkeydown = this.onkeydown.bind(this);
@@ -86,7 +88,9 @@ if (e.button == 0) {
 
 J.interactor.prototype.onmousewheel = function(e) {
 
-  this._camera.zoom(e.clientX, e.clientY, e.wheelDelta);
+  var delta = e.wheelDelta || -e.detail;
+
+  this._camera.zoom(e.clientX, e.clientY, delta);
 
 };
 
