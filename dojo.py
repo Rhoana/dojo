@@ -65,7 +65,7 @@ class ServerLogic:
       (r'/dojo/(.*)', web.StaticFileHandler, {'path': './_web'}),
 
       # image
-      (r'/image/', web.RequestHandler, )
+      #(r'/image/', web.RequestHandler, )
 
       (r'/ws', SocketHandler)
     ])
