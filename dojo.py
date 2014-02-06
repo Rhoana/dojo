@@ -8,16 +8,15 @@ import json
 import os
 import socket
 import sys
-
-from tornado import websocket, web, ioloop
+import tornado
+import tornado.websocket
 
 import _dojo
 
-class IndexHandler(web.RequestHandler):
-  def get(self):
-    self.render("index.html")
-
-class SocketHandler(websocket.WebSocketHandler):
+#
+# websocket handler
+#
+class SocketHandler(tornado.websocket.WebSocketHandler):
 
   def open(self):
     if self not in cl:
@@ -26,6 +25,23 @@ class SocketHandler(websocket.WebSocketHandler):
   def on_close(self):
     if self in cl:
       cl.remove(self)
+
+#
+# default handler
+#
+class DojoHandler(tornado.web.RequestHandler):
+
+  def initialize(self, logic):
+    self.__logic = logic
+
+  def get(self, uri):
+    '''
+    '''
+    self.__logic.handle(self)
+
+
+
+
 
 class ServerLogic:
 
@@ -58,54 +74,43 @@ class ServerLogic:
     print '*', 'open', '\033[92m'+'http://' + ip + ':' + str(port) + '/dojo/' + '\033[0m'
     print '*'*80
 
-    app = web.Application([
+    dojo = tornado.web.Application([
       # viewer
-      (r'/', web.RedirectHandler, {'url':'/dojo/'}),
-      (r'/dojo', web.RedirectHandler, {'url':'/dojo/'}),
-      (r'/dojo/(.*)', web.StaticFileHandler, {'path': './_web'}),
+      # (r'/', web.RedirectHandler, {'url':'/dojo/'}),
+      # (r'/dojo', web.RedirectHandler, {'url':'/dojo/'}),
+      # (r'/dojo/(.*)', web.StaticFileHandler, {'path': './_web'}),
 
-      # image
-      #(r'/image/', web.RequestHandler, )
+      # # image
+      # (r'/image/(.*)', _dojo.Image(mojo_dir)),
 
-      (r'/ws', SocketHandler)
+      (r'/(.*)', DojoHandler, dict(logic=self))
+      # (r'/ws', SocketHandler)
     ])
 
-    app.listen(port)
-    ioloop.IOLoop.instance().start()
+    dojo.listen(port)
+    tornado.ioloop.IOLoop.instance().start()
 
 
-    # # start the http server as the main thread
-    # http_server = http.HTTPServer(('0.0.0.0', port), self.handle)
-    
-    # # start the websocket server as a separate process
-    # websocket_server = _dojo.websockets.WSServer(('0.0.0.0', port_websocket), _dojo.websockets.Handler)
-    # websocket_server_process = Process( target = websocket_server.serve_forever)
-    # websocket_server_process.start()
-    
-    # # start serving HTTP
-    # http_server.serve_forever()
-
-
-  def handle( self, request ):
+  def handle( self, r ):
     '''
     '''
     
     content = None
 
-    if request.find_input_header('upgrade'):
-      # special case for websockets
-      self.__websockets.handle(request)
-      return
+    # if request.find_input_header('upgrade'):
+    #   # special case for websockets
+    #   self.__websockets.handle(request)
+    #   return
 
     # the access to the viewer
-    content, content_type = self.__viewer.handle(request)
+    content, content_type = self.__viewer.handle(r.request)
 
     # let the data sources handle the request
     if not content:
-      content, content_type = self.__segmentation.handle(request)
+      content, content_type = self.__segmentation.handle(r.request)
 
     if not content:
-      content, content_type = self.__image.handle(request)
+      content, content_type = self.__image.handle(r.request)
 
 
     # invalid request
@@ -113,10 +118,10 @@ class ServerLogic:
       content = 'Error 404'
       content_type = 'text/html'
 
-    request.add_output_header('Access-Control-Allow-Origin', '*')
-    request.add_output_header('Content-Type', content_type)
-
-    request.send_reply(200, "OK", content)
+    r.set_header('Access-Control-Allow-Origin', '*')
+    r.set_header('Content-Type', content_type)
+    r.write(content)
+    
 
 def print_help( scriptName ):
   '''
