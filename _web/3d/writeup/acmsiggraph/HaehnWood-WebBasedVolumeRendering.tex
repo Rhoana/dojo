@@ -1,0 +1,259 @@
+%%% template.annotated.tex
+%%%
+%%% This LaTeX source document can be used as the basis for your technical
+%%% paper or abstract. Unlike ``template.tex,'' this version of the source
+%%% document contains documentation of each of the commands and definitions
+%%% that should be used in the preparation of your formatted document.
+%%% 
+%%% The parameter given to the ``acmsiggraph'' LaTeX class in the 
+%%% ``\documentclass'' command controls several features of the formatted 
+%%% output: the presence or absence of hyperlinked icons just prior to the 
+%%% first section of the paper, the amount of space left clear for the ACM
+%%% copyright notice, the presence or absence of line numbers and submission
+%%% ID, and the presence or absence of an appropriate ``preprint'' notice.
+%%% 
+%%% If you are preparing a paper for presentation in the Technical Papers
+%%% program at one of our two annual flagship conferences, held in North 
+%%% America (SIGGRAPH) or Asia (SIGGRAPH Asia), you should use ``annual''
+%%% as the parameter.
+%%%
+%%% If you are preparing a paper for presentation at one of our sponsored
+%%% events, including SIGGRAPH and SIGGRAPH Asia, but not in those events' 
+%%% Technical Papers program, you should use ``sponsored'' as the parameter.
+%%% (Technical Briefs and Game Papers presented at our annual flagship 
+%%% events fall into this category, as do papers accepted to other SIGGRAPH-
+%%% sponsored events, such as I3D or ETRA or VRCAI.)
+%%%
+%%% If you are preparing a version of your content for review, you should
+%%% use ``review'' as the parameter. Line numbers will be added to your 
+%%% paper, and the submission ID value will be printed across the top of 
+%%% each page of your paper. (Use the submission ID as the parameter to the
+%%% ``TOGonlineID'' command, below.)
+%%%
+%%% If you are preparing an abstract, typically one to four pages in 
+%%% length, you should use ``abstract'' as the parameter. No space will 
+%%% be left clear for the ACM copyright notice, as copyright is not 
+%%% transferred for abstracts. A small permission notice will be added
+%%% to your content during production in the footer of the first page.
+%%%
+%%% If you are preparing a preprint of your content, you should use
+%%% ``preprint'' as the parameter. This is primarily for annual conference
+%%% papers; a header reading ``To appear in ACM TOG X(Y)'' will appear on
+%%% each page of the formatted output (where X is the volume and Y is the 
+%%% number of the issue in which it will be published).
+
+\documentclass[annual]{acmsiggraph}
+
+%%% Definitions and commands that begin with ``\TOG'' are meant to be used
+%%% in the preparation of papers to be presented in the Technical Papers
+%%% program at one of our annual flagship events - SIGGRAPH and SIGGRAPH 
+%%% Asia. You can safely ignore these definitions and commands if your 
+%%% content is to be presented in some other venue.
+
+%%% ``\TOGonlineid'' should be filled with the online ID value you received
+%%% when you submitted your technical paper. It will be printed out if you 
+%%% prepare a ``review'' version of your paper.
+
+\TOGonlineid{45678}
+
+%%% Should your technical paper be accepted, you will be given three pieces
+%%% of information: the volume and number of the issue of the ACM Transactions
+%%% on Graphics journal in which your paper will be published, and the 
+%%% ``article DOI'' value, which is unique to your paper and provides the 
+%%% link to your paper's page in the ACM Digital Library. Fill in the 
+%%% ``\TOGvolume,'' ``\TOGnumber,'' and ``\TOGarticleDOI'' definitions with
+%%% the three pieces of information you receive.
+
+\TOGvolume{0}
+\TOGnumber{0}
+\TOGarticleDOI{1111111.2222222}
+
+%%% By default, your technical paper will contain hyperlinked icons which 
+%%% point to your paper's article page in the ACM Digital Library, and to 
+%%% the paper itself in the ACM Digital Library. You may wish to add one 
+%%% or more links to your own resources. If any of the following four 
+%%% definitions have URLs in them, an appropriate hyperlinked icon will be
+%%% added to the list. 
+
+\TOGprojectURL{}
+\TOGvideoURL{}
+\TOGdataURL{}
+\TOGcodeURL{}
+
+\usepackage{subfigure}
+\usepackage{graphicx}
+
+%%% Define the title of your paper here. Use capital letters as appropriate.
+%%% Setting the entire title in upper-case letters is not correct, nor is 
+%%% capitalizing only the first letter of the title.
+
+\title{Web-Based Volume Rendering of Segmented Structures \\ of Large Microscopy Data}
+
+%%% Define the author list in the ``\author'' command. The ``\thanks'' 
+%%% field can be used to define an e-mail address for the author.
+%%% The ``\pdfauthor'' field should contain a comma-separated list of the
+%%% authors of the paper, and is used, along with the title and keyword
+%%% data, for PDF metadata. (To see this metadata, open the PDF in Adobe 
+%%% Reader and select ``File > Properties > Description.''
+
+\author{Daniel Haehn\\Fiona Wood\\Computer Science 175 Final Project \\Harvard School of Engineering and Applied Sciences }
+\pdfauthor{Fiona Wood}
+
+%%% User-defined keywords.
+
+\keywords{volume rendering, WebGL}
+
+%%% End of the document preamble, start of the document.
+
+\begin{document}
+
+%%% A ``teaser'' image appears below the title and affiliation and above
+%%% the two-column body of the paper. This is optional, but if you wish
+%%% to include such an image, the commented-out code, below, can be used
+%%% as an example. Please note that the inclusion of a ``teaser'' image
+%%% may move the copyright space to the bottom of the right-hand column
+%%% on the first page of your formatted output. This is acceptable.
+
+%% \teaser{
+%%   \includegraphics[height=1.5in]{images/sampleteaser}
+%%   \caption{Spring Training 2009, Peoria, AZ.}
+%% }
+
+%%% The ``\maketitle'' command uses the author and title information 
+%%% defined above, and prepares the formatted title.
+
+\maketitle
+
+%%% The ``abstract'' environment should contain the abstract for your
+%%% content -- one to several paragraphs which describe the work.
+
+\begin{abstract}
+
+Using stack-based volume rendering to visualize sequences of two-dimensional image slices in three dimensions, our tool allows segmentations that have been applied to the image slices to be examined and verified manually.
+\end{abstract}
+
+%%% The ``CRCatlist'' environment defines one or more ACM ``Computing Review''
+%%% (or ``CR'') categories, used for indexing your work. For more information
+%%% on CR categories, please see http://www.acm.org/class/1998.
+
+\begin{CRcatlist}
+  \CRcat{I.3.3}{Computer Graphics}{Three-Dimensional Graphics and Realism}{Display Algorithms}
+  \CRcat{I.4.6}{Computer Graphics}{Image Processing and Computer Vision}{Segmentation};
+\end{CRcatlist}
+
+%%% The ``\keywordlist'' prints out the user-defined keywords.
+
+\keywordlist
+
+%%% If you are preparing a paper to be presented in the Technical Papers
+%%% program at one of our annual flagship events (and, therefore, using 
+%%% the ``annual'' parameter to the ``\documentclass'' command), the 
+%%% ``\TOGlinkslist'' command prints out the list of hyperlinked icons.
+%%% If you are using any other parameter to the ``\documentclass'' command
+%%% this command does absolutely nothing.
+
+
+%%% The ``\copyrightspace'' command will leave clear an amount of space
+%%% at the bottom of the left-hand column on the first page of your paper,
+%%% according to the parameter used in the ``\documentclass'' command.
+
+\copyrightspace
+
+%%% The first section of your paper. 
+
+\section{Motivation}
+
+As part of the Connectome project, nanometer-scale images are acquired and segmented. The results of the automatic segmentations are not perfect, but the human eye can quickly identify errors and perform merge and split operations to fix these. 
+
+Recent development included a web-based 2D viewer to scroll through the slices with segmentation overlays colored using a color map. The 2D viewer uses Canvas rendering (not GPU accelerated).
+
+Users would benefit from seeing individual segmented neurons in 3D to check segmentation results. 
+
+\begin{figure}[h]
+\caption{The 2D viewer showing one slice of the microscopy Z-stack at a time. Each color identifies a different neuron. The individual neurons stretch through multiple slices.}
+\includegraphics[width=\linewidth]{images/2dviewer.png} 
+\end{figure}
+
+\section{Approach}
+We developed a 3D component to explore segmentation and image data. This was achieved using a texture-based volume rendering approach in WebGL.
+
+WebGL does not support 3D textures. Also, there are limitations on the number of textures which can be passed to the shader. This makes a raycasting approach not feasible if more than 32 slices are involved.
+
+We decided to implement stack-based volume rendering of image data as well as of the segmentation data. We threshold the segmentation data based on the input id (which can later be based on a user click).
+
+\begin{figure}
+\centering     %%% not \center
+\subfigure[]{\label{fig:a}\includegraphics[height=.35\textwidth]{images/volumeimg.png}}
+\subfigure[]{\label{fig:b}\includegraphics[height=.35\textwidth]{images/volumeseg.png}}
+\caption{Volume rendering of image data \ref{fig:a} and segmentation data \ref{fig:b}. Both rendering modes are possible in our developed tool. \\Url: http://monster.krash.net/d/CS175/asst10/index.html?id=3036}
+\label{fig:compare0}
+\end{figure}
+
+When performing stack-based Volume Rendering, alpha blending is used to generate a seamless 3D effect. WebGL requires a drawing in back-to-front order to correctly perform the blending. Depending on the \texttt{eyeRbt}, we start rendering from either end of the stack.
+
+\subsection{Segmentations}
+Segmentation data is obtained from the image server as ZLIB compressed raw data. This avoids limitation to a certain bitrate which is problematic when using an image format (e.g. PNG is limited to 16-bit one channel, or 8-bit four channel images). When dealing with large segmentations, label values can easily be 64 bit. We inflate the obtained data on the client side using the \texttt{zlib.js} library which works quickly.
+
+We binarize the segmentation slices according to a user specified id and then pass them to the shader. We chose this approach to be scalable in terms of larger tiled images which we can then ignore if the id is not present. 
+
+To generate more realistic shading, we use the central difference method to compute normals. Figure~\ref{fig:compare0} shows the segmentation with bumpy shading as the result. To calculate the central difference in the z-direction, we also pass to the shader for each slice the previous and the following segmentation slice.
+
+\begin{figure}[h]
+\caption{The principle of stack-based Volume Rendering. For illustration purposes, the spacing between the slices is increased.}
+\includegraphics[width=\linewidth]{images/stack-based.png} 
+\end{figure}
+
+We can get the normal at a point by computing the central difference of two of its neighboring voxels in each dimension. In the $x$ and $y$ dimensions, we examine the adjacent voxels in the current texture,  and in the $z$ dimensions, we examine the corresponding voxel in the textures of the previous and following images in the stack.
+
+The three components of the normal $(n_x,n_y,n_z)$ can be represented as follows:
+\[ n_x=\frac{v_i(x-1,y,z)-v_i(x+1,y,z)}{2}\]
+\[n_y=\frac{v_i(x,y-1,z)-v_i(x,y+1,z)}{2}\]
+\[n_z=\frac{v_{i-1}(x,y,z)-v_{i+1}(x,y,z)}{2}\]
+
+where $v_i(x,y,z)$ represents the value of the texture for the $i$th image at position $(x,y,z)$.
+
+Using the central difference is computationally efficient because it involves only a few comparisons. A more accurate gradient calculator is the Sobel operator, which examines all 26 voxels that surround the point of interest rather than the six used for the central difference method. Further work could allow the user to switch between the central difference method and the Sobel method.
+
+
+\subsection{Image Data}
+Image data is acquired from the server as a JPEG. When rendering image data, we do not need to calculate normals and simply perform alpha blending of the actual image data. Figures~\ref{fig:compare1} and~\ref{fig:compare2} show two additional volume renderings of image data and segmentation data.
+
+\begin{figure}[h]
+\centering     %%% not \center
+\subfigure[]{\label{fig:2a}\includegraphics[height=.16\textwidth]{images/img2.png}}
+\subfigure[]{\label{fig:2b}\includegraphics[height=.16\textwidth]{images/seg2.png}}
+\caption{Volume rendering of image data \ref{fig:2a} and segmentation data \ref{fig:2b}. Both rendering modes are possible in our developed tool. \\Url: http://monster.krash.net/d/CS175/asst10/index.html?id=47}
+\label{fig:compare1}
+\end{figure}
+
+\begin{figure}[h]
+\centering     %%% not \center
+\subfigure[]{\label{fig:3a}\includegraphics[height=.19\textwidth]{images/img3.png}}
+\subfigure[]{\label{fig:3b}\includegraphics[height=.19\textwidth]{images/seg3.png}}
+\caption{Volume rendering of image data \ref{fig:3a} and segmentation data \ref{fig:3b}. Both rendering modes are possible in our developed tool. \\Url: http://monster.krash.net/d/CS175/asst10/index.html?id=1251}
+\label{fig:compare2}
+\end{figure}
+
+\section{Data and Implementation}
+We performed our experiments on a 512x512x75 stack of microscopy data. The implementation is fully generic and the coloring of segmentations is performed using a color table to match the 2D viewer settings. We chose the lowest zoom level as data input and thus our approach should be scalable for much larger volumes. One downside would be a lower level of detail when the in-plane resolution increases. The purpose of 3D rendering is to give the user an idea of how the segmentation matches the image data so this should be ok.
+
+\begin{table}[h]
+
+\begin{tabular}{|c|l|}
+\hline
+SPACE & switch between image data and segmentation rendering \\ 
+- / + & increase/decrease opacity for alpha blending \\ 
+\hline
+\end{tabular} 
+\caption{Hot keys}
+\end{table}
+
+
+
+
+%%% Please use the ``acmsiggraph'' BibTeX style to properly format your
+%%% bibliography.
+
+\bibliographystyle{acmsiggraph}
+\bibliography{template}
+\end{document}

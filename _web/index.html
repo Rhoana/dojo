@@ -9,9 +9,11 @@
 
   <script type='text/javascript' src='dojo.js'></script>
   <script type='text/javascript' src='viewer.js'></script>
+  <script type='text/javascript' src='controller.js'></script>
   <script type='text/javascript' src='camera.js'></script>
   <script type='text/javascript' src='interactor.js'></script>
   <script type='text/javascript' src='loader.js'></script>
+  <script type='text/javascript' src='websocket.js'></script>
   <script type='text/javascript' src='util.js'></script>
 
   <script type="text/javascript">
@@ -33,12 +35,16 @@
 
   <div id='tools' class='toolbar'>
     <img src='gfx/merge.png' id='merge' class='tool' data-ot='Merge' data-ot-target='true' data-ot-tip-joint='right'>
+    <img src='gfx/3d.png' id='3d' class='tool' data-ot='3D Rendering' data-ot-target='true' data-ot-tip-joint='right'>
   </div>
 
   <div id='info' class='infopanel'>
-    <div id='slicenumber'>1/75</div>
+    <div><div id='slicenumber'>1/75</div><div id='label'>Label n/a</div></div>
     <div><strong>Q</strong>: next slice</div>
     <div><strong>A</strong>: previous slice</div>
+  </div>
+
+  <div id='log' class='logpanel'>
   </div>
 
 </body>

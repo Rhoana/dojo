@@ -26,10 +26,28 @@ body {
   color:white;
 }
 
+.logpanel {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  color:white;
+  width: auto;
+  max-height: 200px;
+  overflow: hidden;
+}
+
 #slicenumber {
   font-weight: bold;
+  float: left;
+}
+
+#label {
+  margin-left: 25px;
+  font-weight: bold;
+  white-space: nowrap;
 }
 
 .tool {
   cursor: pointer;
 }
+
