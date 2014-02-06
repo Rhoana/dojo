@@ -35,6 +35,8 @@ J.viewer = function(container) {
 
   this._loader = new J.loader(this);
   this._camera = new J.camera(this);
+  this._websocket = new J.websocket(this);
+  this._controller = new J.controller(this);
 
 };
 
@@ -126,6 +128,15 @@ J.viewer.prototype.calc_zoomlevels = function() {
 
 };
 
+J.viewer.prototype.redraw = function() {
+
+  // trigger re-draw
+  this.loading(true);
+
+  this._loader.load_tiles(this._camera._x, this._camera._y, this._camera._z, this._camera._w, this._camera._w);
+
+};
+
 J.viewer.prototype.draw_image = function(x,y,z,w,i,s) {
 
   this._image_buffer_context.drawImage(i,0,0,512,512,x*512,y*512,512,512);
@@ -148,7 +159,7 @@ J.viewer.prototype.draw_image = function(x,y,z,w,i,s) {
       //id = id % max_colors;
     //}
 
-    var color = colormap[id % max_colors];
+    var color = this.get_color(id);//colormap[id % max_colors];
 
     // if (color[0] == 0) {
     //   console.log(color, id, segmentation_data[p], p);
@@ -163,6 +174,22 @@ J.viewer.prototype.draw_image = function(x,y,z,w,i,s) {
 
   this._segmentation_buffer_context.putImageData(pixel_data, 0, 0);
   this._image_buffer_context.drawImage(this._segmentation_buffer,0,0,512,512,x*512,y*512,512,512);
+
+};
+
+J.viewer.prototype.get_color = function(id) {
+
+  if (id in this._controller._merge_table) {
+    return this._colormap[this._controller._merge_table[id] % this._max_colors];
+  }
+
+  return this._colormap[id % this._max_colors];
+
+};
+
+J.viewer.prototype.get_color_before_merge = function(id) {
+
+  return this._colormap[id % this._max_colors];
 
 };
 
@@ -247,14 +274,16 @@ J.viewer.prototype.ij2xy = function(i, j) {
 
 J.viewer.prototype.get_segmentation_id = function(i, j, callback) {
 
-  var x = Math.floor((i / (this._image.zoom_levels[0][2] * 512)) * this._image.zoomlevel_count);
-  var y = Math.floor((j / (this._image.zoom_levels[0][3] * 512)) * this._image.zoomlevel_count);
+  var x = Math.floor(i / 512);
+  var y = Math.floor(j / 512);
   var z = this._camera._z;
   var w = 0;
-
+  
   this._loader.get_segmentation(x, y, z, w, function(s) {
 
     var pixel_data = new Uint32Array(s.buffer);
+
+    // TODO have to incorporate merge table
 
     callback(pixel_data[(j % 512) * 512 + (i % 512)]);
 

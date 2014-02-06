@@ -27,6 +27,8 @@ J.interactor.prototype.init = function() {
 
   // mouse wheel
   this._viewer._canvas.onmousewheel = this.onmousewheel.bind(this);
+  // for firefox
+  this._viewer._canvas.addEventListener('DOMMouseScroll', this.onmousewheel.bind(this), false);
 
   // keyboard
   window.onkeydown = this.onkeydown.bind(this);
@@ -45,6 +47,9 @@ J.interactor.prototype.onmousemove = function(e) {
   } else if (this._right_down) {
     // pan
     this._camera.pan(x-this._last_mouse[0], y-this._last_mouse[1]);    
+  } else {
+    // show current label
+    DOJO.update_label(x, y);
   }
 
   this._last_mouse = [x, y];
@@ -83,7 +88,9 @@ if (e.button == 0) {
 
 J.interactor.prototype.onmousewheel = function(e) {
 
-  this._camera.zoom(e.clientX, e.clientY, e.wheelDelta);
+  var delta = e.wheelDelta || -e.detail;
+
+  this._camera.zoom(e.clientX, e.clientY, delta);
 
 };
 

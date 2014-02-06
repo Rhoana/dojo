@@ -32,6 +32,9 @@ class Viewer(object):
 
     url = request.uri
 
+    # remove query
+    url = url.split('?')[0]
+
     # check if a request goes straight to a folder
     if url.split('/')[-1] == '':
       # add index.html

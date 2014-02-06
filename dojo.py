@@ -63,8 +63,10 @@ class ServerLogic:
     # and the viewer
     self.__viewer = _dojo.Viewer()
 
+    # and the controller
+    self.__controller = _dojo.Controller()
+
     port = 1337
-    port_websocket = 31337
     ip = socket.gethostbyname(socket.gethostname())
 
 
@@ -78,13 +80,13 @@ class ServerLogic:
       # viewer
       # (r'/', web.RedirectHandler, {'url':'/dojo/'}),
       # (r'/dojo', web.RedirectHandler, {'url':'/dojo/'}),
-      # (r'/dojo/(.*)', web.StaticFileHandler, {'path': './_web'}),
+
 
       # # image
       # (r'/image/(.*)', _dojo.Image(mojo_dir)),
-
+      (r'/ws', _dojo.Websockets, dict(controller=self.__controller)),
       (r'/(.*)', DojoHandler, dict(logic=self))
-      # (r'/ws', SocketHandler)
+  
     ])
 
     dojo.listen(port)

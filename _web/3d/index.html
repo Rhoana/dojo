@@ -1,0 +1,674 @@
+<html>
+<head>
+  <title>CS175 Assignment 10</title>
+
+  <!-- CS 175 Assignment 10, WebGL version by Daniel Haehn and Fiona Wood -->
+  <meta charset="UTF-8">
+
+  <!-- external matrix library (from http://glmatrix.net) -->
+  <script type='text/javascript' src='gl-matrix.js'></script>
+
+  <!-- external zlib library (from https://github.com/imaya/zlib.js) -->
+  <script type='text/javascript' src='zlib.min.js'></script>
+
+  <!-- jsProgressBarHandler prerequisites : prototype.js -->
+  <script type="text/javascript" src="prototype/prototype.js"></script>
+
+  <!-- jsProgressBarHandler core -->
+  <script type="text/javascript" src="bramus/jsProgressBarHandler.js"></script>
+
+  <!-- our code -->
+  <script type='text/javascript' src='util.js'></script>
+  <script type='text/javascript' src='interaction.js'></script>
+  <script type='text/javascript' src='geometrymaker.js'></script>
+  <script type='text/javascript' src='arcball.js'></script>
+  <script type='text/javascript' src='rigtform.js'></script>
+  
+
+  <!-- SHADERS -->
+  <script id="fs1" type="x-shader/x-fragment">
+    precision mediump float;
+
+    uniform vec3 uLight, uLight2, uColor;
+    uniform sampler2D uTextureSampler;
+    uniform sampler2D uTextureSampler2;
+    uniform sampler2D uTextureSampler3;
+    uniform sampler2D uTextureSampler4;
+    uniform int uMode;
+    uniform float uOpacity;
+
+    varying vec3 vNormal;
+    varying vec3 vPosition;
+    varying vec2 vTexturePosition;
+
+    void main() {
+      vec3 tolight = normalize(uLight - vPosition);
+      vec3 tolight2 = normalize(uLight2 - vPosition);
+      vec3 normal = normalize(vNormal);
+
+      vec4 texture = texture2D(uTextureSampler, vTexturePosition);
+      vec4 texture_prev = texture2D(uTextureSampler2, vTexturePosition);
+      vec4 texture_next = texture2D(uTextureSampler3, vTexturePosition);
+      vec4 image_data = texture2D(uTextureSampler4, vTexturePosition);
+
+      vec3 tNormal;
+
+      if (uMode == 0) {
+
+        // mode 0: use segmentation for volume rendering
+        // and "pseudo"-shading based on central differences
+
+        if (texture.x == 0.0) {
+          discard;
+        } else {
+          texture = vec4(uColor, 1.0);
+        }
+
+        // calculate normal as central difference
+        vec4 x_l = texture2D(uTextureSampler, vec2(vTexturePosition.x - 1.0/512.0, vTexturePosition.y));
+        vec4 x_r = texture2D(uTextureSampler, vec2(vTexturePosition.x + 1.0/512.0, vTexturePosition.y));
+        vec4 y_b = texture2D(uTextureSampler, vec2(vTexturePosition.x, vTexturePosition.y - 1.0/512.0));
+        vec4 y_t = texture2D(uTextureSampler, vec2(vTexturePosition.x, vTexturePosition.y + 1.0/512.0));
+        vec4 z_p = texture2D(uTextureSampler2, vTexturePosition);
+        vec4 z_n = texture2D(uTextureSampler3, vTexturePosition);
+
+        tNormal.x = 0.5 * (x_l.r - x_r.r);
+        tNormal.y = 0.5 * (y_b.r - y_t.r);
+        tNormal.z = 0.5 * (z_p.r - z_n.r);
+
+
+        vec3 reflectionDirection = reflect(-uLight, tNormal) + reflect(-uLight2, tNormal);
+
+        float specular = pow(max(dot(reflectionDirection, vPosition), 0.0), 10.0);
+        float diffuse = max(0.0, dot(tNormal, tolight));
+        diffuse += max(0.0, dot(tNormal, tolight2));
+        float ambient = 0.3;
+        //vec3 intensity = vec3(uColor * ambient + uColor * diffuse + vec3(0.2, 0.2, 0.2) * specular);
+        vec3 intensity = vec3(uColor * diffuse);
+
+        gl_FragColor = vec4(intensity, uOpacity);//vec4(texture.x, texture_prev.y, texture_next.z, 0.1);//vec4(dot(texture.x, intensity.x),dot(texture.y, intensity.y),dot(texture.z, intensity.z), 0.3);
+
+      } else {
+
+        // mode 1: use image data for volume rendering
+
+        if (texture.x == 0.0) {
+          discard;
+        } else {
+          texture = image_data;
+        }
+
+        // texture = image_data;
+
+        gl_FragColor = vec4(texture.xyz, uOpacity);
+
+      }
+
+    }
+  </script>
+
+  <script id="vs1" type="x-shader/x-vertex">
+    uniform mat4 uProjMatrix;
+    uniform mat4 uModelViewMatrix;
+    uniform mat4 uNormalMatrix;
+
+    attribute vec3 aNormal, aPosition;
+    attribute vec2 aTexturePosition;
+
+    varying vec3 vNormal;
+    varying vec3 vPosition;
+    varying vec2 vTexturePosition;
+
+    void main() {
+      
+      vNormal = vec3(uNormalMatrix * vec4(aNormal, 0.0));
+      vTexturePosition = aTexturePosition;
+
+      // send position (eye coordinates) to fragment shader
+      vec4 tPosition = uModelViewMatrix * vec4(aPosition, 1.0);
+      vPosition = vec3(tPosition);
+      gl_Position = uProjMatrix * tPosition;
+    }
+  </script>
+  <!-- END OF SHADERS -->
+
+
+  <script type='text/javascript'>
+
+    /* GLOBALS */
+    
+    // the WebGL context
+    var gl;
+
+    // the shader states
+    var shaderStates = [];
+    var currentShader = 0;
+
+    // the sky-eye
+    // var skyRbt = mat4.translate(mat4.create(), mat4.create(), [0, 0.25, 4]);
+    var skyRbt = new RigTForm([0, 0.25, 4],null);
+
+    // mouse
+    var mouseClickDown = false;
+    var mouseLClickButton = false;
+    var mouseRClickButton = false;
+    var mouseMClickButton = false;
+    var mouseClickX = null;
+    var mouseClickY = null;
+    var showArcball = false;
+
+    // some configuration
+    var frustMinFov = 60.0;  // A minimal of 60 degree field of view
+    var frustFovY = frustMinFov; // FOV in y direction (updated by updateFrustFovY)
+
+    var frustNear = -0.1;    // near plane
+    var frustFar = -50.0;    // far plane
+    var groundY = -2.0;      // y coordinate of the ground
+    var groundSize = 2.0;   // half the ground length
+
+    var light1 = [2., 3., 14.];
+    var light2 = [-2., -3., -5.];
+
+    var arcballScreenRadius = 100;
+    var arcballScale = 1;
+
+    // var objectRbt = [mat4.translate(mat4.create(), mat4.create(), [-1,0,0]), mat4.translate(mat4.create(), mat4.create(), [1,0,0])];
+    var objectRbt = [new RigTForm([-1,0,0],null), new RigTForm([1,0,0],null)];
+    var objectColor = [[1,0,0], [0,0,1]];
+    // var sphereRbt = mat4.identity(mat4.create());
+    var sphereRbt = new RigTForm(null, null);
+
+    // the camera mode. 0 for SKY-SKY, 1 for WORLD-SKY
+    var currentMode = 1;
+    // the current eye frame
+    var currentView = 'SKY'
+    // the current manipulation frame
+    var currentManipulation = 'SKY';
+
+    var slices = [];
+    var textures = [];
+    var textures2 = [];
+    var NO_SLICES = -1;
+
+    var MODE = 1.0;
+
+    var COLOR = [1,1,1];
+
+    var SERVER = 'http://'+window.location.hostname+':1337/';
+
+    var OPACITY = 0.3;
+
+    // ShaderState constructor
+    var ShaderState = function(vs_id, fs_id) {
+
+      this.program = linkShaders(vs_id, fs_id);
+
+      var h = this.program;
+      HHH = h;
+      gl.useProgram(h);
+
+      // retrieve handles to uniform variables
+      this.h_uLight =  gl.getUniformLocation(h, 'uLight');
+      this.h_uLight2 = gl.getUniformLocation(h, 'uLight2');
+      this.h_uProjMatrix = gl.getUniformLocation(h, 'uProjMatrix');
+      this.h_uModelViewMatrix = gl.getUniformLocation(h, 'uModelViewMatrix');
+      this.h_uNormalMatrix = gl.getUniformLocation(h, 'uNormalMatrix');
+      this.h_uColor = gl.getUniformLocation(h, 'uColor');
+      this.h_uTextureSampler = gl.getUniformLocation(h, 'uTextureSampler');
+      this.h_uTextureSampler2 = gl.getUniformLocation(h, 'uTextureSampler2');
+      this.h_uTextureSampler3 = gl.getUniformLocation(h, 'uTextureSampler3');
+      this.h_uTextureSampler4 = gl.getUniformLocation(h, 'uTextureSampler4');
+      this.h_uMode = gl.getUniformLocation(h, 'uMode');
+      this.h_uOpacity = gl.getUniformLocation(h, 'uOpacity');
+
+      // retrieve handles to vertex attributes
+      this.h_aPosition = gl.getAttribLocation(h, 'aPosition');
+      this.h_aNormal = gl.getAttribLocation(h, 'aNormal');
+      this.h_aTexturePosition = gl.getAttribLocation(h, 'aTexturePosition');
+
+    };
+
+    // a texture object for 1-channel or 4-channel textures
+    var Texture = function(channels, data, width, height, uvs) {
+
+      this.channels = channels;
+      this.data = data;
+      this.width = width;
+      this.height = height;
+      this.uvs = uvs;
+
+      // GL pointers
+      this.texture = null;
+      this.buffer = null;
+
+      this.create = function() {
+
+          this.texture = gl.createTexture();
+          gl.bindTexture(gl.TEXTURE_2D, this.texture);
+
+          if (this.channels == 1) {
+
+            // for 1-channel textures
+            gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, this.width, this.height, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, this.data);
+
+          } else {
+
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this.data);
+
+          }
+
+          // clamp to edge
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+
+          gl.bindTexture(gl.TEXTURE_2D, null);
+
+          var buffer = gl.createBuffer();
+          gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+          gl.bufferData(gl.ARRAY_BUFFER, this.uvs, gl.STATIC_DRAW);
+
+          this.buffer = buffer;
+
+      }
+
+    };
+
+    var Geometry = function(points, normals, indices, centroid, texture, texture2, texture3, image_data) {
+
+      this.points = points;
+      this.normals = normals;
+      this.indices = indices;
+      this.centroid = centroid;
+      this.texture = texture;
+      this.texture2 = texture2;
+      this.texture3 = texture3;
+      this.image_data = image_data;
+
+      // create the VBOs and IBO
+      this.b_points = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.b_points);
+      gl.bufferData(gl.ARRAY_BUFFER, points, gl.STATIC_DRAW);
+
+      this.b_normals = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.b_normals);
+      gl.bufferData(gl.ARRAY_BUFFER, normals, gl.STATIC_DRAW);
+
+      this.b_indices = gl.createBuffer();
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.b_indices);
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
+
+      // the draw function
+      this.draw = function(wireframe) {
+
+        var drawmode = gl.TRIANGLES;
+        if (typeof wireframe != 'undefined') {
+          // WebGL does not support glPolygonMode but we
+          // can simulate wireframe with drawing as lines
+          drawmode = gl.LINES;
+        }
+
+        // enable the attributes used by our shader and bind the data
+        gl.enableVertexAttribArray(shaderStates[currentShader].h_aPosition);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.b_points);
+        gl.vertexAttribPointer(shaderStates[currentShader].h_aPosition, 3, gl.FLOAT, false, 0, 0);
+
+        gl.enableVertexAttribArray(shaderStates[currentShader].h_aNormal);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.b_normals);
+        gl.vertexAttribPointer(shaderStates[currentShader].h_aNormal, 3, gl.FLOAT, false, 0, 0);
+
+        // texture
+        if (this.texture) {
+
+          gl.activeTexture(gl.TEXTURE0);
+
+          gl.bindTexture(gl.TEXTURE_2D, this.texture.texture);
+          // activate first texture sampler
+          gl.uniform1i(shaderStates[currentShader].h_uTextureSampler, 0);
+
+          // uvs
+          gl.enableVertexAttribArray(shaderStates[currentShader].h_aTexturePosition);
+          gl.bindBuffer(gl.ARRAY_BUFFER, this.texture.buffer);
+          gl.vertexAttribPointer(shaderStates[currentShader].h_aTexturePosition, 2, gl.FLOAT, false, 0, 0);
+
+        }
+
+        if (this.texture2) {
+
+          gl.activeTexture(gl.TEXTURE1);
+
+          gl.bindTexture(gl.TEXTURE_2D, this.texture2.texture);
+          gl.uniform1i(shaderStates[currentShader].h_uTextureSampler2, 1);
+
+        }
+
+        if (this.texture3) {
+
+          gl.activeTexture(gl.TEXTURE2);
+
+          gl.bindTexture(gl.TEXTURE_2D, this.texture3.texture);
+          gl.uniform1i(shaderStates[currentShader].h_uTextureSampler3, 2);
+
+        }        
+
+        if (this.image_data) {
+
+          gl.activeTexture(gl.TEXTURE3);
+
+          gl.bindTexture(gl.TEXTURE_2D, this.image_data.texture);
+          gl.uniform1i(shaderStates[currentShader].h_uTextureSampler4, 3);
+
+        }
+
+        // bind index buffer
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.b_indices);
+
+        // draw!
+        gl.drawElements(drawmode, this.indices.length, gl.UNSIGNED_SHORT, 0);
+
+      }
+
+    };
+
+    // the MAIN function
+    window.onload = function() {
+
+      parseArgs();
+
+      // get image server table of contents
+      var oReq = new XMLHttpRequest();
+      oReq.open("GET", SERVER+"image/contents", true);
+
+      oReq.onload = function (a, oEvent) {
+
+        var contents = JSON.parse(a.response);
+        
+        // get no_slices from toc
+        NO_SLICES = contents['max_z_tiles'];
+        MAX_ZOOM = parseInt(contents['zoomlevel_count'], 10)-1;
+
+        // now get the colormap
+        var oReq = new XMLHttpRequest();
+        oReq.open("GET", SERVER+"segmentation/colormap", true);
+
+        oReq.onload = function (a, oEvent) {
+
+          var colormap = JSON.parse(a.response);
+
+          // now get the appropriate color for the label id
+          COLOR = colormap[_ID_ % colormap.length];
+
+          // add callbacks for mouse movement, mouse keys and keyboard
+          initCallbacks();
+
+          initGLState();
+
+          // call reshape once
+          reshape();
+
+          initShaders();
+          initGeometry();
+
+        }.bind(this, oReq);
+
+        oReq.send(null);
+
+      }.bind(this, oReq);      
+
+      oReq.send(null);
+
+
+    };
+
+
+    function initTextures(callback) {
+
+      var pb = progressbar();
+      var pb_val = 0;
+
+      // wait until pb appeared
+      setTimeout(function() {
+
+        for (var i=0; i<NO_SLICES; i++) {
+
+          // get images
+          var oReq = new XMLHttpRequest();
+          oReq.open("GET", SERVER+"image/"+pad(i,8)+"/"+MAX_ZOOM+"/0_0.jpg", true);
+          oReq.id = i;
+          oReq.responseType = "arraybuffer";
+
+          oReq.onload = function (a, i, oEvent) {
+
+            // convert data to a byte array
+            var bytebuffer = new Uint8Array(a.response);
+            var j = bytebuffer.length;
+            
+            // create a binary string of the bytebuffer
+            var binaryString = new Array(j);
+            while (j--) {
+              binaryString[j] = String.fromCharCode(bytebuffer[j]);
+            }
+            var convertedData = binaryString.join('');
+            
+            // encode the converted binary string
+            var encodedData = window.btoa(convertedData);
+            
+            // create a new image
+            var _image = new Image();
+            
+            pb_val += .5/NO_SLICES;
+            pb.setPercentage(Math.floor(pb_val*100));
+
+            // set the encoded data using a data uri
+            _image.src = "data:image/jpeg;base64," + encodedData;
+
+            // we need to wait until the image is properly set up
+            _image.onload = function(_image) {
+
+              var t = new Texture(4, _image, 512, 512, new Float32Array([0,0, 1,0, 0,1, 1,1]));
+              t.create();
+              textures2.push(t);
+
+              if (textures.length == NO_SLICES && textures2.length == NO_SLICES) {
+
+                console.log('All textures loaded!');
+
+                // all textures were loaded
+                callback();          
+
+              }
+
+            }.bind(this,_image);
+
+          }.bind(this, oReq, i);
+
+          oReq.send(null);
+
+          // get segmentations
+          // http://127.0.1.1:1337/segmentation/00000001/0/0_0.raw
+          var oReq = new XMLHttpRequest();
+          oReq.open("GET", SERVER+"segmentation/"+pad(i,8)+"/"+MAX_ZOOM+"/0_0.raw", true);
+          oReq.id = i;
+          oReq.responseType = "arraybuffer";
+
+          oReq.onload = function (a, i, oEvent) {
+
+            console.log('Loaded texture', i, a.id);
+
+            var arrayBuffer = a.response; 
+
+            if (arrayBuffer) {
+
+              // unzip the raw data
+              var compressed = new Zlib.Inflate(new Uint8Array(arrayBuffer));
+              var image = compressed.decompress();          
+
+              // we need to convert first to the real bitrate (maybe 32 bit)
+              var image_highbit = new Uint32Array(image.buffer); 
+              // but for the WebGL texture we need a binarized 8 bit image
+              var image_8bit = new Uint8Array(image_highbit.length);
+
+              // binarize
+              for (var i = 0; i < image_highbit.length; i++) {
+                
+                if (image_highbit[i] == _ID_) {
+                  image_8bit[i] = 255;
+                } else {
+                  image_8bit[i] = 0;
+                }
+
+              }
+
+              pb_val += .5/NO_SLICES;
+              pb.setPercentage(Math.floor(pb_val*100));
+
+              var t = new Texture(1, image_8bit, 512, 512, new Float32Array([0,0, 1,0, 0,1, 1,1]));
+              t.create();
+              textures.push(t);
+
+              if (textures.length == NO_SLICES && textures2.length == NO_SLICES) {
+
+                console.log('All textures loaded!');
+
+                // all textures were loaded
+                callback();          
+
+              }                
+
+
+            }
+
+
+            
+          }.bind(this, oReq, i);
+
+          oReq.send(null);      
+
+        }
+
+
+
+      },100);
+    }
+
+    function initSlices() {
+
+      for (var s=0; s<NO_SLICES; s++) {
+
+        var groundY = s*0.01 - (NO_SLICES/2*0.01);
+
+        // A x-z plane at y = g_groundY of dimension [-g_groundSize, g_groundSize]^2
+        var p = new Float32Array([-groundSize, groundY, -groundSize,
+                                  -groundSize, groundY, groundSize,
+                                   groundSize, groundY, groundSize,
+                                   groundSize, groundY, -groundSize]);
+
+        var centroid = new Float32Array([0, groundY, 0, 1]);
+
+        var n = new Float32Array([0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0]);
+
+        var i = new Uint16Array([0, 1, 2, 0, 2, 3]);
+
+        var prevTexture = null;
+        var nextTexture = null;
+
+        if (s > 0) prevTexture = textures[s-1];
+        if (s < NO_SLICES-1) nextTexture = textures[s+1];
+
+        slices.push(new Geometry(p, n, i, centroid, textures[s], prevTexture, nextTexture, textures2[s]));
+
+      }
+
+    };
+
+
+    function drawStuff() {
+
+      // clear the viewport
+      gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+      // activate current shader
+      gl.useProgram(shaderStates[currentShader].program);
+
+      // build and send proj. matrix to vshader
+      sendProjectionMatrix(makeProjectionMatrix());
+
+      var eyeRbt = skyRbt;
+
+      invEyeRbt = inv(eyeRbt);
+
+      // send lights
+      var eyeLight1 = vec3.transformMat4(vec3.create(), light1, rigTFormToMatrix(invEyeRbt));
+      var eyeLight2 = vec3.transformMat4(vec3.create(), light2, rigTFormToMatrix(invEyeRbt));
+      gl.uniform3f(shaderStates[currentShader].h_uLight, eyeLight1[0], eyeLight1[1], eyeLight1[2]);
+      gl.uniform3f(shaderStates[currentShader].h_uLight2, eyeLight2[0], eyeLight2[1], eyeLight2[2]);
+
+      gl.uniform3f(shaderStates[currentShader].h_uColor, COLOR[0]/255, COLOR[1]/255, COLOR[2]/255);
+
+      gl.uniform1i(shaderStates[currentShader].h_uMode, MODE);
+
+      gl.uniform1f(shaderStates[currentShader].h_uOpacity, OPACITY);
+
+      // TODO order back to front depending on eye
+      var first_slice = invEyeRbt.multiplyByVec4(slices[0].centroid);
+      var last_slice = invEyeRbt.multiplyByVec4(slices[74].centroid);
+
+      var first_slice_distance = vec3.distance(eyeRbt.getTranslation(), first_slice);
+      var last_slice_distance = vec3.distance(eyeRbt.getTranslation(), last_slice);
+
+      if (last_slice_distance > first_slice_distance) {
+
+        // last slice is closer
+        console.log('last is closer');
+        for (var s=0; s<NO_SLICES; s++) {
+
+          var slice = slices[s];
+
+          var rbt = new RigTForm();
+          var MVM = invEyeRbt.multiply(rbt);
+          NMVM = normalMatrix(rigTFormToMatrix(MVM));
+          sendModelViewMatrix(rigTFormToMatrix(MVM), NMVM);
+
+          slice.draw();
+    
+        }
+
+      } else {
+
+        // first slice is closer
+        console.log('first is closer');
+        for (var s=NO_SLICES-1; s>=0; s--) {
+
+          var slice = slices[s];
+
+          var rbt = new RigTForm();
+          var MVM = invEyeRbt.multiply(rbt);
+          NMVM = normalMatrix(rigTFormToMatrix(MVM));
+          sendModelViewMatrix(rigTFormToMatrix(MVM), NMVM);
+
+          slice.draw();
+    
+        }        
+
+      }
+
+
+      // re-start the drawStuff function (loop)
+      window.requestAnimationFrame(drawStuff);
+
+    };
+
+
+
+
+  </script>
+</head>
+<body style='margin:0px;background-color:black;'>
+  <div id='pb' style='position:absolute;left:48%;top:48%;'></div>
+  <canvas id='c'></canvas>
+</body>
+</html>
