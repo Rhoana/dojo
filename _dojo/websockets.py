@@ -10,6 +10,8 @@ from StringIO import StringIO
 import tornado
 import tornado.websocket
 
+cl = []
+
 class Websockets(tornado.websocket.WebSocketHandler):
 
   def initialize(self, controller):
@@ -20,7 +22,16 @@ class Websockets(tornado.websocket.WebSocketHandler):
   def open(self):
     '''
     '''
+    if self not in cl:
+      cl.append(self)
+
     self.__controller.handshake(self)
+
+  def on_close(self):
+    '''
+    '''
+    if self in cl:
+      cl.remove(self)
 
   def on_message(self, message):
     '''
@@ -30,7 +41,8 @@ class Websockets(tornado.websocket.WebSocketHandler):
   def send(self, message):
     '''
     '''
-    self.write_message(message)
+    for c in cl:
+      c.write_message(message)
 
 
 # class Handler(SocketServer.StreamRequestHandler):
