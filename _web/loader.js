@@ -7,7 +7,7 @@ J.loader = function(viewer) {
   this._image_cache = [];
   this._segmentation_cache = [];
 
-  this._z_cache_size = 1;
+  this._z_cache_size = 3;
 
   this._image_loading = [];
 
@@ -53,7 +53,7 @@ J.loader.prototype.get_image = function(x, y, z, w, callback, no_cache) {
       if (this._image_cache[z][w][x]) {
         if (this._image_cache[z][w][x][y]) {
           // we have it cached
-          // console.log('cache hit', z, w, x, y);
+          console.log('cache hit', z, w, x, y);
           var i = this._image_cache[z][w][x][y];
 
           if (!no_cache) {
