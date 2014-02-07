@@ -81,6 +81,11 @@ J.viewer.prototype.init = function(callback) {
 
           this._loader.get_segmentation(x, y, z, w, function(x, y, z, w, s) {
 
+            // // get some more slices as well
+            // this._loader.get_image(x, y, z+1, w, function(i) {
+            //   console.log('cached', i);
+            // });
+
             this.draw_image(x, y, z, w, i, s);
             this._image_buffer_ready = true;
 
