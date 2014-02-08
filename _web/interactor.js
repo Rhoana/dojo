@@ -42,7 +42,7 @@ J.interactor.prototype.onmousemove = function(e) {
   var x = e.clientX;
   var y = e.clientY;
 
-  var u_v = this._viewer.xy2uv(x, y);
+  //var u_v = this._viewer.xy2uv(x, y);
 
   if (this._left_down) {
 

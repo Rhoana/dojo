@@ -241,12 +241,12 @@ J.viewer.prototype.xy2uv = function(x, y) {
   var v = y - this._camera._view[7];
   // console.log(u, this._camera._view[6], x, this._image.zoom_levels[this._camera._zoom_level][0])
   //if (u < 0 || u >= this._camera._view[0] * this._zoom_level*512) {
-  if (u < 0 || u >= this._image.zoom_levels[this._camera._w][2] *512) {
+  if (u < 0 || u >= this._camera._view[0] * this._image.zoom_levels[this._camera._w][2] *512) {
     u = -1;
   }
 
   //if (v < 0 || v >= this._camera._view[4] * this._zoom_level*512) {
-  if (v < 0 || v >= this._image.zoom_levels[this._camera._w][3] *512) {
+  if (v < 0 || v >= this._camera._view[4] * this._image.zoom_levels[this._camera._w][3] *512) {
     v = -1;
   }
 
@@ -263,8 +263,10 @@ J.viewer.prototype.xy2ij = function(x, y) {
     return [-1, -1];
   }
 
-  return [(u_v[0]/this._image.zoom_levels[this._camera._w][2])*this._image.zoom_levels[0][2], 
-          (u_v[1]/this._image.zoom_levels[this._camera._w][3])*this._image.zoom_levels[0][3]];
+  var i_j = [Math.floor(((u_v[0]/this._image.zoom_levels[this._camera._w][2])*this._image.zoom_levels[0][2])/this._camera._view[0]), 
+             Math.floor(((u_v[1]/this._image.zoom_levels[this._camera._w][3])*this._image.zoom_levels[0][3])/this._camera._view[4])];
+
+  return i_j;
 
 };
 

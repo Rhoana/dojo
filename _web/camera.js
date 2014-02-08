@@ -15,6 +15,8 @@ J.camera = function(viewer) {
   // 0 0 1
   this._view = [1, 0, 0, 0, 1, 0, 0, 0, 1];
 
+  this._linear_zoom_factor = 0.3;
+
 };
 
 
@@ -50,6 +52,48 @@ J.camera.prototype.reset = function() {
 ///
 
 J.camera.prototype.zoom = function(x, y, delta) {
+
+  // perform linear zooming until a new image zoom level is reached
+  // then reset scale to 1 and show the image
+
+  var u_v = this._viewer.xy2uv(x,y);
+
+  // only do stuff if we are over the image data
+  if (u_v[0] == -1 || u_v[1] == -1) {
+    return;
+  }  
+
+  var wheel_sign = sign(delta/120);
+
+  var future_zoom_level = this._view[0] + wheel_sign * this._linear_zoom_factor;
+
+  // clamp the linear zoom
+  if (future_zoom_level < 1.0 || future_zoom_level >= 5.0) return;
+
+  var old_scale = this._view[0];  
+
+  // perform zooming
+  this._view[0] += wheel_sign * this._linear_zoom_factor;
+  this._view[4] += wheel_sign * this._linear_zoom_factor;  
+
+  var new_scale = this._view[0];
+
+  console.log(old_scale, new_scale);
+
+  // if (old_scale != 0) {
+
+    u_new = u_v[0]/old_scale * new_scale;
+    v_new = u_v[1]/old_scale * new_scale;
+
+  // }
+
+  // translate to correct point
+  this._view[6] -= wheel_sign * Math.abs(u_v[0] - u_new);
+  this._view[7] -= wheel_sign * Math.abs(u_v[1] - v_new);  
+
+};
+
+J.camera.prototype.image_zoom = function(x, y, delta) {
 
   var u_v = this._viewer.xy2uv(x,y);
 
