@@ -53,7 +53,7 @@ J.loader.prototype.get_image = function(x, y, z, w, callback, no_cache) {
       if (this._image_cache[z][w][x]) {
         if (this._image_cache[z][w][x][y]) {
           // we have it cached
-          console.log('cache hit', z, w, x, y);
+          //console.log('cache hit', z, w, x, y);
           var i = this._image_cache[z][w][x][y];
 
           if (!no_cache) {
@@ -94,7 +94,7 @@ J.loader.prototype.cache_image = function(x, y, z, w) {
   for (var j=1;j<=this._z_cache_size;j++) {
     if (z+j < this._viewer._image.max_z_tiles) {
       this.get_image(x, y, z+j, w, function(i) {
-        console.log('cached', i);
+        //console.log('cached', i);
       }, true);
     }
   }

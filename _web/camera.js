@@ -15,7 +15,7 @@ J.camera = function(viewer) {
   // 0 0 1
   this._view = [1, 0, 0, 0, 1, 0, 0, 0, 1];
 
-  this._linear_zoom_factor = 0.3;
+  this._linear_zoom_factor = 0.1;
 
 };
 
@@ -50,12 +50,12 @@ J.camera.prototype.reset = function() {
 
 
 ///
-
+var block = false;
 J.camera.prototype.zoom = function(x, y, delta) {
 
   // perform linear zooming until a new image zoom level is reached
   // then reset scale to 1 and show the image
-
+  if (block) return;
   var u_v = this._viewer.xy2uv(x,y);
 
   // only do stuff if we are over the image data
@@ -72,13 +72,43 @@ J.camera.prototype.zoom = function(x, y, delta) {
 
   var old_scale = this._view[0];  
 
+
   // perform zooming
   this._view[0] += wheel_sign * this._linear_zoom_factor;
   this._view[4] += wheel_sign * this._linear_zoom_factor;  
 
   var new_scale = this._view[0];
 
-  console.log(old_scale, new_scale);
+  if (new_scale >= 2) {
+
+    var future_zoom_level = this._w - wheel_sign;
+
+    // clamp zooming
+    if (future_zoom_level >= 0 && future_zoom_level < this._viewer._image.zoomlevel_count) {
+
+      console.log('new tile');
+
+      this._viewer.loading(true);
+
+      this._loader.load_tiles(x, y, this._z, this._w, this._w - wheel_sign);
+      this._w -= wheel_sign;
+
+      this._view[0] = 1;
+      this._view[4] = 1;
+      
+    }    
+    
+    // block = true;
+
+    // this._view[6] *= 2;
+    // this._view[7] *= 2;
+
+    // //this.image_zoom(x,y,delta);
+    // old_scale = 1;
+    // new_scale = 1;
+
+    // return;
+  }
 
   // if (old_scale != 0) {
 
