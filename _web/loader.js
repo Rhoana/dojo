@@ -159,7 +159,7 @@ J.loader.prototype.cache_segmentation = function(x, y, z, w) {
 
 };
 
-J.loader.prototype.load_tiles = function(x, y, z, w, w_new) {
+J.loader.prototype.load_tiles = function(x, y, z, w, w_new, no_draw) {
 
 
 
@@ -171,7 +171,9 @@ J.loader.prototype.load_tiles = function(x, y, z, w, w_new) {
   }
 
   // clear old tiles
-  this._viewer.clear_buffer(this._viewer._image.zoom_levels[w][0]*512, this._viewer._image.zoom_levels[w][1]*512);
+  if (!no_draw) {
+    this._viewer.clear_buffer(this._viewer._image.zoom_levels[w][0]*512, this._viewer._image.zoom_levels[w][1]*512);
+  }
 
   //console.log('loading', x, y, z, w, w_new);
 
@@ -188,7 +190,8 @@ J.loader.prototype.load_tiles = function(x, y, z, w, w_new) {
 
         this.get_segmentation(x, y, z, mojo_w_new, function(x, y, z, mojo_w_new, s) {
 
-          this._viewer.draw_image(x, y, z, mojo_w_new, i, s);
+          if (!no_draw) this._viewer.draw_image(x, y, z, mojo_w_new, i, s);
+
           to_draw--;
 
           if (to_draw == 0) {
