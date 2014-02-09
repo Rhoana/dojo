@@ -71,14 +71,18 @@ J.camera.prototype.zoom = function(x, y, delta) {
   // clamp the linear pixel zoom
   if (future_zoom_level < 1.0 || future_zoom_level >= 5.0) return;
 
-  // start loading the tiles immediately but set no_draw to true
-  this._loader.load_tiles(x, y, this._z, this._w, future_w, true);
+  if (future_w >= 0 && future_w < this._viewer._image.zoomlevel_count) {
+    // start loading the tiles immediately but set no_draw to true
+    this._loader.load_tiles(x, y, this._z, this._w, future_w, true);
+  }
 
   var old_scale = this._view[0];
 
   // perform pixel zooming
   this._view[0] = future_zoom_level;
   this._view[4] = future_zoom_level;
+
+  // console.log(future_zoom_level);
 
   var new_scale = future_zoom_level;
 
@@ -90,7 +94,9 @@ J.camera.prototype.zoom = function(x, y, delta) {
     // clamp zooming
     if (future_zoom_level >= 0 && future_zoom_level < this._viewer._image.zoomlevel_count) {
 
-      console.log('new tile', old_scale, new_scale, this._w, future_zoom_level);
+      // console.log('new tile');
+      // console.log('old scale', old_scale);
+      // console.log('new scale', new_scale)
 
       this._viewer.loading(true);
 
@@ -98,16 +104,18 @@ J.camera.prototype.zoom = function(x, y, delta) {
       this._loader.load_tiles(x, y, this._z, this._w, future_zoom_level, false);
       this._w = future_zoom_level;
 
+      // console.log('w', future_zoom_level);
+
       // reset pixel size to 1
       this._view[0] = 1;
       this._view[4] = 1;
 
 
       if (wheel_sign < 0) {
-      //   old_scale = 2;
-      //   new_scale = 2;
-      this._view[0] = 1;
-      this._view[4] = 1;      
+        old_scale = 2.2;
+        new_scale = 2;
+        this._view[0] = 2;
+        this._view[4] = 2;      
       }
       //   this._view[6] += 256;
       //   this._view[7] += 256;  
