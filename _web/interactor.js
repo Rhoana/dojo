@@ -10,6 +10,8 @@ J.interactor = function(viewer) {
 
   this._last_mouse = [0,0];
 
+  this._keypress_callback = null;
+
   this.init();
 
 };
@@ -40,7 +42,7 @@ J.interactor.prototype.onmousemove = function(e) {
   var x = e.clientX;
   var y = e.clientY;
 
-  var u_v = this._viewer.xy2uv(x, y);
+  //var u_v = this._viewer.xy2uv(x, y);
 
   if (this._left_down) {
 
@@ -98,13 +100,21 @@ J.interactor.prototype.onkeydown = function(e) {
   
   if (!this._viewer._image_buffer_ready) return;
 
+  if (this._keypress_callback) return;
+
   if (e.keyCode == 81) {
   
-    this._camera.slice_up();
+    this._keypress_callback = setTimeout(function() {
+      this._camera.slice_up();
+      this._keypress_callback = null;
+    }.bind(this),10);   
 
   } else if (e.keyCode == 65) {
   
-    this._camera.slice_down();
+    this._keypress_callback = setTimeout(function() {
+      this._camera.slice_down();
+      this._keypress_callback = null;
+    }.bind(this),10);   
 
   }
 

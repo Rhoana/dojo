@@ -7,6 +7,10 @@ J.loader = function(viewer) {
   this._image_cache = [];
   this._segmentation_cache = [];
 
+  this._z_cache_size = 3;
+
+  this._image_loading = [];
+
 };
 
 J.loader.prototype.load_json = function(url, callback) {
@@ -40,7 +44,7 @@ J.loader.prototype.load_segmentation = function(x, y, z, w, callback) {
 
 };
 
-J.loader.prototype.get_image = function(x, y, z, w, callback) {
+J.loader.prototype.get_image = function(x, y, z, w, callback, no_cache) {
 
   // check if we have a cached version
   if (this._image_cache[z]) {
@@ -49,8 +53,12 @@ J.loader.prototype.get_image = function(x, y, z, w, callback) {
       if (this._image_cache[z][w][x]) {
         if (this._image_cache[z][w][x][y]) {
           // we have it cached
-          // console.log('cache hit', z, w, x, y);
+          //console.log('cache hit', z, w, x, y);
           var i = this._image_cache[z][w][x][y];
+
+          if (!no_cache) {
+            this.cache_image(x, y, z, w);
+          }
 
           callback(i);
 
@@ -74,9 +82,26 @@ J.loader.prototype.get_image = function(x, y, z, w, callback) {
 
   });
 
+  if (!no_cache) {
+    this.cache_image(x, y, z, w);
+  }
+
 };
 
-J.loader.prototype.get_segmentation = function(x, y, z, w, callback) {
+J.loader.prototype.cache_image = function(x, y, z, w) {
+
+  // now get some more images  
+  for (var j=1;j<=this._z_cache_size;j++) {
+    if (z+j < this._viewer._image.max_z_tiles) {
+      this.get_image(x, y, z+j, w, function(i) {
+        //console.log('cached', i);
+      }, true);
+    }
+  }
+
+};
+
+J.loader.prototype.get_segmentation = function(x, y, z, w, callback, no_cache) {
 
   // check if we have a cached version
   if (this._segmentation_cache[z]) {
@@ -114,9 +139,27 @@ J.loader.prototype.get_segmentation = function(x, y, z, w, callback) {
 
   });
 
+  // if (!no_cache) {
+  //   this.cache_segmentation(x, y, z, w);
+  // }  
+
 };
 
-J.loader.prototype.load_tiles = function(x, y, z, w, w_new) {
+J.loader.prototype.cache_segmentation = function(x, y, z, w) {
+
+  // now get some more images  
+  for (var j=1;j<=this._z_cache_size;j++) {
+    if (z+j < this._viewer._image.max_z_tiles) {      
+      console.log('getting', z+j);
+      this.get_segmentation(x, y, z+j, w, function(s) {
+        console.log('cached', s);
+      }, true);
+    }
+  }
+
+};
+
+J.loader.prototype.load_tiles = function(x, y, z, w, w_new, no_draw) {
 
 
 
@@ -128,7 +171,9 @@ J.loader.prototype.load_tiles = function(x, y, z, w, w_new) {
   }
 
   // clear old tiles
-  this._viewer.clear_buffer(this._viewer._image.zoom_levels[w][0]*512, this._viewer._image.zoom_levels[w][1]*512);
+  if (!no_draw) {
+    this._viewer.clear_buffer(this._viewer._image.zoom_levels[w][0]*512, this._viewer._image.zoom_levels[w][1]*512);
+  }
 
   //console.log('loading', x, y, z, w, w_new);
 
@@ -145,7 +190,8 @@ J.loader.prototype.load_tiles = function(x, y, z, w, w_new) {
 
         this.get_segmentation(x, y, z, mojo_w_new, function(x, y, z, mojo_w_new, s) {
 
-          this._viewer.draw_image(x, y, z, mojo_w_new, i, s);
+          if (!no_draw) this._viewer.draw_image(x, y, z, mojo_w_new, i, s);
+
           to_draw--;
 
           if (to_draw == 0) {
