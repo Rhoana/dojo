@@ -94,11 +94,11 @@ J.camera.prototype.zoom = function(x, y, delta) {
     // clamp zooming
     if (future_zoom_level >= 0 && future_zoom_level < this._viewer._image.zoomlevel_count) {
 
-      // console.log('new tile');
+      console.log('new tile');
       // console.log('old scale', old_scale);
       // console.log('new scale', new_scale)
 
-      this._viewer.loading(true);
+      //this._viewer.loading(true);
 
       // this time we really draw (no_draw = false)
       this._loader.load_tiles(x, y, this._z, this._w, future_zoom_level, false);
