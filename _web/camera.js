@@ -10,6 +10,8 @@ J.camera = function(viewer) {
   this._z = 0;
   this._w = 1;
 
+  this._i_j = [-1, -1];
+
   // a c e
   // b d f
   // 0 0 1
@@ -101,7 +103,9 @@ J.camera.prototype.zoom = function(x, y, delta) {
       //this._viewer.loading(true);
 
       // this time we really draw (no_draw = false)
+      // setTimeout(function() {
       this._loader.load_tiles(x, y, this._z, this._w, future_zoom_level, false);
+      // }.bind(this), 100);
       this._w = future_zoom_level;
 
       // console.log('w', future_zoom_level);
