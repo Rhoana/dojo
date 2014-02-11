@@ -106,7 +106,7 @@ J.controller.prototype.merge = function(id) {
 
   this.send_log(log);
   // shouldn't be required
-  DOJO.update_log(log);
+  // DOJO.update_log(log);
 
   this._viewer.redraw();
 
