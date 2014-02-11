@@ -42,6 +42,10 @@ J.interactor.prototype.onmousemove = function(e) {
   var x = e.clientX;
   var y = e.clientY;
 
+  this._camera._x = x;
+  this._camera._y = y;
+  this._camera._i_j = this._viewer.xy2ij(x, y);
+
   //var u_v = this._viewer.xy2uv(x, y);
 
   if (this._left_down) {
@@ -62,6 +66,10 @@ J.interactor.prototype.onmousedown = function(e) {
 
   var x = e.clientX;
   var y = e.clientY;
+
+  this._camera._x = x;
+  this._camera._y = y;  
+  this._camera._i_j = this._viewer.xy2ij(x, y);
 
   if (e.button == 0) {
     // left
@@ -92,7 +100,14 @@ J.interactor.prototype.onmousewheel = function(e) {
 
   var delta = e.wheelDelta || -e.detail;
 
-  this._camera.zoom(e.clientX, e.clientY, delta);
+  var x = e.clientX;
+  var y = e.clientY;
+
+  this._camera._x = x;
+  this._camera._y = y;  
+  this._camera._i_j = this._viewer.xy2ij(x, y);
+
+  this._camera.zoom(x, y, delta);
 
 };
 

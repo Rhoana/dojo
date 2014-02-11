@@ -10,12 +10,15 @@ J.camera = function(viewer) {
   this._z = 0;
   this._w = 1;
 
+  // we need to cache this here since manipulations to the camera matrix might mess things up
+  this._i_j = [-1, -1];
+
   // a c e
   // b d f
   // 0 0 1
   this._view = [1, 0, 0, 0, 1, 0, 0, 0, 1];
 
-  this._linear_zoom_factor = 0.1;
+  this._linear_zoom_factor = 0.3;
 
 };
 
@@ -65,7 +68,6 @@ J.camera.prototype.zoom = function(x, y, delta) {
   var wheel_sign = sign(delta/120);
 
   var future_w = this._w - wheel_sign;
-
   var future_zoom_level = this._view[0] + wheel_sign * this._linear_zoom_factor;
 
   // clamp the linear pixel zoom
@@ -87,41 +89,37 @@ J.camera.prototype.zoom = function(x, y, delta) {
   var new_scale = future_zoom_level;
 
   // here we check if we pass an image zoom level, if yes we need to draw other tiles
-  if ((new_scale >= 2 && wheel_sign > 0) || (new_scale <= 1 && wheel_sign < 0)) {
+  if ((new_scale >= 2 && wheel_sign > 0) || (new_scale-this._linear_zoom_factor < 1 && wheel_sign < 0)) {
 
     future_zoom_level = this._w - wheel_sign;
 
     // clamp zooming
     if (future_zoom_level >= 0 && future_zoom_level < this._viewer._image.zoomlevel_count) {
 
-      console.log('new tile');
-      // console.log('old scale', old_scale);
-      // console.log('new scale', new_scale)
-
-      //this._viewer.loading(true);
+      // this._viewer.loading(true);
 
       // this time we really draw (no_draw = false)
       this._loader.load_tiles(x, y, this._z, this._w, future_zoom_level, false);
+      
       this._w = future_zoom_level;
 
-      // console.log('w', future_zoom_level);
-
-      // reset pixel size to 1
-      this._view[0] = 1;
-      this._view[4] = 1;
-
-
       if (wheel_sign < 0) {
-        old_scale = 2.2;
-        new_scale = 2;
-        this._view[0] = 2;
-        this._view[4] = 2;      
+        // only zooming out
+
+        old_scale *= 2;
+        new_scale *= 2;
+        
+      } else {
+
+        new_scale /= 2;
+        old_scale /= 2;
+
+
       }
-      //   this._view[6] += 256;
-      //   this._view[7] += 256;  
-      //   // return;    
-      // }
-      
+
+      this._view[0] = new_scale;
+      this._view[4] = new_scale;
+
     }    
     
   }

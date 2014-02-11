@@ -58,3 +58,15 @@ function timestamp() {
 // Return the formatted string
   return date.join("/") + " " + time.join(":") + " " + suffix;
 }
+
+function remove_duplicates(array) {
+  var n = array.length,
+    i, result;
+
+  for (; n--;) {
+    result = [array[n--]];
+    i = array[n];
+    if (!(i in result)) result.push(i);
+  }
+  return result;  
+}
