@@ -10,6 +10,7 @@ J.camera = function(viewer) {
   this._z = 0;
   this._w = 1;
 
+  // we need to cache this here since manipulations to the camera matrix might mess things up
   this._i_j = [-1, -1];
 
   // a c e
@@ -96,7 +97,7 @@ J.camera.prototype.zoom = function(x, y, delta) {
     // clamp zooming
     if (future_zoom_level >= 0 && future_zoom_level < this._viewer._image.zoomlevel_count) {
 
-      console.log('new tile');
+      console.log('new tile', future_zoom_level);
       // console.log('old scale', old_scale);
       // console.log('new scale', new_scale)
 
@@ -116,6 +117,7 @@ J.camera.prototype.zoom = function(x, y, delta) {
 
 
       if (wheel_sign < 0) {
+        console.log(old_scale, new_scale);
         old_scale = 2.2;
         new_scale = 2;
         this._view[0] = 2;
