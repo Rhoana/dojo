@@ -241,9 +241,7 @@ J.loader.prototype.load_tiles = function(x, y, z, w, w_new, no_draw) {
 
   for (var r=1; r<=no_right; r++) {
     var new_x = x+r;
-    
     if (new_x >= tilescount_x) break;
-    
     tiles_to_load.push([new_x, y]);
   }
 
@@ -252,6 +250,50 @@ J.loader.prototype.load_tiles = function(x, y, z, w, w_new, no_draw) {
     if (new_y >= tilescount_y) break;
     tiles_to_load.push([x, new_y]);
   }
+
+
+  for (var t=1; t<=no_top; t++) {
+    var new_y = y-t;
+    if (new_y < 0) break;    
+    for (var r=1; r<=no_right; r++) {
+      var new_x = x+r;
+      if (new_x >= tilescount_x) break;
+      tiles_to_load.push([new_x, new_y]);
+    }
+  }
+
+  for (var b=1; b<=no_bottom; b++) {
+    var new_y = y+b;
+    if (new_y >= tilescount_y) break;
+    for (var r=1; r<=no_right; r++) {
+      var new_x = x+r;
+      if (new_x >= tilescount_x) break;
+      tiles_to_load.push([new_x, new_y]);
+    }
+  }
+
+  for (var t=1; t<=no_top; t++) {
+    var new_y = y-t;
+    if (new_y < 0) break;    
+    for (var l=1; l<=no_left; l++) {
+      var new_x = x-l;
+      
+      if (new_x < 0) break;
+      tiles_to_load.push([new_x,new_y]);
+    }
+  }
+
+  for (var b=1; b<=no_bottom; b++) {
+    var new_y = y+b;
+    if (new_y >= tilescount_y) break;
+    for (var l=1; l<=no_left; l++) {
+      var new_x = x-l;
+      
+      if (new_x < 0) break;
+      tiles_to_load.push([new_x,new_y]);
+    }
+  }
+
 
   // for(var l=1;x-l>=0 && l<=no_left;l++) {
   //   tiles_to_load.push([x-l,y]);
@@ -287,15 +329,15 @@ J.loader.prototype.load_tiles = function(x, y, z, w, w_new, no_draw) {
   // for (var y=0; y<tilescount_y; y++) {
   //   for (var x=0; x<tilescount_x; x++) {
   var to_draw = tiles_to_load.length;
-  console.log(to_draw);
-  console.log(tiles_to_load)
+  // console.log(to_draw);
+  // console.log(tiles_to_load)
   var max_to_draw = tiles_to_load.length;
   for (var k=0; k<max_to_draw; k++) {
 
     var x_y = tiles_to_load[k];
     x = tiles_to_load[k][0];
     y = tiles_to_load[k][1];
-    console.log('loading',x,y)
+    // console.log('loading',x,y)
 
     this.get_image(x, y, z, mojo_w_new, function(x, y, z, mojo_w_new, i) {
 
