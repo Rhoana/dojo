@@ -89,7 +89,7 @@ J.loader.prototype.get_image = function(x, y, z, w, callback, no_cache) {
 };
 
 J.loader.prototype.cache_image = function(x, y, z, w) {
-  return;
+
   // now get some more images  
   for (var j=1;j<=this._z_cache_size;j++) {
     if (z+j < this._viewer._image.max_z_tiles) {
@@ -187,20 +187,20 @@ J.loader.prototype.load_tiles = function(x, y, z, w, w_new, no_draw) {
   var tiles_to_load = [];
   tiles_to_load.push([x,y]);
 
-  var current_tile_x = (this._viewer._camera._view[6]+x*512);
-  var current_tile_y = (this._viewer._camera._view[7]+y*512);
+  var current_tile_x = (this._viewer._camera._view[6]+x*512*this._viewer._camera._view[0]);
+  var current_tile_y = (this._viewer._camera._view[7]+y*512*this._viewer._camera._view[4]);
 
   // check how many surrounding tiles we should load
   var space_left = Math.max(0,current_tile_x);
   var space_top = Math.max(0,current_tile_y);
-  var space_right = Math.max(0, this._viewer._width - (current_tile_x+512));
-  var space_bottom = Math.max(0, this._viewer._height - (current_tile_y+512));
-
+  var space_right = Math.max(0, this._viewer._width - (current_tile_x+512)*this._viewer._camera._view[0]);
+  var space_bottom = Math.max(0, this._viewer._height - (current_tile_y+512)*this._viewer._camera._view[4]);
+  // console.log(space_right, current_tile_x)
   var no_left = Math.ceil(space_left/512);
   var no_top = Math.ceil(space_top/512);
   var no_right = Math.ceil(space_right/512);
   var no_bottom = Math.ceil(space_bottom/512);
-
+  // console.log(no_right)
   for (var l=1; l<=no_left; l++) {
     var new_x = x-l;
     

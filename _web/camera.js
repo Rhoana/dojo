@@ -20,6 +20,8 @@ J.camera = function(viewer) {
 
   this._linear_zoom_factor = 0.3;
 
+  this._zoom_end_timeout = null;
+
 };
 
 
@@ -51,6 +53,11 @@ J.camera.prototype.reset = function() {
 
 };
 
+J.camera.prototype.zoom_end = function() {
+
+  this._loader.load_tiles(this._x, this._y, this._z, this._w, this._w, false);
+
+};
 
 ///
 J.camera.prototype.zoom = function(x, y, delta) {
@@ -64,6 +71,8 @@ J.camera.prototype.zoom = function(x, y, delta) {
   if (u_v[0] == -1 || u_v[1] == -1) {
     return;
   }
+
+  if (this._zoom_end_timeout) clearTimeout(this._zoom_end_timeout);
 
   var wheel_sign = sign(delta/120);
 
@@ -132,12 +141,16 @@ J.camera.prototype.zoom = function(x, y, delta) {
   this._view[6] -= wheel_sign * Math.abs(u_v[0] - u_new);
   this._view[7] -= wheel_sign * Math.abs(u_v[1] - v_new);  
 
+  this._zoom_end_timeout = setTimeout(this.zoom_end.bind(this), 60);
+
 };
 
 J.camera.prototype.pan = function(dx, dy) {
 
   this._view[6] += dx;
   this._view[7] += dy;
+
+  this._loader.load_tiles(this._x, this._y, this._z, this._w, this._w, false);
 
 };
 
