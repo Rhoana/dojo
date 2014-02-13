@@ -104,13 +104,14 @@ J.camera.prototype.zoom = function(x, y, delta) {
       this._w = future_zoom_level;
 
       if (wheel_sign < 0) {
-        // only zooming out
 
+        // zooming out
         old_scale *= 2;
         new_scale *= 2;
         
       } else {
 
+        // zooming in
         new_scale /= 2;
         old_scale /= 2;
 
@@ -133,65 +134,6 @@ J.camera.prototype.zoom = function(x, y, delta) {
 
 };
 
-J.camera.prototype.image_zoom = function(x, y, delta) {
-
-  var u_v = this._viewer.xy2uv(x,y);
-
-  //console.log('zoom')
-
-  // only do stuff if we are over the image data
-  if (u_v[0] == -1 || u_v[1] == -1) {
-    console.log('out')
-    return;
-  }  
-
-  this._viewer.loading(true);
-
-  var wheel_sign = sign(delta/120);
-
-  //var future_zoom_level = this._view[0] + wheel_sign;
-  var future_zoom_level = this._w - wheel_sign;
-
-  // clamp zooming
-  if (future_zoom_level < 0 || future_zoom_level == this._viewer._image.zoomlevel_count) {
-    this._viewer.loading(false);
-    return;
-  }
-
-  // trigger tile loading
-  //this._loader.load_tile(x, y, this._z, this._view[0], future_zoom_level);
-  this._loader.load_tiles(x, y, this._z, this._w, future_zoom_level);
-
-  //var old_scale = this._view[0];
-  var old_scale_w = this._viewer._image.zoom_levels[this._w][2];//this._zoom_level;
-  var old_scale_h = this._viewer._image.zoom_levels[this._w][3];
-
-  // perform zooming
-  //this._view[0] += wheel_sign;
-  //this._view[4] += wheel_sign;
-  this._x = x;
-  this._y = y;
-  this._w -= wheel_sign;
-
-  //var new_scale = this._view[0];
-  var new_scale_w = this._viewer._image.zoom_levels[this._w][2];
-  var new_scale_h = this._viewer._image.zoom_levels[this._w][3];
-
-  // var u_new = u_v[0] * new_scale;
-  // var v_new = u_v[1] * new_scale;
-  // if (old_scale != 0) {
-
-    u_new = u_v[0]/old_scale_w * new_scale_w;
-    v_new = u_v[1]/old_scale_h * new_scale_h;
-
-  // }
-
-  // translate to correct point
-  this._view[6] -= wheel_sign * Math.abs(u_v[0] - u_new);
-  this._view[7] -= wheel_sign * Math.abs(u_v[1] - v_new);
-
-};
-
 J.camera.prototype.pan = function(dx, dy) {
 
   this._view[6] += dx;
@@ -204,7 +146,7 @@ J.camera.prototype.slice_up = function() {
   if (this._z == this._viewer._image.max_z_tiles-1) return;
 
   this._viewer.loading(true);
-  this._loader.load_tiles(this._x, this._y, ++this._z, this._w, this._w);
+  this._loader.load_tiles(this._x, this._y, ++this._z, this._w, this._w, false);
 
   DOJO.update_slice_number(this._z+1);
 
@@ -215,7 +157,7 @@ J.camera.prototype.slice_down = function() {
   if (this._z == 0) return;
 
   this._viewer.loading(true);
-  this._loader.load_tiles(this._x, this._y, --this._z, this._w, this._w);
+  this._loader.load_tiles(this._x, this._y, --this._z, this._w, this._w, false);
 
   DOJO.update_slice_number(this._z+1);
 
