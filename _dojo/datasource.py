@@ -5,6 +5,7 @@ import re
 import h5py
 import json
 import xml.etree.ElementTree as ET
+import sqlite3
 
 class Datasource(object):
 
@@ -30,10 +31,12 @@ class Datasource(object):
 
     self.__has_colormap = False
     self.__colormap = None
+    self.__database = None
 
     # file system regex
     self.__info_regex = re.compile('.*' + self.__sub_dir + '/tiledVolumeDescription.xml$')
     self.__colormap_file_regex = re.compile('.*' + self.__sub_dir + '/colorMap.hdf5$')
+    self.__segmentinfo_file_regex = re.compile('.*' + self.__sub_dir + '/segmentInfo.db$')
 
     # handler regex
     self.__query_toc_regex = re.compile('^/' + self.__query + '/contents$')
@@ -72,6 +75,10 @@ class Datasource(object):
           hdf5_file.visit(list_of_names.append) 
           self.__has_colormap = True
           self.__colormap = hdf5_file[list_of_names[0]].value
+
+        # segmentinfo database
+        elif self.__segmentinfo_file_regex.match(os.path.join(root,f)):
+          self.__database = sqlite3.connect(os.path.join(root,f))
 
 
   def get_info_xml(self):
