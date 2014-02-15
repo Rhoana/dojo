@@ -33,6 +33,8 @@ J.viewer = function(container) {
   this._colormap = null;
   this._max_colors = 0;
 
+  this._overlay_opacity = 100;  
+
   this._loader = new J.loader(this);
   this._camera = new J.camera(this);
   this._websocket = new J.websocket(this);
@@ -151,6 +153,10 @@ J.viewer.prototype.draw_image = function(x,y,z,w,i,s) {
   var pixel_data_data = pixel_data.data;
   var segmentation_data = new Uint32Array(s.buffer);
 
+  var opacity = this._overlay_opacity;
+  var highlighted_id = this._controller._highlighted_id;
+  var activated_id = this._controller._activated_id;
+
   var pos = 0; // running pixel (rgba) index, increases by 4
   var max_colors = this._max_colors;
   var colormap = this._colormap;
@@ -158,22 +164,19 @@ J.viewer.prototype.draw_image = function(x,y,z,w,i,s) {
   // run through all 512*512 bytes
   for (var p=0; p<262144; p++) {
 
-    var id = segmentation_data[p];
+    var id = this.lookup_id(segmentation_data[p]);
 
-    //if (id >= max_colors) {
-      //id = id % max_colors;
-    //}
-
-    var color = this.get_color(id);//colormap[id % max_colors];
-
-    // if (color[0] == 0) {
-    //   console.log(color, id, segmentation_data[p], p);
-    // }
+    var color = this.get_color(id);
 
     pixel_data_data[pos++] = color[0];
     pixel_data_data[pos++] = color[1];
     pixel_data_data[pos++] = color[2];
-    pixel_data_data[pos++] = 150;
+
+    if (id == highlighted_id || id == activated_id) {
+      pixel_data_data[pos++] = 200;
+    } else {    
+      pixel_data_data[pos++] = opacity;
+    }
 
   }
 
@@ -182,17 +185,18 @@ J.viewer.prototype.draw_image = function(x,y,z,w,i,s) {
 
 };
 
-J.viewer.prototype.get_color = function(id) {
+J.viewer.prototype.lookup_id = function(id) {
 
-  if (id in this._controller._merge_table) {
-    return this._colormap[this._controller._merge_table[id] % this._max_colors];
+  // check if this has an entry in the merge table
+  while(id in this._controller._merge_table) {
+    id = this._controller._merge_table[id];
   }
 
-  return this._colormap[id % this._max_colors];
+  return id;
 
 };
 
-J.viewer.prototype.get_color_before_merge = function(id) {
+J.viewer.prototype.get_color = function(id) {
 
   return this._colormap[id % this._max_colors];
 
@@ -290,9 +294,9 @@ J.viewer.prototype.get_segmentation_id = function(i, j, callback) {
 
     var pixel_data = new Uint32Array(s.buffer);
 
-    // TODO have to incorporate merge table
+    var id = this.lookup_id(pixel_data[(j % 512) * 512 + (i % 512)]);
 
-    callback(pixel_data[(j % 512) * 512 + (i % 512)]);
+    callback(id);
 
   }.bind(this));
 
