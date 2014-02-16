@@ -117,19 +117,40 @@ J.interactor.prototype.onkeydown = function(e) {
 
   if (this._keypress_callback) return;
 
-  if (e.keyCode == 81) {
+  // 81: Q
+  // 65: A
+  // 87: W SLICE UP
+  // 83: S SLICE DOWN
+  // 67: C ZOOM IN
+  // 88: X ZOOM OUT
+
+  if (e.keyCode == 87) {
   
     this._keypress_callback = setTimeout(function() {
       this._camera.slice_up();
       this._keypress_callback = null;
     }.bind(this),10);   
 
-  } else if (e.keyCode == 65) {
+  } else if (e.keyCode == 83) {
   
     this._keypress_callback = setTimeout(function() {
       this._camera.slice_down();
       this._keypress_callback = null;
     }.bind(this),10);   
+
+  } else if (e.keyCode == 67) {
+
+    this._keypress_callback = setTimeout(function() {
+      this._camera.zoom(this._camera._x, this._camera._y, 1);
+      this._keypress_callback = null;
+    }.bind(this),10); 
+
+  } else if (e.keyCode == 88) {
+
+    this._keypress_callback = setTimeout(function() {
+      this._camera.zoom(this._camera._x, this._camera._y, -1);
+      this._keypress_callback = null;
+    }.bind(this),10); 
 
   }
 
