@@ -11,7 +11,7 @@ J.camera = function(viewer) {
   this._w = 1;
 
   // we need to cache this here since manipulations to the camera matrix might mess things up
-  this._i_j = [-1, -1];
+  this._i_j = [0, 0];
 
   // a c e
   // b d f

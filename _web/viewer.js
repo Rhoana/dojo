@@ -37,7 +37,6 @@ J.viewer = function(container) {
 
   this._loader = new J.loader(this);
   this._camera = new J.camera(this);
-  this._websocket = new J.websocket(this);
   this._controller = new J.controller(this);
 
 };
@@ -75,33 +74,42 @@ J.viewer.prototype.init = function(callback) {
         this._colormap = JSON.parse(res.response);
         this._max_colors = this._colormap.length;
 
-        var x = 0;
-        var y = 0;
-        var z = 0;
-        var w = parseInt(this._image.zoomlevel_count,10)-1;
-        this._loader.get_image(x, y, z, w, function(i) {
+        console.log('Colormap loaded.')
 
-          this._loader.get_segmentation(x, y, z, w, function(x, y, z, w, s) {
+       this._camera.reset();
 
-            // // get some more slices as well
-            // this._loader.get_image(x, y, z+1, w, function(i) {
-            //   console.log('cached', i);
-            // });
+       this.render();
 
-            this.draw_image(x, y, z, w, i, s);
-            this._image_buffer_ready = true;
+        // now create websocket connection
+        this._websocket = new J.websocket(this);
+        // var x = 0;
+        // var y = 0;
+        // var z = 0;
+        // var w = parseInt(this._image.zoomlevel_count,10)-1;
+        // this._loader.load_tiles(x, y, z, w, w, false);
+//         this._loader.get_image(x, y, z, w, function(i) {
 
-          }.bind(this, x, y, z, w)); // load first segmentation
+//           this._loader.get_segmentation(x, y, z, w, function(x, y, z, w, s) {
 
-          this._camera.reset();
+//             // // get some more slices as well
+//             // this._loader.get_image(x, y, z+1, w, function(i) {
+//             //   console.log('cached', i);
+//             // });
 
-          this.render();
+// //            this.draw_image(x, y, z, w, i, s);
+//             this._image_buffer_ready = true;
 
-          callback();
+//           }.bind(this, x, y, z, w)); // load first segmentation
 
-        }.bind(this)); // load first image
+          // this.redraw();
 
-      }.bind(this));
+
+
+//           callback();
+
+//         }.bind(this)); // load first image
+
+      }.bind(this)); // /segmentation/colormap
 
     }.bind(this)); // load /segmentation/contents
 
@@ -140,12 +148,12 @@ J.viewer.prototype.redraw = function() {
   // trigger re-draw
   this.loading(true);
 
-  this._loader.load_tiles(this._camera._x, this._camera._y, this._camera._z, this._camera._w, this._camera._w);
+  this._loader.load_tiles(this._camera._x, this._camera._y, this._camera._z, this._camera._w, this._camera._w, false);
 
 };
 
 J.viewer.prototype.draw_image = function(x,y,z,w,i,s) {
-
+  console.log(x,y)
   this._image_buffer_context.drawImage(i,0,0,512,512,x*512,y*512,512,512);
 
   // draw segmentation
@@ -161,12 +169,38 @@ J.viewer.prototype.draw_image = function(x,y,z,w,i,s) {
   var max_colors = this._max_colors;
   var colormap = this._colormap;
 
+  var right_border = 1;
+  var left_border = 0;
+
   // run through all 512*512 bytes
   for (var p=0; p<262144; p++) {
 
     var id = this.lookup_id(segmentation_data[p]);
 
     var color = this.get_color(id);
+
+    // if (++right_border == 511) {
+    //   right_border = 1;
+    // }
+
+    // if (++left_border == 512) {
+    //   left_border = 0;
+    // }
+
+    var border = false;
+    border = (p>0 && left_border > 0 && id != this.lookup_id(segmentation_data[p-1])) || // left
+             (p<262143 && right_border > 1 && id != this.lookup_id(segmentation_data[p+1])) //|| // right
+             // (p>511 && id != segmentation_data[p-512]) || // top
+             // (p<261631 && id != segmentation_data[p+512]); // bottom
+    
+    if (border) {
+      // console.log('border')
+      pixel_data_data[pos++] = 0;
+      pixel_data_data[pos++] = 0;
+      pixel_data_data[pos++] = 0;
+      pixel_data_data[pos++] = 255;
+      continue;
+    }
 
     pixel_data_data[pos++] = color[0];
     pixel_data_data[pos++] = color[1];
@@ -188,7 +222,7 @@ J.viewer.prototype.draw_image = function(x,y,z,w,i,s) {
 J.viewer.prototype.lookup_id = function(id) {
 
   // check if this has an entry in the merge table
-  while(id in this._controller._merge_table) {
+  while(typeof this._controller._merge_table[id] !== 'undefined') {
     id = this._controller._merge_table[id];
   }
 
@@ -205,6 +239,7 @@ J.viewer.prototype.get_color = function(id) {
 J.viewer.prototype.clear_buffer = function(width, height) {
 
   this._image_buffer_context.clearRect(0, 0, width, height);
+  //this._segmentation_buffer_context.clearRect(0, 0, width, height);
 
 };
 

@@ -7,7 +7,7 @@ J.loader = function(viewer) {
   this._image_cache = [];
   this._segmentation_cache = [];
 
-  this._z_cache_size = 3;
+  this._z_cache_size = 0;
 
   this._image_loading = [];
 
@@ -170,6 +170,7 @@ J.loader.prototype.load_tiles = function(x, y, z, w, w_new, no_draw) {
 
   // clear old tiles
   if (!no_draw) {
+    console.log('clearing',this._viewer._image.zoom_levels[w][0]*512)
     this._viewer.clear_buffer(this._viewer._image.zoom_levels[w][0]*512, this._viewer._image.zoom_levels[w][1]*512);
   }
 
