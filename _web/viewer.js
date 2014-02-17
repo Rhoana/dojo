@@ -35,6 +35,7 @@ J.viewer = function(container) {
   this._segmentation = null;
 
   this._colormap = null;
+  this._gl_colormap = null;
   this._max_colors = 0;
 
   this._overlay_opacity = 100;  
@@ -81,6 +82,19 @@ J.viewer.prototype.init = function(callback) {
 
         this._colormap = JSON.parse(res.response);
         this._max_colors = this._colormap.length;
+        this._gl_colormap = new Uint8Array(4*this._max_colors);
+
+        var pos = 0;
+        for (var i=0; i<this._max_colors; i++) {
+          
+          var c = this._colormap[i];
+
+          this._gl_colormap[pos++] = c[0];
+          this._gl_colormap[pos++] = c[1];
+          this._gl_colormap[pos++] = c[2];
+          this._gl_colormap[pos++] = 255;
+
+        }
 
         this._camera.reset();
 
@@ -140,7 +154,7 @@ J.viewer.prototype.draw_image = function(x,y,z,w,i,s) {
   // draw segmentation
   var pixel_data = this._pixel_data_buffer;
   var pixel_data_data = pixel_data.data;
-  var segmentation_data = new Uint32Array(s.buffer);
+  var segmentation_data = s;//;new Uint32Array(s.buffer);
 
   var opacity = this._overlay_opacity;
   var highlighted_id = this._controller._highlighted_id;
@@ -153,50 +167,51 @@ J.viewer.prototype.draw_image = function(x,y,z,w,i,s) {
   var right_border = 1;
   var left_border = 0;
 
-  // run through all 512*512 bytes
-  for (var p=0; p<262144; p++) {
+  // // run through all 512*512 bytes
+  // for (var p=0; p<262144; p++) {
 
-    var id = this.lookup_id(segmentation_data[p]);
+  //   var id = this.lookup_id(segmentation_data[p]);
 
-    var color = this.get_color(id);
+  //   var color = this.get_color(id);
 
-    // if (++right_border == 511) {
-    //   right_border = 1;
-    // }
+  //   // if (++right_border == 511) {
+  //   //   right_border = 1;
+  //   // }
 
-    // if (++left_border == 512) {
-    //   left_border = 0;
-    // }
+  //   // if (++left_border == 512) {
+  //   //   left_border = 0;
+  //   // }
 
-    // var border = false;
-    // border = (p>0 && left_border > 0 && id != this.lookup_id(segmentation_data[p-1])) || // left
-    //          (p<262143 && right_border > 1 && id != this.lookup_id(segmentation_data[p+1])) //|| // right
-    //          // (p>511 && id != segmentation_data[p-512]) || // top
-    //          // (p<261631 && id != segmentation_data[p+512]); // bottom
+  //   // var border = false;
+  //   // border = (p>0 && left_border > 0 && id != this.lookup_id(segmentation_data[p-1])) || // left
+  //   //          (p<262143 && right_border > 1 && id != this.lookup_id(segmentation_data[p+1])) //|| // right
+  //   //          // (p>511 && id != segmentation_data[p-512]) || // top
+  //   //          // (p<261631 && id != segmentation_data[p+512]); // bottom
     
-    // if (border) {
-    //   // console.log('border')
-    //   pixel_data_data[pos++] = 0;
-    //   pixel_data_data[pos++] = 0;
-    //   pixel_data_data[pos++] = 0;
-    //   pixel_data_data[pos++] = 255;
-    //   continue;
-    // }
+  //   // if (border) {
+  //   //   // console.log('border')
+  //   //   pixel_data_data[pos++] = 0;
+  //   //   pixel_data_data[pos++] = 0;
+  //   //   pixel_data_data[pos++] = 0;
+  //   //   pixel_data_data[pos++] = 255;
+  //   //   continue;
+  //   // }
 
-    pixel_data_data[pos++] = color[0];
-    pixel_data_data[pos++] = color[1];
-    pixel_data_data[pos++] = color[2];
+  //   pixel_data_data[pos++] = color[0];
+  //   pixel_data_data[pos++] = color[1];
+  //   pixel_data_data[pos++] = color[2];
+  //   pixel_data_data[pos++] = 255;
 
-    if (id == highlighted_id || id == activated_id) {
-      pixel_data_data[pos++] = 200;
-    } else {    
-      pixel_data_data[pos++] = opacity;
-    }
+  //   // if (id == highlighted_id || id == activated_id) {
+  //   //   pixel_data_data[pos++] = 200;
+  //   // } else {    
+  //   //   pixel_data_data[pos++] = opacity;
+  //   // }
 
-  }
+  // }
   
   // send pixel data to WebGL and get the processed return
-  pixel_data.data = this._offscreen_renderer.draw(pixel_data_data);
+  pixel_data.data = this._offscreen_renderer.draw(s);
 
   this._segmentation_buffer_context.putImageData(pixel_data, 0, 0);
   this._image_buffer_context.drawImage(this._segmentation_buffer,0,0,512,512,x*512,y*512,512,512);

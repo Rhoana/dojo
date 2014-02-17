@@ -19,19 +19,44 @@
 
   <!-- SHADERS -->
   <script id="fs1" type="x-shader/x-fragment">
-    precision mediump float;
+    precision highp float;
 
     uniform sampler2D uTextureSampler;
+    uniform sampler2D uColorMapSampler;
     //uniform sampler2D uTextureSampler2;
+    uniform float uOpacity;
+    uniform vec3 uHighlightedId;
+    uniform vec3 uActivatedId;
 
     varying vec3 vPosition;
     varying vec2 vTexturePosition;
+
+    float unpack (vec4 colour) {
+      // const vec4 bitShifts = vec4( (256.0 * 256.0 * 256.0),
+      //                              (256.0 * 256.0),
+      //                              256.0,
+      //                             1);
+      // return dot(colour.abgr , bitShifts);
+      return colour.r + colour.g*256. + colour.b*256.*256. + colour.a*256.*256.*256.;
+    }
 
     void main() {
 
       vec4 tex1 = texture2D(uTextureSampler, vTexturePosition);
 
-      gl_FragColor = tex1;
+      float id = unpack(tex1);
+      id = float(int(mod(id, 1.)) + 33);
+      vec4 color = texture2D(uColorMapSampler, vec2(int(mod(id, 1001.)), 0));
+      //color = texture2D(uColorMapSampler, vec2(33, 0));
+
+
+      // if (tex1.rgb == uHighlightedId || tex1.rgb == uActivatedId) {
+      //   tex1.a = 0.8;
+      // } else {
+      //   tex1.a = uOpacity;
+      // }
+
+      gl_FragColor = vec4(color.rgb, 1.);
 
     }
   </script>

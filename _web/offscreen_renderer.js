@@ -51,6 +51,10 @@ J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
   gl.useProgram(h);
 
   this.h_uTextureSampler = gl.getUniformLocation(h, 'uTextureSampler');
+  this.h_uColorMapSampler = gl.getUniformLocation(h, 'uColorMapSampler');
+  this.h_uOpacity = gl.getUniformLocation(h, 'uOpacity');
+  this.h_uHighlightedId = gl.getUniformLocation(h, 'uHighlightedId');
+  this.h_uActivatedId = gl.getUniformLocation(h, 'uActivatedId');
   // this.h_uTextureSampler2 = gl.getUniformLocation(h, 'uTextureSampler2');  
 
   this.h_aPosition = gl.getAttribLocation(h, 'aPosition');
@@ -77,10 +81,23 @@ J.offscreen_renderer.prototype.draw = function(s) {
 
   var gl = this._gl;
 
+  // create colormap texture buffer
+  var colormap_texture = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, colormap_texture);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this._viewer._max_colors, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, this._viewer._gl_colormap);
+
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+
+  gl.bindTexture(gl.TEXTURE_2D, null);
+
   // create segmentation texture buffer
   this._segmentation_texture_buffer = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, this._segmentation_texture_buffer);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 512, 512, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(s.buffer));
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 512, 512, 0, gl.RGBA, gl.UNSIGNED_BYTE, s);
 
   // clamp to edge
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -107,10 +124,17 @@ J.offscreen_renderer.prototype.draw = function(s) {
   gl.bindBuffer(gl.ARRAY_BUFFER, this._square_buffer);
   gl.vertexAttribPointer(this.h_aPosition, 3, gl.FLOAT, false, 0, 0);
 
-  gl.activeTexture(gl.TEXTURE0);
+  // gl.uniform3fv(this.h_uActivatedId, activated_id);
+  // gl.uniform3fv(this.h_uHighlightedId, highlighted_id);
+  // gl.uniform1f(this.h_uOpacity, this._viewer._overlay_opacity);
 
+  gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, this._segmentation_texture_buffer);
   gl.uniform1i(this.h_uTextureSampler, 0);
+
+  gl.activeTexture(gl.TEXTURE1);
+  gl.bindTexture(gl.TEXTURE_2D, colormap_texture);
+  gl.uniform1i(this.h_uColorMapSampler, 1);
 
   gl.enableVertexAttribArray(this.h_aTexturePosition);
   gl.bindBuffer(gl.ARRAY_BUFFER, this._uv_buffer);
@@ -120,6 +144,8 @@ J.offscreen_renderer.prototype.draw = function(s) {
 
   var array = new Uint8Array(1048576);
   gl.readPixels(0, 0, 512, 512, gl.RGBA, gl.UNSIGNED_BYTE, array);
+
+  console.log(array);
 
   return array;
 
