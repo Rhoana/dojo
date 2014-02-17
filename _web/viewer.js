@@ -26,6 +26,10 @@ J.viewer = function(container) {
   this._segmentation_buffer_context = this._segmentation_buffer.getContext('2d');
   this._pixel_data_buffer = this._segmentation_buffer_context.createImageData(512, 512);
 
+  this._offscreen_buffer = document.createElement('canvas');
+  // _container.appendChild(this._offscreen_buffer);
+  this._offscreen_buffer.width = 512;
+  this._offscreen_buffer.height = 512;
 
   this._image = null;
   this._segmentation = null;
@@ -38,6 +42,10 @@ J.viewer = function(container) {
   this._loader = new J.loader(this);
   this._camera = new J.camera(this);
   this._controller = new J.controller(this);
+  this._offscreen_renderer = new J.offscreen_renderer(this);
+  if (!this._offscreen_renderer.init('vs1', 'fs1')) {
+    console.log('WebGL not supported.');
+  }
 
 };
 
@@ -74,40 +82,13 @@ J.viewer.prototype.init = function(callback) {
         this._colormap = JSON.parse(res.response);
         this._max_colors = this._colormap.length;
 
-        console.log('Colormap loaded.')
+        this._camera.reset();
 
-       this._camera.reset();
-
-       this.render();
+        // start rendering loop
+        this.render();
 
         // now create websocket connection
         this._websocket = new J.websocket(this);
-        // var x = 0;
-        // var y = 0;
-        // var z = 0;
-        // var w = parseInt(this._image.zoomlevel_count,10)-1;
-        // this._loader.load_tiles(x, y, z, w, w, false);
-//         this._loader.get_image(x, y, z, w, function(i) {
-
-//           this._loader.get_segmentation(x, y, z, w, function(x, y, z, w, s) {
-
-//             // // get some more slices as well
-//             // this._loader.get_image(x, y, z+1, w, function(i) {
-//             //   console.log('cached', i);
-//             // });
-
-// //            this.draw_image(x, y, z, w, i, s);
-//             this._image_buffer_ready = true;
-
-//           }.bind(this, x, y, z, w)); // load first segmentation
-
-          // this.redraw();
-
-
-
-//           callback();
-
-//         }.bind(this)); // load first image
 
       }.bind(this)); // /segmentation/colormap
 
@@ -153,7 +134,7 @@ J.viewer.prototype.redraw = function() {
 };
 
 J.viewer.prototype.draw_image = function(x,y,z,w,i,s) {
-  console.log(x,y)
+  
   this._image_buffer_context.drawImage(i,0,0,512,512,x*512,y*512,512,512);
 
   // draw segmentation
@@ -187,20 +168,20 @@ J.viewer.prototype.draw_image = function(x,y,z,w,i,s) {
     //   left_border = 0;
     // }
 
-    var border = false;
-    border = (p>0 && left_border > 0 && id != this.lookup_id(segmentation_data[p-1])) || // left
-             (p<262143 && right_border > 1 && id != this.lookup_id(segmentation_data[p+1])) //|| // right
-             // (p>511 && id != segmentation_data[p-512]) || // top
-             // (p<261631 && id != segmentation_data[p+512]); // bottom
+    // var border = false;
+    // border = (p>0 && left_border > 0 && id != this.lookup_id(segmentation_data[p-1])) || // left
+    //          (p<262143 && right_border > 1 && id != this.lookup_id(segmentation_data[p+1])) //|| // right
+    //          // (p>511 && id != segmentation_data[p-512]) || // top
+    //          // (p<261631 && id != segmentation_data[p+512]); // bottom
     
-    if (border) {
-      // console.log('border')
-      pixel_data_data[pos++] = 0;
-      pixel_data_data[pos++] = 0;
-      pixel_data_data[pos++] = 0;
-      pixel_data_data[pos++] = 255;
-      continue;
-    }
+    // if (border) {
+    //   // console.log('border')
+    //   pixel_data_data[pos++] = 0;
+    //   pixel_data_data[pos++] = 0;
+    //   pixel_data_data[pos++] = 0;
+    //   pixel_data_data[pos++] = 255;
+    //   continue;
+    // }
 
     pixel_data_data[pos++] = color[0];
     pixel_data_data[pos++] = color[1];
@@ -213,6 +194,9 @@ J.viewer.prototype.draw_image = function(x,y,z,w,i,s) {
     }
 
   }
+  
+  // send pixel data to WebGL and get the processed return
+  pixel_data.data = this._offscreen_renderer.draw(pixel_data_data);
 
   this._segmentation_buffer_context.putImageData(pixel_data, 0, 0);
   this._image_buffer_context.drawImage(this._segmentation_buffer,0,0,512,512,x*512,y*512,512,512);
@@ -239,7 +223,6 @@ J.viewer.prototype.get_color = function(id) {
 J.viewer.prototype.clear_buffer = function(width, height) {
 
   this._image_buffer_context.clearRect(0, 0, width, height);
-  //this._segmentation_buffer_context.clearRect(0, 0, width, height);
 
 };
 
