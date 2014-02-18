@@ -144,7 +144,7 @@ J.offscreen_renderer.prototype.draw = function(s) {
 
   var array = new Uint8Array(1048576);
   gl.readPixels(0, 0, 512, 512, gl.RGBA, gl.UNSIGNED_BYTE, array);
-
+  // console.log(array);
   return array;
 
 };

@@ -32,55 +32,46 @@
     varying vec2 vTexturePosition;
 
     float unpack (vec4 value) {
-      // const vec4 bitShifts = vec4( (256.0 * 256.0 * 256.0),
-      //                              (256.0 * 256.0),
-      //                              256.0,
-      //                             1);
-      // return dot(colour.abgr , bitShifts);
-      return value.x + value.y*256. + value.z*256.*256. + value.w*256.*256.*256.;
+      
+      const vec4 bitShifts = vec4( (256.0 * 256.0 * 256.0),
+                                   (256.0 * 256.0),
+                                   256.0,
+                                  1);
+      return dot(value.abgr , bitShifts);
+      
+      //return (value.x) + (value.y)*256. + (value.z)*256.*256. + (value.w)*256.*256.*256.;
+      //return value.w + value.z*256. + value.y*256.*256. + value.x*256.*256.*256.;
+    }
+
+    int unpack_i (vec4 value) {
+      return int(value.x) + int(value.y)*256 + int(value.z)*256*256 + int(value.w)*256*256*256;
     }
 
     void main() {
 
-      // [220, 11, 0, 0, 220, 11, 0, 0, ...
+      // between 0..1
       vec4 tex1 = texture2D(uTextureSampler, vTexturePosition);
 
-      float id = unpack(tex1);
+      float id = unpack(tex1)*255.;
 
-      // gives 33
-      //id = float(int(mod(id, 1.)) + 33);
+      float normalized_id = mod(id, 1001.);
+      //float normalized_id = mod(id, 1.) + 33.;
+      //float normalized_id = 33.;
 
+      //float one_pixel = 1.0 / 1000.;
 
-      float normalized_id = float(int(mod(id, 1001.)));
-
-
-// 3036 % 1001
-// 33
-// DOJO.viewer._colormap[3036 % 1001]
-// [181, 134, 113]
-
-
-
-
-      //[0, 0, 0, 255, 32, 48, 193, 255, 55, 86, 169, 255, 36, 163, 218, 255, 223, 115, 61, 255, 94, 79, 151, 255,
-      //vec4 color = texture2D(uColorMapSampler, vTexturePosition);
-    
-      vec2 one_pixel = vec2(1.0, 1.0) / vec2(1001., 1.);
-
-      vec2 colormap_pos = vec2(one_pixel.x * normalized_id, 0.);
+      //vec2 colormap_pos = vec2(one_pixel * normalized_id, 0.);
+      vec2 colormap_pos = vec2(normalized_id / 1000., 0.);
+      // vec2 colormap_pos = vec2(normalized_id, 0.);
       vec4 color = texture2D(uColorMapSampler, colormap_pos);
-      //color = texture2D(uColorMapSampler, vec2(33, 0));
-
 
       if (id == uHighlightedId || id == uActivatedId) {
-        color.a = 0.8;
+         color.a = 0.8;
       } else {
         color.a = uOpacity/255.;
       }
 
-      //gl_FragColor = vec4(id/255., color.r, color.g, 0.);//vec4(color.rgb, 1.);
-      //gl_FragColor = vec4(colormap_pos.x, vTexturePosition.x, 1. , 1.);
-      gl_FragColor = color;
+      gl_FragColor = color;//tex1;//color;//vec4(id/255.);
 
     }
   </script>

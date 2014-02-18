@@ -243,7 +243,7 @@ J.viewer.prototype.lookup_id = function(id) {
 };
 
 J.viewer.prototype.get_color = function(id) {
-
+  console.log(id, id % this._max_colors, this._colormap[id % this._max_colors]);
   return this._colormap[id % this._max_colors];
 
 };
