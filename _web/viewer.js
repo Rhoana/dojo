@@ -82,7 +82,7 @@ J.viewer.prototype.init = function(callback) {
 
         this._colormap = JSON.parse(res.response);
         this._max_colors = this._colormap.length;
-        this._gl_colormap = new Uint8Array(4*this._max_colors);
+        this._gl_colormap = new Uint8Array(3*this._max_colors);
 
         var pos = 0;
         for (var i=0; i<this._max_colors; i++) {
@@ -92,7 +92,6 @@ J.viewer.prototype.init = function(callback) {
           this._gl_colormap[pos++] = c[0];
           this._gl_colormap[pos++] = c[1];
           this._gl_colormap[pos++] = c[2];
-          this._gl_colormap[pos++] = 255;
 
         }
 
@@ -211,7 +210,21 @@ J.viewer.prototype.draw_image = function(x,y,z,w,i,s) {
   // }
   
   // send pixel data to WebGL and get the processed return
-  pixel_data.data = this._offscreen_renderer.draw(s);
+  var s_new = this._offscreen_renderer.draw(s);
+  //console.log(s_new)
+
+  //pixel_data.data = s_new.buffer);
+
+  for (var p=0; p<262144; p++) {
+
+    pixel_data_data[pos] = s_new[pos++];
+    pixel_data_data[pos] = s_new[pos++];
+    pixel_data_data[pos] = s_new[pos++];
+    pixel_data_data[pos] = s_new[pos++];
+
+  }
+
+  //console.log(pixel_data.data)
 
   this._segmentation_buffer_context.putImageData(pixel_data, 0, 0);
   this._image_buffer_context.drawImage(this._segmentation_buffer,0,0,512,512,x*512,y*512,512,512);
