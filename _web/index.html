@@ -28,6 +28,7 @@
     uniform float uOpacity;
     uniform float uHighlightedId;
     uniform float uActivatedId;
+    uniform float uMaxColors;
 
     varying vec3 vPosition;
     varying vec2 vTexturePosition;
@@ -50,10 +51,10 @@
 
       float id = unpack(tex1)*255.;
 
-      float normalized_id = mod(id, 1001.);
+      float normalized_id = mod(id, uMaxColors);
       //float normalized_id = mod(id, 1.) + 33.;
 
-      vec2 colormap_pos = vec2(normalized_id / 1000., 0.);
+      vec2 colormap_pos = vec2(normalized_id / (uMaxColors - 1.), 0.);
       // vec2 colormap_pos = vec2(normalized_id, 0.);
       vec4 color = texture2D(uColorMapSampler, colormap_pos);
 

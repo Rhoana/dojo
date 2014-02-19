@@ -56,6 +56,7 @@ J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
   this.h_uOpacity = gl.getUniformLocation(h, 'uOpacity');
   this.h_uHighlightedId = gl.getUniformLocation(h, 'uHighlightedId');
   this.h_uActivatedId = gl.getUniformLocation(h, 'uActivatedId');
+  this.h_uMaxColors = gl.getUniformLocation(h, 'uMaxColors');
   // this.h_uTextureSampler2 = gl.getUniformLocation(h, 'uTextureSampler2');  
 
   this.h_aPosition = gl.getAttribLocation(h, 'aPosition');
@@ -107,8 +108,8 @@ J.offscreen_renderer.prototype.draw = function(s, c, x, y) {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 
   gl.bindTexture(gl.TEXTURE_2D, null);
 
@@ -128,9 +129,11 @@ J.offscreen_renderer.prototype.draw = function(s, c, x, y) {
   gl.bindBuffer(gl.ARRAY_BUFFER, this._square_buffer);
   gl.vertexAttribPointer(this.h_aPosition, 3, gl.FLOAT, false, 0, 0);
 
+  // some values
   gl.uniform1f(this.h_uActivatedId, this._viewer._controller._activated_id);
   gl.uniform1f(this.h_uHighlightedId, this._viewer._controller._highlighted_id);
   gl.uniform1f(this.h_uOpacity, this._viewer._overlay_opacity);
+  gl.uniform1f(this.h_uMaxColors, this._viewer._max_colors);
 
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, this._segmentation_texture_buffer);
