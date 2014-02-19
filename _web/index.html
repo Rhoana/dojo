@@ -19,7 +19,8 @@
 
   <!-- SHADERS -->
   <script id="fs1" type="x-shader/x-fragment">
-    precision lowp float;
+    precision mediump float;
+    precision mediump int;
 
     uniform sampler2D uTextureSampler;
     uniform sampler2D uColorMapSampler;
@@ -31,20 +32,15 @@
     varying vec3 vPosition;
     varying vec2 vTexturePosition;
 
+    // convert rgba to a 32 bit value
     float unpack (vec4 value) {
-      
+      // note: little endian
       const vec4 bitShifts = vec4( (256.0 * 256.0 * 256.0),
                                    (256.0 * 256.0),
                                    256.0,
                                   1);
       return dot(value.abgr , bitShifts);
       
-      //return (value.x) + (value.y)*256. + (value.z)*256.*256. + (value.w)*256.*256.*256.;
-      //return value.w + value.z*256. + value.y*256.*256. + value.x*256.*256.*256.;
-    }
-
-    int unpack_i (vec4 value) {
-      return int(value.x) + int(value.y)*256 + int(value.z)*256*256 + int(value.w)*256*256*256;
     }
 
     void main() {
@@ -56,22 +52,21 @@
 
       float normalized_id = mod(id, 1001.);
       //float normalized_id = mod(id, 1.) + 33.;
-      //float normalized_id = 33.;
 
-      //float one_pixel = 1.0 / 1000.;
-
-      //vec2 colormap_pos = vec2(one_pixel * normalized_id, 0.);
       vec2 colormap_pos = vec2(normalized_id / 1000., 0.);
       // vec2 colormap_pos = vec2(normalized_id, 0.);
       vec4 color = texture2D(uColorMapSampler, colormap_pos);
 
-      if (id == uHighlightedId || id == uActivatedId) {
+      float highlighted_delta = abs(uHighlightedId - id);
+      float activated_delta = abs(uHighlightedId - id);
+
+      if (highlighted_delta <= 0.1 || activated_delta <= 0.1) {
          color.a = 0.8;
       } else {
         color.a = uOpacity/255.;
       }
 
-      gl_FragColor = color;//tex1;//color;//vec4(id/255.);
+      gl_FragColor = color;
 
     }
   </script>

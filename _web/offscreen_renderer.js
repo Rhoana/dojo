@@ -14,6 +14,9 @@ J.offscreen_renderer = function(viewer) {
   this._segmentation_texture_buffer = null;
   this._uv_buffer = null;
 
+  this._width = this._canvas.width;
+  this._height = this._canvas.height;
+
 };
 
 J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
@@ -25,25 +28,23 @@ J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
     return false;
   }
 
-  // store the canvas size
-  gl.viewportWidth = canvas.width;
-  gl.viewportHeight = canvas.height;
-
-  gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
-  gl.clearColor(0,0,0,0);//128./255., 200./255., 255./255., 1.);
+  gl.viewport(0, 0, this._width, this._height);
+  gl.clearColor(0,0,0,1.);//128./255., 200./255., 255./255., 1.);
   gl.clearDepth(0);
   // gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
   // gl.pixelStorei(gl.PACK_ALIGNMENT, 1);
 
   // enable transparency
-  // gl.blendEquation(gl.FUNC_ADD);
-  // gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-  // gl.enable(gl.BLEND);
+  gl.blendEquation(gl.FUNC_ADD);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  gl.enable(gl.BLEND);
 
   // gl.enable(gl.DEPTH_TEST);
   // gl.depthFunc(gl.GREATER);
 
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
   // create shaders
   this._program = linkShaders(gl, vs_id, fs_id);
@@ -64,10 +65,14 @@ J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
   this._square_buffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, this._square_buffer);
   var vertices = new Float32Array([
-     1.,  1., 0.,
-    -1.,  1., 0.,
+    //  1.,  1., 0.,
+    // -1.,  1., 0.,
+    //  1., -1., 0.,
+    // -1, -1., 0.
+    -1, -1., 0.,
      1., -1., 0.,
-    -1, -1., 0.
+    -1.,  1., 0.,
+    1.,  1., 0.
     ]);
   gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
 
@@ -77,9 +82,12 @@ J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
 
 };
 
-J.offscreen_renderer.prototype.draw = function(s) {
+J.offscreen_renderer.prototype.draw = function(s, c, x, y) {
 
   var gl = this._gl;
+
+  gl.viewport(0, 0, this._width, this._height);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
   // create colormap texture buffer
   var colormap_texture = gl.createTexture();
@@ -103,8 +111,8 @@ J.offscreen_renderer.prototype.draw = function(s) {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 
   gl.bindTexture(gl.TEXTURE_2D, null);
 
@@ -112,10 +120,15 @@ J.offscreen_renderer.prototype.draw = function(s) {
   this._uv_buffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, this._uv_buffer);
   var uvs = new Float32Array([
-    1., 1.,
-    0., 1.,
+    0., 0.,
     1., 0.,
-    0., 0.
+    0., 1.,
+    1., 1.
+
+    // 1., 1.,
+    // 0., 1.,
+    // 1., 0.,
+    // 0., 0.
     ]);
   gl.bufferData(gl.ARRAY_BUFFER, uvs, gl.STATIC_DRAW);
 
@@ -142,9 +155,11 @@ J.offscreen_renderer.prototype.draw = function(s) {
 
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
-  var array = new Uint8Array(1048576);
-  gl.readPixels(0, 0, 512, 512, gl.RGBA, gl.UNSIGNED_BYTE, array);
-  // console.log(array);
-  return array;
+  // var array = new Uint8Array(1048576);
+  // gl.readPixels(0, 0, 512, 512, gl.RGBA, gl.UNSIGNED_BYTE, array);
+  // // console.log(array);
+  // return array;
+
+  c.drawImage(this._canvas,0,0,512,512,x*512,y*512,512,512);
 
 };

@@ -38,14 +38,18 @@ J.viewer = function(container) {
   this._gl_colormap = null;
   this._max_colors = 0;
 
-  this._overlay_opacity = 100;  
+  this._overlay_opacity = 130;  
 
   this._loader = new J.loader(this);
   this._camera = new J.camera(this);
   this._controller = new J.controller(this);
   this._offscreen_renderer = new J.offscreen_renderer(this);
+
+  this._webgl_supported = true;
+
   if (!this._offscreen_renderer.init('vs1', 'fs1')) {
-    console.log('WebGL not supported.');
+    console.log('No WebGL support.');
+    this._webgl_supported = false;
   }
 
 };
@@ -210,24 +214,12 @@ J.viewer.prototype.draw_image = function(x,y,z,w,i,s) {
   // }
   
   // send pixel data to WebGL and get the processed return
-  var s_new = this._offscreen_renderer.draw(s);
-  //console.log(s_new)
+  this._offscreen_renderer.draw(s, this._image_buffer_context, x, y);
 
-  //pixel_data.data = s_new.buffer);
+  //this._segmentation_buffer_context.putImageData(pixel_data, 0, 0);
+  //this._image_buffer_context.drawImage(this._segmentation_buffer,0,0,512,512,x*512,y*512,512,512);
 
-  for (var p=0; p<262144; p++) {
-
-    pixel_data_data[pos] = s_new[pos++];
-    pixel_data_data[pos] = s_new[pos++];
-    pixel_data_data[pos] = s_new[pos++];
-    pixel_data_data[pos] = s_new[pos++];
-
-  }
-
-  //console.log(pixel_data.data)
-
-  this._segmentation_buffer_context.putImageData(pixel_data, 0, 0);
-  this._image_buffer_context.drawImage(this._segmentation_buffer,0,0,512,512,x*512,y*512,512,512);
+  //this._image_buffer_context.drawImage(s_new,0,0,512,512,x*512,y*512,512,512);
 
 };
 
@@ -243,7 +235,7 @@ J.viewer.prototype.lookup_id = function(id) {
 };
 
 J.viewer.prototype.get_color = function(id) {
-  console.log(id, id % this._max_colors, this._colormap[id % this._max_colors]);
+
   return this._colormap[id % this._max_colors];
 
 };
