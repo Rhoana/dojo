@@ -116,7 +116,7 @@ J.interactor.prototype.onkeydown = function(e) {
   if (!this._viewer._image_buffer_ready) return;
 
   if (this._keypress_callback) return;
-
+  
   // 81: Q
   // 65: A
   // 87: W SLICE UP
@@ -149,6 +149,13 @@ J.interactor.prototype.onkeydown = function(e) {
 
     this._keypress_callback = setTimeout(function() {
       this._camera.zoom(this._camera._x, this._camera._y, -1);
+      this._keypress_callback = null;
+    }.bind(this),10); 
+
+  } else if (e.keyCode == 65) {
+
+    this._keypress_callback = setTimeout(function() {
+      this._viewer.toggle_borders();
       this._keypress_callback = null;
     }.bind(this),10); 
 

@@ -39,6 +39,7 @@ J.viewer = function(container) {
   this._max_colors = 0;
 
   this._overlay_opacity = 130;  
+  this._overlay_borders = true;
 
   this._loader = new J.loader(this);
   this._camera = new J.camera(this);
@@ -276,6 +277,11 @@ J.viewer.prototype.clear = function() {
 
 };
 
+J.viewer.prototype.toggle_borders = function() {
+  this._overlay_borders = !this._overlay_borders;
+  this.redraw();
+};
+
 J.viewer.prototype.loading = function(value) {
   // console.log('loading', value)
   this._image_buffer_ready = !value;
@@ -289,6 +295,7 @@ J.viewer.prototype.render = function() {
     this.clear();
     // put image buffer
     this._context.drawImage(this._image_buffer, 0, 0);
+    // console.log('draw')
   }
 
   this._AnimationFrameID = window.requestAnimationFrame(this.render.bind(this));

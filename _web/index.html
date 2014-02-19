@@ -31,6 +31,7 @@
     uniform float uHighlightedId;
     uniform float uActivatedId;
     uniform float uMaxColors;
+    uniform int uBorders;
 
     varying vec3 vPosition;
     varying vec2 vTexturePosition;
@@ -46,12 +47,29 @@
       
     }
 
+    bool equals(float id1, float id2) {
+      return (abs(id1-id2) <= 0.1);
+    }
+
     void main() {
 
       // between 0..1
       vec4 tex1 = texture2D(uTextureSampler, vTexturePosition);
 
       float id = unpack(tex1)*255.;
+
+      bool border = false;
+      if (uBorders == 1) {
+
+        // grab surrounding ids
+        float id_l = unpack(texture2D(uTextureSampler, vec2(vTexturePosition.x - 1.0/512.0, vTexturePosition.y)))*255.;
+        float id_r = unpack(texture2D(uTextureSampler, vec2(vTexturePosition.x + 1.0/512.0, vTexturePosition.y)))*255.;
+        float id_b = unpack(texture2D(uTextureSampler, vec2(vTexturePosition.x, vTexturePosition.y - 1.0/512.0)))*255.;
+        float id_t = unpack(texture2D(uTextureSampler, vec2(vTexturePosition.x, vTexturePosition.y + 1.0/512.0)))*255.;
+
+        border = (!equals(id_l, id) || !equals(id_r, id) || !equals(id_b, id) || !equals(id_t, id));
+
+      }
 
       float normalized_id = mod(id, uMaxColors);
       //float normalized_id = mod(id, 1.) + 33.;
@@ -60,16 +78,21 @@
       // vec2 colormap_pos = vec2(normalized_id, 0.);
       vec4 color = texture2D(uColorMapSampler, colormap_pos);
 
-      float highlighted_delta = abs(uHighlightedId - id);
-      float activated_delta = abs(uHighlightedId - id);
+      if (border) {
 
-      if (highlighted_delta <= 0.1 || activated_delta <= 0.1) {
-         color.a = 0.8;
+        gl_FragColor = vec4(0., 0., 0., 1.);
+
       } else {
-        color.a = uOpacity/255.;
-      }
 
-      gl_FragColor = color;
+        if (equals(uHighlightedId, id) || equals(uActivatedId, id)) {
+           color.a = 0.8;
+        } else {
+          color.a = uOpacity/255.;
+        }
+
+        gl_FragColor = color;
+
+      }
 
     }
   </script>
