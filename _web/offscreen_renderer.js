@@ -65,10 +65,6 @@ J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
   this._square_buffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, this._square_buffer);
   var vertices = new Float32Array([
-    //  1.,  1., 0.,
-    // -1.,  1., 0.,
-    //  1., -1., 0.,
-    // -1, -1., 0.
     -1, -1., 0.,
      1., -1., 0.,
     -1.,  1., 0.,
@@ -124,11 +120,6 @@ J.offscreen_renderer.prototype.draw = function(s, c, x, y) {
     1., 0.,
     0., 1.,
     1., 1.
-
-    // 1., 1.,
-    // 0., 1.,
-    // 1., 0.,
-    // 0., 0.
     ]);
   gl.bufferData(gl.ARRAY_BUFFER, uvs, gl.STATIC_DRAW);
 
@@ -157,8 +148,7 @@ J.offscreen_renderer.prototype.draw = function(s, c, x, y) {
 
   // var array = new Uint8Array(1048576);
   // gl.readPixels(0, 0, 512, 512, gl.RGBA, gl.UNSIGNED_BYTE, array);
-  // // console.log(array);
-  // return array;
+  // console.log(array);
 
   c.drawImage(this._canvas,0,0,512,512,x*512,y*512,512,512);
 

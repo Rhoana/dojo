@@ -46,6 +46,7 @@ J.viewer = function(container) {
   this._offscreen_renderer = new J.offscreen_renderer(this);
 
   this._webgl_supported = true;
+  this._drawer = null;
 
   if (!this._offscreen_renderer.init('vs1', 'fs1')) {
     console.log('No WebGL support.');
@@ -55,6 +56,14 @@ J.viewer = function(container) {
 };
 
 J.viewer.prototype.init = function(callback) {
+
+  // check which drawer to use (WebGL vs. canvas)
+  if (this._webgl_supported) {
+    this._drawer = this.draw_webgl.bind(this);
+  } else {
+    this._drawer = this.draw_canvas.bind(this);
+  }
+
 
   // get contents
   this._loader.load_json('/image/contents', function(res) {
@@ -151,13 +160,28 @@ J.viewer.prototype.redraw = function() {
 };
 
 J.viewer.prototype.draw_image = function(x,y,z,w,i,s) {
-  
+
+  this._drawer(x,y,z,w,i,s);
+
+};
+
+J.viewer.prototype.draw_webgl = function(x,y,z,w,i,s) {
+
+  this._image_buffer_context.drawImage(i,0,0,512,512,x*512,y*512,512,512);
+
+  // draw segmentation
+  this._offscreen_renderer.draw(s, this._image_buffer_context, x, y);  
+
+};
+
+J.viewer.prototype.draw_canvas = function(x,y,z,w,i,s) {
+
   this._image_buffer_context.drawImage(i,0,0,512,512,x*512,y*512,512,512);
 
   // draw segmentation
   var pixel_data = this._pixel_data_buffer;
   var pixel_data_data = pixel_data.data;
-  var segmentation_data = s;//;new Uint32Array(s.buffer);
+  var segmentation_data = new Uint32Array(s.buffer);
 
   var opacity = this._overlay_opacity;
   var highlighted_id = this._controller._highlighted_id;
@@ -170,56 +194,50 @@ J.viewer.prototype.draw_image = function(x,y,z,w,i,s) {
   var right_border = 1;
   var left_border = 0;
 
-  // // run through all 512*512 bytes
-  // for (var p=0; p<262144; p++) {
+  // run through all 512*512 bytes
+  for (var p=0; p<262144; p++) {
 
-  //   var id = this.lookup_id(segmentation_data[p]);
+    var id = this.lookup_id(segmentation_data[p]);
 
-  //   var color = this.get_color(id);
+    var color = this.get_color(id);
 
-  //   // if (++right_border == 511) {
-  //   //   right_border = 1;
-  //   // }
+    // if (++right_border == 511) {
+    //   right_border = 1;
+    // }
 
-  //   // if (++left_border == 512) {
-  //   //   left_border = 0;
-  //   // }
+    // if (++left_border == 512) {
+    //   left_border = 0;
+    // }
 
-  //   // var border = false;
-  //   // border = (p>0 && left_border > 0 && id != this.lookup_id(segmentation_data[p-1])) || // left
-  //   //          (p<262143 && right_border > 1 && id != this.lookup_id(segmentation_data[p+1])) //|| // right
-  //   //          // (p>511 && id != segmentation_data[p-512]) || // top
-  //   //          // (p<261631 && id != segmentation_data[p+512]); // bottom
+    // var border = false;
+    // border = (p>0 && left_border > 0 && id != this.lookup_id(segmentation_data[p-1])) || // left
+    //          (p<262143 && right_border > 1 && id != this.lookup_id(segmentation_data[p+1])) //|| // right
+    //          // (p>511 && id != segmentation_data[p-512]) || // top
+    //          // (p<261631 && id != segmentation_data[p+512]); // bottom
     
-  //   // if (border) {
-  //   //   // console.log('border')
-  //   //   pixel_data_data[pos++] = 0;
-  //   //   pixel_data_data[pos++] = 0;
-  //   //   pixel_data_data[pos++] = 0;
-  //   //   pixel_data_data[pos++] = 255;
-  //   //   continue;
-  //   // }
+    // if (border) {
+    //   // console.log('border')
+    //   pixel_data_data[pos++] = 0;
+    //   pixel_data_data[pos++] = 0;
+    //   pixel_data_data[pos++] = 0;
+    //   pixel_data_data[pos++] = 255;
+    //   continue;
+    // }
 
-  //   pixel_data_data[pos++] = color[0];
-  //   pixel_data_data[pos++] = color[1];
-  //   pixel_data_data[pos++] = color[2];
-  //   pixel_data_data[pos++] = 255;
+    pixel_data_data[pos++] = color[0];
+    pixel_data_data[pos++] = color[1];
+    pixel_data_data[pos++] = color[2];
 
-  //   // if (id == highlighted_id || id == activated_id) {
-  //   //   pixel_data_data[pos++] = 200;
-  //   // } else {    
-  //   //   pixel_data_data[pos++] = opacity;
-  //   // }
+    if (id == highlighted_id || id == activated_id) {
+      pixel_data_data[pos++] = 200;
+    } else {    
+      pixel_data_data[pos++] = opacity;
+    }
 
-  // }
-  
-  // send pixel data to WebGL and get the processed return
-  this._offscreen_renderer.draw(s, this._image_buffer_context, x, y);
+  }  
 
-  //this._segmentation_buffer_context.putImageData(pixel_data, 0, 0);
-  //this._image_buffer_context.drawImage(this._segmentation_buffer,0,0,512,512,x*512,y*512,512,512);
-
-  //this._image_buffer_context.drawImage(s_new,0,0,512,512,x*512,y*512,512,512);
+  this._segmentation_buffer_context.putImageData(pixel_data, 0, 0);
+  this._image_buffer_context.drawImage(this._segmentation_buffer,0,0,512,512,x*512,y*512,512,512);
 
 };
 
