@@ -1,6 +1,6 @@
 body {
   margin:0px;
-  overflow:hidden;
+  overflow:hidden !important;
   font-family: sans-serif;
   font-size: 10px;
 }

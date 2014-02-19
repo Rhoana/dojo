@@ -8,16 +8,6 @@ function pad(i,n) {
   return v;
 }
 
-// UTILITY FUNCTIONS
-
-function pad(i,n) {
-  var v = i + "";
-  while (v.length < n) {
-    v = "0" + v
-  }
-  return v;
-}
-
 
 function updateFrustFovY() {
 

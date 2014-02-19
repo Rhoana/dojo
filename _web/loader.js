@@ -7,7 +7,7 @@ J.loader = function(viewer) {
   this._image_cache = [];
   this._segmentation_cache = [];
 
-  this._z_cache_size = 3;
+  this._z_cache_size = 0;
 
   this._image_loading = [];
 
@@ -168,10 +168,7 @@ J.loader.prototype.load_tiles = function(x, y, z, w, w_new, no_draw) {
     return;
   }
 
-  // clear old tiles
-  if (!no_draw) {
-    this._viewer.clear_buffer(this._viewer._image.zoom_levels[w][0]*512, this._viewer._image.zoom_levels[w][1]*512);
-  }
+  // this._viewer.loading(true);
 
   // todo check which sub-tiles to load
   var tilescount_x = this._viewer._image.zoom_levels[mojo_w_new][0];
@@ -179,6 +176,10 @@ J.loader.prototype.load_tiles = function(x, y, z, w, w_new, no_draw) {
   
   // don't recalculate I,J here
   var i_j = this._viewer._camera._i_j;
+  if (i_j[0] == -1 || i_j[1] == -1) {
+    this._viewer.loading(false);
+    return;
+  }
 
   // console.log(x,y,i_j);
   x = Math.floor(i_j[0] / (this._viewer._image.width/this._viewer._image.zoom_levels[mojo_w_new][2]));
@@ -269,6 +270,11 @@ J.loader.prototype.load_tiles = function(x, y, z, w, w_new, no_draw) {
     }
   }
 
+  // clear old tiles
+  if (!no_draw) {
+    // console.log('clearing',this._viewer._image.zoom_levels[w][0]*512)
+    this._viewer.clear_buffer(this._viewer._image.zoom_levels[w][0]*512, this._viewer._image.zoom_levels[w][1]*512);
+  }
 
   var to_draw = tiles_to_load.length;
   var max_to_draw = tiles_to_load.length;
@@ -283,10 +289,13 @@ J.loader.prototype.load_tiles = function(x, y, z, w, w_new, no_draw) {
       this.get_segmentation(x, y, z, mojo_w_new, function(x, y, z, mojo_w_new, s) {
 
         if (!no_draw) this._viewer.draw_image(x, y, z, mojo_w_new, i, s);
-
+        
         to_draw--;
 
+
+
         if (to_draw == 0) {
+
           this._viewer.loading(false);
         }
 
