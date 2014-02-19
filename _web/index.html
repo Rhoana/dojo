@@ -26,12 +26,15 @@
 
     uniform sampler2D uTextureSampler;
     uniform sampler2D uColorMapSampler;
+    uniform sampler2D uMergeTableKeySampler;
+    uniform sampler2D uMergeTableValueSampler;
     //uniform sampler2D uTextureSampler2;
     uniform float uOpacity;
     uniform float uHighlightedId;
     uniform float uActivatedId;
     uniform float uMaxColors;
     uniform int uBorders;
+    uniform int uMergeTableLength;
 
     varying vec3 vPosition;
     varying vec2 vTexturePosition;
@@ -51,12 +54,35 @@
       return (abs(id1-id2) <= 0.1);
     }
 
+    bool larger(float id1, float id2) {
+
+      if (equals(id1, id2)) return false;
+
+      return id1 > id2;
+    }
+
     void main() {
 
       // between 0..1
       vec4 tex1 = texture2D(uTextureSampler, vTexturePosition);
 
       float id = unpack(tex1)*255.;
+
+      //
+      // MERGE
+      //
+      for (int m=0; m<uMergeTableLength; m++) {
+
+        vec4 m_key = texture2D(uMergeTableKeySampler, float(m) + 1.0/float(uMergeTableLength));
+        float m_id = unpack(m_key)*255;
+
+        // if m_id is larger than our id, then we are done since all entries are sorted
+        if (larger(m_id, id)) return;
+
+        // while loop, maybe use other function
+
+      }
+
 
       bool border = false;
       if (uBorders == 1) {
@@ -72,10 +98,10 @@
       }
 
       float normalized_id = mod(id, uMaxColors);
-      //float normalized_id = mod(id, 1.) + 33.;
+      //float normalized_id = mod(id, 1.) + 33.; // <---- TESTCASE
 
       vec2 colormap_pos = vec2(normalized_id / (uMaxColors - 1.), 0.);
-      // vec2 colormap_pos = vec2(normalized_id, 0.);
+      
       vec4 color = texture2D(uColorMapSampler, colormap_pos);
 
       if (border) {

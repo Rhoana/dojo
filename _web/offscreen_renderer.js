@@ -4,14 +4,13 @@ J.offscreen_renderer = function(viewer) {
 
   this._viewer = viewer;
   this._canvas = this._viewer._offscreen_buffer;
+  this._controller = this._viewer._controller;
 
   this._gl = null;
 
   this._program = null;
 
   this._square_buffer = null;
-  this._image_texture_buffer = null;
-  this._segmentation_texture_buffer = null;
   this._uv_buffer = null;
 
   this._width = this._canvas.width;
@@ -53,11 +52,14 @@ J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
 
   this.h_uTextureSampler = gl.getUniformLocation(h, 'uTextureSampler');
   this.h_uColorMapSampler = gl.getUniformLocation(h, 'uColorMapSampler');
+  this.h_uMergeTableKeySampler = gl.getUniformLocation(h, 'uMergeTableKeySampler');
+  this.h_uMergeTableValueSampler = gl.getUniformLocation(h, 'uMergeTableValueSampler');
   this.h_uOpacity = gl.getUniformLocation(h, 'uOpacity');
   this.h_uHighlightedId = gl.getUniformLocation(h, 'uHighlightedId');
   this.h_uActivatedId = gl.getUniformLocation(h, 'uActivatedId');
   this.h_uMaxColors = gl.getUniformLocation(h, 'uMaxColors');
   this.h_uBorders = gl.getUniformLocation(h, 'uBorders');
+  this.h_uMergeTableLength = gl.getUniformLocation(h, 'uMergeTableLength');
   // this.h_uTextureSampler2 = gl.getUniformLocation(h, 'uTextureSampler2');  
 
   this.h_aPosition = gl.getAttribLocation(h, 'aPosition');
@@ -101,8 +103,8 @@ J.offscreen_renderer.prototype.draw = function(s, c, x, y) {
   gl.bindTexture(gl.TEXTURE_2D, null);
 
   // create segmentation texture buffer
-  this._segmentation_texture_buffer = gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D, this._segmentation_texture_buffer);
+  var segmentation_texture = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, segmentation_texture);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 512, 512, 0, gl.RGBA, gl.UNSIGNED_BYTE, s);
 
   // clamp to edge
@@ -113,6 +115,42 @@ J.offscreen_renderer.prototype.draw = function(s, c, x, y) {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 
   gl.bindTexture(gl.TEXTURE_2D, null);
+
+  //
+  // MERGE TABLE
+  //
+  var merge_table_length = this._controller._merge_table_length;
+
+  var merge_table_keys = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, merge_table_keys);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, merge_table_length, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, this._controller._gl_merge_table_keys);
+
+  // clamp to edge
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+
+  gl.bindTexture(gl.TEXTURE_2D, null);
+
+  var merge_table_values = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, merge_table_values);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, merge_table_length, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, this._controller._gl_merge_table_values);
+
+  // clamp to edge
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+
+  gl.bindTexture(gl.TEXTURE_2D, null);
+
+  //
+  //
+  //
+
 
   // u-v
   this._uv_buffer = gl.createBuffer();
@@ -137,13 +175,24 @@ J.offscreen_renderer.prototype.draw = function(s, c, x, y) {
   gl.uniform1f(this.h_uMaxColors, this._viewer._max_colors);
   gl.uniform1i(this.h_uBorders, this._viewer._overlay_borders);
 
+  gl.uniform1i(this.h_uMergeTableLength, merge_table_length);
+
+
   gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, this._segmentation_texture_buffer);
+  gl.bindTexture(gl.TEXTURE_2D, segmentation_texture);
   gl.uniform1i(this.h_uTextureSampler, 0);
 
   gl.activeTexture(gl.TEXTURE1);
   gl.bindTexture(gl.TEXTURE_2D, colormap_texture);
   gl.uniform1i(this.h_uColorMapSampler, 1);
+
+  gl.activeTexture(gl.TEXTURE2);
+  gl.bindTexture(gl.TEXTURE_2D, merge_table_keys);
+  gl.uniform1i(this.h_uMergeTableKeySampler, 2);
+
+  gl.activeTexture(gl.TEXTURE3);
+  gl.bindTexture(gl.TEXTURE_2D, merge_table_values);
+  gl.uniform1i(this.h_uMergeTableValueSampler, 3);
 
   gl.enableVertexAttribArray(this.h_aTexturePosition);
   gl.bindBuffer(gl.ARRAY_BUFFER, this._uv_buffer);

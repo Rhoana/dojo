@@ -8,6 +8,10 @@ J.controller = function(viewer) {
 
   this._merge_table = null;
 
+  this._gl_merge_table_keys = null;
+  this._gl_merge_table_values = null;
+  this._merge_table_length = -1;
+
   this._lock_table = null;
 
   this._highlighted_id = null;
@@ -80,6 +84,8 @@ J.controller.prototype.update_merge_table = function(data) {
 
   this._merge_table = data;
 
+  this.create_gl_merge_table();
+
   this._viewer.redraw();
 
 };
@@ -140,7 +146,45 @@ J.controller.prototype.merge = function(id) {
 
   this.send_merge_table();
 
+  this.create_gl_merge_table();
+
   this.highlight(this._last_id);
+
+};
+
+J.controller.prototype.create_gl_merge_table = function() {
+
+  var keys = Object.keys(this._merge_table);
+  var no_keys = keys.length;
+
+  this._merge_table_length = no_keys;
+
+  this._gl_merge_table_keys = new Uint8Array(4 * no_keys);
+
+  var pos = 0;
+  for (var k=0; k<no_keys; k++) {
+    // pack value to 4 bytes (little endian)
+    var value = parseInt(keys[k],10);
+    var b = from32bitTo8bit(value);
+    this._gl_merge_table_keys[pos++] = b[0];
+    this._gl_merge_table_keys[pos++] = b[1];
+    this._gl_merge_table_keys[pos++] = b[2];
+    this._gl_merge_table_keys[pos++] = b[3];
+  }
+
+  this._gl_merge_table_values = new Uint8Array(4 * no_keys);
+
+  pos = 0;
+  for (var k=0; k<no_keys; k++) {
+    // pack value to 4 bytes (little endian)
+    var key = parseInt(keys[k],10);
+    var value = this._merge_table[key];
+    var b = from32bitTo8bit(value);
+    this._gl_merge_table_values[pos++] = b[0];
+    this._gl_merge_table_values[pos++] = b[1];
+    this._gl_merge_table_values[pos++] = b[2];
+    this._gl_merge_table_values[pos++] = b[3];
+  }  
 
 };
 
