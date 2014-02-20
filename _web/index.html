@@ -82,7 +82,7 @@
 
         if (m>uMergeTableLength) break;
 
-        vec4 m_key = texture2D(uMergeTableKeySampler, vec2(float(m) + 1.0/float(uMergeTableLength), 0.));
+        vec4 m_key = texture2D(uMergeTableKeySampler, vec2(float(m)/float(uMergeTableLength), 0.));
         float m_id = unpack(m_key)*255.;
 
         // if m_id is larger than our id, then we are done since all entries are sorted
@@ -90,10 +90,10 @@
 
         if (equals(id, m_id)) {
           // found entry
-          vec4 m_value = texture2D(uMergeTableValueSampler, vec2(float(m) + 1.0/float(uMergeTableLength), 0.));
+          vec4 m_value = texture2D(uMergeTableValueSampler, vec2(float(m)/float(uMergeTableLength), 0.));
           id = unpack(m_value)*255.;
 
-          return id;
+          return 5289.;
         }
 
       }
@@ -108,8 +108,6 @@
       vec4 tex1 = texture2D(uTextureSampler, vTexturePosition);
 
       float id = unpack(tex1)*255.;
-      gl_FragColor = pack(id);
-      float orig_id = id;
       float new_id = 0.;
       //
       // MERGE
@@ -119,6 +117,7 @@
         new_id = lookup_id(id);
 
         if (equals(new_id, id)) {
+          id = new_id;
           break;
         } else {
           id = new_id;
@@ -159,7 +158,7 @@
           color.a = uOpacity/255.;
         }
 
-        gl_FragColor = pack(3306.);//vec4(id/10000., new_id/10000., orig_id/10000., 1.);//color;
+        gl_FragColor = color;
 
       }
 
