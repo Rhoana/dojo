@@ -200,9 +200,9 @@ J.offscreen_renderer.prototype.draw = function(s, c, x, y) {
 
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
-  var array = new Uint8Array(1048576);
-  gl.readPixels(0, 0, 512, 512, gl.RGBA, gl.UNSIGNED_BYTE, array);
-  console.log(array);
+  // var array = new Uint8Array(1048576);
+  // gl.readPixels(0, 0, 512, 512, gl.RGBA, gl.UNSIGNED_BYTE, array);
+  // console.log(array);
 
   c.drawImage(this._canvas,0,0,512,512,x*512,y*512,512,512);
 
