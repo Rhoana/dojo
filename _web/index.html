@@ -109,7 +109,8 @@
       vec4 tex1 = texture2D(uTextureSampler, vTexturePosition);
 
       float id = unpack(tex1)*255.;
-      float new_id = 0.;
+      float orig_id = id;
+      float new_id = id;
 
       //
       // MERGE
@@ -136,8 +137,12 @@
         float id_b = unpack(texture2D(uTextureSampler, vec2(vTexturePosition.x, vTexturePosition.y - 1.0/512.0)))*255.;
         float id_t = unpack(texture2D(uTextureSampler, vec2(vTexturePosition.x, vTexturePosition.y + 1.0/512.0)))*255.;
 
-        border = (!equals(id_l, id) || !equals(id_r, id) || !equals(id_b, id) || !equals(id_t, id));
-        border = false;
+        border = ((!equals(id_l, orig_id) && !equals(id_l, new_id)) ||
+                  (!equals(id_r, orig_id) && !equals(id_r, new_id)) ||
+                  (!equals(id_b, orig_id) && !equals(id_b, new_id)) ||
+                  (!equals(id_t, orig_id) && !equals(id_t, new_id)));
+                   // !equals(id_r, id) || !equals(id_b, id) || !equals(id_t, id));
+        // border = false;
 
       }
 
