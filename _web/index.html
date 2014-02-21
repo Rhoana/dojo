@@ -41,6 +41,10 @@
     varying vec3 vPosition;
     varying vec2 vTexturePosition;
 
+    //
+    // 32 BIT <-> 8 BIT CONVERSIONS
+    //
+
     // convert rgba to a 32 bit value
     float unpack (vec4 value) {
       // note: little endian
@@ -66,6 +70,9 @@
 
     }
 
+    //
+    // FLOAT COMPARE FUNCTIONS WITH DELTA
+    //
     bool equals(float id1, float id2) {
       return (abs(id1-id2) <= 0.1);
     }
@@ -77,7 +84,10 @@
       return id1 > id2;
     }
 
-    float lookup_id(float id) {
+    //
+    // ID LOOKUPS
+    //
+    float lookup_id_(float id) {
 
       for (int m=0; m<MAX_MERGES; m++) {
 
@@ -103,13 +113,8 @@
 
     }
 
-    void main() {
+    float lookup_id(float id) {
 
-      // between 0..1
-      vec4 tex1 = texture2D(uTextureSampler, vTexturePosition);
-
-      float id = unpack(tex1)*255.;
-      float orig_id = id;
       float new_id = id;
 
       //
@@ -117,7 +122,7 @@
       //
       for (int m=0; m < 1000; m++) {
 
-        new_id = lookup_id(id);
+        new_id = lookup_id_(id);
 
         if (equals(new_id, id)) {
           break;
@@ -127,52 +132,83 @@
 
       }
 
+      return id;
 
-      bool border = false;
-      if (uBorders == 1) {
+    }
 
-        // grab surrounding ids
-        float id_l = unpack(texture2D(uTextureSampler, vec2(vTexturePosition.x - 1.0/512.0, vTexturePosition.y)))*255.;
-        float id_r = unpack(texture2D(uTextureSampler, vec2(vTexturePosition.x + 1.0/512.0, vTexturePosition.y)))*255.;
-        float id_b = unpack(texture2D(uTextureSampler, vec2(vTexturePosition.x, vTexturePosition.y - 1.0/512.0)))*255.;
-        float id_t = unpack(texture2D(uTextureSampler, vec2(vTexturePosition.x, vTexturePosition.y + 1.0/512.0)))*255.;
-
-        border = ((!equals(id_l, orig_id) && !equals(id_l, new_id)) ||
-                  (!equals(id_r, orig_id) && !equals(id_r, new_id)) ||
-                  (!equals(id_b, orig_id) && !equals(id_b, new_id)) ||
-                  (!equals(id_t, orig_id) && !equals(id_t, new_id)));
-                   // !equals(id_r, id) || !equals(id_b, id) || !equals(id_t, id));
-        // border = false;
-
-      }
+    //
+    // COLORTABLE
+    //
+    vec4 lookup_color(float id) {
 
       float normalized_id = mod(id, uMaxColors);
-      float orig_n_id = normalized_id;
+
       // float normalized_id = mod(id, 1.) + 33.; // <---- TESTCASE
 
       vec2 colormap_pos = vec2(normalized_id / (uMaxColors - 1.), 0.);
       
       vec4 color = texture2D(uColorMapSampler, colormap_pos);
 
-      if (border) {
-
-        gl_FragColor = vec4(0., 0., 0., 1.);
-
+      // highlight active labels
+      if (equals(uHighlightedId, id) || equals(uActivatedId, id)) {
+         color.a = 0.8;
       } else {
+        color.a = uOpacity/255.;
+      }      
 
-        if (equals(uHighlightedId, id) || equals(uActivatedId, id)) {
-           color.a = 0.8;
-        } else {
-          color.a = uOpacity/255.;
-        }
+      return color;
 
-        gl_FragColor = color;
+    }
 
-        // gl_FragColor = vec4(tex1.x,tex1.y,tex1.z,1.0); // <<< shows the right id
-        // ivec4 n = pack(int(old_id));
-        // gl_FragColor = vec4(float(n.x)/255., float(n.y)/255., float(n.z)/255., 1.0);
+    //
+    // BORDERS
+    //
+    bool show_borders(float id) {
+
+      if (uBorders == 1) {
+
+        // grab surrounding ids
+        float id_l = unpack(texture2D(uTextureSampler, vec2(vTexturePosition.x - 1.0/512.0, vTexturePosition.y)))*255.;
+        id_l = lookup_id(id_l);
+        float id_r = unpack(texture2D(uTextureSampler, vec2(vTexturePosition.x + 1.0/512.0, vTexturePosition.y)))*255.;
+        id_r = lookup_id(id_r);
+        float id_b = unpack(texture2D(uTextureSampler, vec2(vTexturePosition.x, vTexturePosition.y - 1.0/512.0)))*255.;
+        id_b = lookup_id(id_b);
+        float id_t = unpack(texture2D(uTextureSampler, vec2(vTexturePosition.x, vTexturePosition.y + 1.0/512.0)))*255.;
+        id_t = lookup_id(id_t);
+
+        return (!equals(id, id_l) || !equals(id, id_r) || !equals(id, id_b) || !equals(id, id_t));
 
       }
+
+      return false;
+
+    }
+
+    //
+    //
+    //
+    //
+    //
+    //
+    void main() {
+
+      // grab 32 bit segmentation id
+      vec4 rgba_ids = texture2D(uTextureSampler, vTexturePosition);
+      float id = lookup_id(unpack(rgba_ids)*255.);
+
+      // .. lookup its' color
+      vec4 color = lookup_color(id);
+
+      if (show_borders(id)) {
+
+        // show borders in black
+        gl_FragColor = vec4(0., 0., 0., 1.);
+        return;
+
+      }
+
+      gl_FragColor = color;
 
     }
   </script>
