@@ -50,10 +50,13 @@ J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
   var h = this._program;
   gl.useProgram(h);
 
+  // textures
   this.h_uTextureSampler = gl.getUniformLocation(h, 'uTextureSampler');
   this.h_uColorMapSampler = gl.getUniformLocation(h, 'uColorMapSampler');
   this.h_uMergeTableKeySampler = gl.getUniformLocation(h, 'uMergeTableKeySampler');
   this.h_uMergeTableValueSampler = gl.getUniformLocation(h, 'uMergeTableValueSampler');
+  this.h_uLockTableSampler = gl.getUniformLocation(h, 'uLockTableSampler');
+
   this.h_uOpacity = gl.getUniformLocation(h, 'uOpacity');
   this.h_uHighlightedId = gl.getUniformLocation(h, 'uHighlightedId');
   this.h_uActivatedId = gl.getUniformLocation(h, 'uActivatedId');

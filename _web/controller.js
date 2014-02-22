@@ -14,6 +14,9 @@ J.controller = function(viewer) {
 
   this._lock_table = null;
 
+  this._gl_lock_table = null;
+  this._lock_table_length = -1;
+
   this._highlighted_id = null;
 
   this._activated_id = null;
@@ -57,6 +60,11 @@ J.controller.prototype.receive = function(data) {
     // received new merge table
     this._viewer._controller.update_merge_table(input.value);
 
+  } else if (input.name == 'LOCKTABLE') {
+
+    // received new lock table
+    this._viewer._controller.update_lock_table(input.value);
+
   }
 
 };
@@ -95,6 +103,10 @@ J.controller.prototype.send_merge_table = function() {
   this.send('MERGETABLE', this._merge_table);
 
 };
+
+J.controller.prototype.update_lock_table = function()
+
+
 
 J.controller.prototype.send_log = function(message) {
 
