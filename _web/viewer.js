@@ -364,3 +364,7 @@ J.viewer.prototype.get_segmentation_id = function(i, j, callback) {
   }.bind(this));
 
 };
+
+J.viewer.prototype.is_locked = function(id) {
+  return this._controller.is_locked(id);
+};

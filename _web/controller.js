@@ -122,6 +122,38 @@ J.controller.prototype.send_log = function(message) {
 
 };
 
+J.controller.prototype.is_locked = function(id) {
+  return (id in this._lock_table);
+};
+
+J.controller.prototype.lock = function(x, y) {
+
+  if (!this._lock_table) {
+    throw new Error('Lock table does not exist.');
+  }
+
+  var i_j = this._viewer.xy2ij(x, y);
+
+  if (i_j[0] == -1 || i_j[1] == -1) return;
+
+  this._viewer.get_segmentation_id(i_j[0], i_j[1], function(id) {
+
+    if (id in this._lock_table) {
+      delete this._lock_table[id];
+      console.log('Unlocking', id);
+    } else {
+      this._lock_table[id] = true;
+      console.log('Locking', id);
+    }
+
+    this.create_gl_lock_table();
+
+    this._viewer.redraw();
+
+  }.bind(this));
+
+};
+
 J.controller.prototype.merge = function(id) {
 
   if (!this._merge_table) {
@@ -242,6 +274,7 @@ J.controller.prototype.create_gl_lock_table = function() {
 
   this._lock_table_length = new_length;
 
+  var pos = 0;
   for (var i=0; i<no_keys; i++) {
 
     var b = from32bitTo8bit(keys[i]);

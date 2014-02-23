@@ -139,6 +139,32 @@
     }
 
     //
+    // LOCKTABLE
+    //
+    bool is_locked(float id) {
+
+      for (int m=0; m<MAX; m++) {
+
+        if (m>uLockTableLength) break;
+
+        vec4 m_key = texture2D(uLockTableSampler, vec2(float(m)/float(uLockTableLength), 0.));
+        float m_id = unpack(m_key)*255.;
+
+        // if m_id is larger than our id, then we are done since all entries are sorted
+        if (larger(m_id, id)) break;
+
+        if (equals(id, m_id)) {
+          // found entry -> label is locked
+          return true;
+        }
+
+      }
+
+      return false;
+
+    }
+
+    //
     // COLORTABLE
     //
     vec4 lookup_color(float id) {
@@ -151,12 +177,25 @@
       
       vec4 color = texture2D(uColorMapSampler, colormap_pos);
 
-      // highlight active labels
-      if (equals(uHighlightedId, id) || equals(uActivatedId, id)) {
-         color.a = 0.8;
+      // default opacity
+      color.a = uOpacity/255.;
+
+      // locked
+      if (is_locked(id)) {
+        if (mod(vTexturePosition.x, 0.05) < 0.01) {
+          color *= 1.5;
+        }
+        else if (mod(vTexturePosition.y, 0.05) < 0.01) {
+          color *= 1.5;
+        }
       } else {
-        color.a = uOpacity/255.;
-      }      
+
+        // highlight active labels
+        if (equals(uHighlightedId, id) || equals(uActivatedId, id)) {
+           color.a = 0.8;
+        }
+
+      }
 
       return color;
 
