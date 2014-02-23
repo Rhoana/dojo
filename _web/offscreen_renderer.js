@@ -63,6 +63,7 @@ J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
   this.h_uMaxColors = gl.getUniformLocation(h, 'uMaxColors');
   this.h_uBorders = gl.getUniformLocation(h, 'uBorders');
   this.h_uMergeTableLength = gl.getUniformLocation(h, 'uMergeTableLength');
+  this.h_uLockTableLength = gl.getUniformLocation(h, 'uLockTableLength');
   // this.h_uTextureSampler2 = gl.getUniformLocation(h, 'uTextureSampler2');  
 
   this.h_aPosition = gl.getAttribLocation(h, 'aPosition');
@@ -151,8 +152,22 @@ J.offscreen_renderer.prototype.draw = function(s, c, x, y) {
   gl.bindTexture(gl.TEXTURE_2D, null);
 
   //
+  // LOCK TABLE
   //
-  //
+  var lock_table_length = this._controller._lock_table_length;
+
+  var lock_table = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, lock_table);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, lock_table_length, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, this._controller._gl_lock_table);
+
+  // clamp to edge
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+
+  gl.bindTexture(gl.TEXTURE_2D, null);
 
 
   // u-v
@@ -179,6 +194,7 @@ J.offscreen_renderer.prototype.draw = function(s, c, x, y) {
   gl.uniform1i(this.h_uBorders, this._viewer._overlay_borders);
 
   gl.uniform1i(this.h_uMergeTableLength, merge_table_length);
+  gl.uniform1i(this.h_uLockTableLength, lock_table_length);
 
 
   gl.activeTexture(gl.TEXTURE0);
@@ -196,6 +212,10 @@ J.offscreen_renderer.prototype.draw = function(s, c, x, y) {
   gl.activeTexture(gl.TEXTURE3);
   gl.bindTexture(gl.TEXTURE_2D, merge_table_values);
   gl.uniform1i(this.h_uMergeTableValueSampler, 3);
+
+  gl.activeTexture(gl.TEXTURE4);
+  gl.bindTexture(gl.TEXTURE_2D, lock_table);
+  gl.uniform1i(this.h_uLockTableSampler, 4);
 
   gl.enableVertexAttribArray(this.h_aTexturePosition);
   gl.bindBuffer(gl.ARRAY_BUFFER, this._uv_buffer);

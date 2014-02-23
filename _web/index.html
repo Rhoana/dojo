@@ -36,8 +36,9 @@
     uniform float uMaxColors;
     uniform int uBorders;
     uniform int uMergeTableLength;
+    uniform int uLockTableLength;
 
-    const int MAX_MERGES = 1000000;
+    const int MAX = 10000;
 
     varying vec3 vPosition;
     varying vec2 vTexturePosition;
@@ -90,9 +91,9 @@
     //
     float lookup_id_(float id) {
 
-      for (int m=0; m<MAX_MERGES; m++) {
+      for (int m=0; m<MAX; m++) {
 
-        if (m>uMergeTableLength) return id;
+        if (m>uMergeTableLength) break;
 
         vec4 m_key = texture2D(uMergeTableKeySampler, vec2(float(m)/float(uMergeTableLength), 0.));
         float m_id = unpack(m_key)*255.;
@@ -121,7 +122,7 @@
       //
       // MERGE
       //
-      for (int m=0; m < 1000; m++) {
+      for (int m=0; m < MAX; m++) {
 
         new_id = lookup_id_(id);
 
