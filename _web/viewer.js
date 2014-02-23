@@ -195,44 +195,54 @@ J.viewer.prototype.draw_canvas = function(x,y,z,w,i,s) {
   var right_border = 1;
   var left_border = 0;
 
+  var i = 0;
+  var j = 0;
+
   // run through all 512*512 bytes
   for (var p=0; p<262144; p++) {
+
+    i++;
+    if (i == 512) {
+      i = 0;
+      j++;
+    }
 
     var id = this.lookup_id(segmentation_data[p]);
 
     var color = this.get_color(id);
 
-    // if (++right_border == 511) {
-    //   right_border = 1;
-    // }
+    if (this.is_locked(id)) {
 
-    // if (++left_border == 512) {
-    //   left_border = 0;
-    // }
+      var striped = (i/512 % 0.05 < 0.01) || (j/512 % 0.05 < 0.01);
 
-    // var border = false;
-    // border = (p>0 && left_border > 0 && id != this.lookup_id(segmentation_data[p-1])) || // left
-    //          (p<262143 && right_border > 1 && id != this.lookup_id(segmentation_data[p+1])) //|| // right
-    //          // (p>511 && id != segmentation_data[p-512]) || // top
-    //          // (p<261631 && id != segmentation_data[p+512]); // bottom
-    
-    // if (border) {
-    //   // console.log('border')
-    //   pixel_data_data[pos++] = 0;
-    //   pixel_data_data[pos++] = 0;
-    //   pixel_data_data[pos++] = 0;
-    //   pixel_data_data[pos++] = 255;
-    //   continue;
-    // }
+      if (striped) {
 
-    pixel_data_data[pos++] = color[0];
-    pixel_data_data[pos++] = color[1];
-    pixel_data_data[pos++] = color[2];
+        pixel_data_data[pos++] = color[0] - 70;
+        pixel_data_data[pos++] = color[1] - 70;
+        pixel_data_data[pos++] = color[2] - 70;
+        pixel_data_data[pos++] = opacity;
 
-    if (id == highlighted_id || id == activated_id) {
-      pixel_data_data[pos++] = 200;
-    } else {    
-      pixel_data_data[pos++] = opacity;
+      } else {
+
+        pixel_data_data[pos++] = color[0];
+        pixel_data_data[pos++] = color[1];
+        pixel_data_data[pos++] = color[2];        
+        pixel_data_data[pos++] = 0.3*255;
+
+      }
+
+    } else {
+
+      pixel_data_data[pos++] = color[0];
+      pixel_data_data[pos++] = color[1];
+      pixel_data_data[pos++] = color[2];
+
+      if (id == highlighted_id || id == activated_id) {
+        pixel_data_data[pos++] = 200;
+      } else {    
+        pixel_data_data[pos++] = opacity;
+      }
+
     }
 
   }  
@@ -363,4 +373,8 @@ J.viewer.prototype.get_segmentation_id = function(i, j, callback) {
 
   }.bind(this));
 
+};
+
+J.viewer.prototype.is_locked = function(id) {
+  return this._controller.is_locked(id);
 };

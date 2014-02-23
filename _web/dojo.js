@@ -91,7 +91,10 @@ DOJO.onleftclick = function(x, y) {
 
       DOJO.viewer._controller.activate(id);
     } else if (DOJO.mode == DOJO.modes.merge) {
-      DOJO.viewer._controller.merge(id);
+
+      if (!DOJO.viewer.is_locked(id))
+        DOJO.viewer._controller.merge(id);
+      
     }
     
 

@@ -28,6 +28,7 @@
     uniform sampler2D uColorMapSampler;
     uniform sampler2D uMergeTableKeySampler;
     uniform sampler2D uMergeTableValueSampler;
+    uniform sampler2D uLockTableSampler;
     //uniform sampler2D uTextureSampler2;
     uniform float uOpacity;
     uniform float uHighlightedId;
@@ -35,8 +36,9 @@
     uniform float uMaxColors;
     uniform int uBorders;
     uniform int uMergeTableLength;
+    uniform int uLockTableLength;
 
-    const int MAX_MERGES = 1000000;
+    const int MAX = 10000;
 
     varying vec3 vPosition;
     varying vec2 vTexturePosition;
@@ -89,9 +91,9 @@
     //
     float lookup_id_(float id) {
 
-      for (int m=0; m<MAX_MERGES; m++) {
+      for (int m=0; m<MAX; m++) {
 
-        if (m>uMergeTableLength) return id;
+        if (m>uMergeTableLength) break;
 
         vec4 m_key = texture2D(uMergeTableKeySampler, vec2(float(m)/float(uMergeTableLength), 0.));
         float m_id = unpack(m_key)*255.;
@@ -120,7 +122,7 @@
       //
       // MERGE
       //
-      for (int m=0; m < 1000; m++) {
+      for (int m=0; m < MAX; m++) {
 
         new_id = lookup_id_(id);
 
@@ -137,6 +139,32 @@
     }
 
     //
+    // LOCKTABLE
+    //
+    bool is_locked(float id) {
+
+      for (int m=0; m<MAX; m++) {
+
+        if (m>uLockTableLength) break;
+
+        vec4 m_key = texture2D(uLockTableSampler, vec2(float(m)/float(uLockTableLength), 0.));
+        float m_id = unpack(m_key)*255.;
+
+        // if m_id is larger than our id, then we are done since all entries are sorted
+        if (larger(m_id, id)) break;
+
+        if (equals(id, m_id)) {
+          // found entry -> label is locked
+          return true;
+        }
+
+      }
+
+      return false;
+
+    }
+
+    //
     // COLORTABLE
     //
     vec4 lookup_color(float id) {
@@ -149,12 +177,29 @@
       
       vec4 color = texture2D(uColorMapSampler, colormap_pos);
 
-      // highlight active labels
-      if (equals(uHighlightedId, id) || equals(uActivatedId, id)) {
-         color.a = 0.8;
+      // default opacity
+      color.a = uOpacity/255.;
+
+      // locked
+      if (is_locked(id)) {
+        
+        if (mod(vTexturePosition.x, 0.05) < 0.01) {
+          color *= 1.5;
+        }
+        else if (mod(vTexturePosition.y, 0.05) < 0.01) {
+          color *= 1.5;
+        } else {
+          color.a = 0.3;
+        }
+
       } else {
-        color.a = uOpacity/255.;
-      }      
+
+        // highlight active labels
+        if (equals(uHighlightedId, id) || equals(uActivatedId, id)) {
+           color.a = 0.8;
+        }
+
+      }
 
       return color;
 
