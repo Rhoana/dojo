@@ -197,10 +197,10 @@ J.loader.prototype.load_tiles = function(x, y, z, w, w_new, no_draw) {
   var space_right = Math.max(0, this._viewer._width - (current_tile_x+512)*this._viewer._camera._view[0]);
   var space_bottom = Math.max(0, this._viewer._height - (current_tile_y+512)*this._viewer._camera._view[4]);
   // console.log(space_right, current_tile_x)
-  var no_left = Math.ceil(space_left/512);
-  var no_top = Math.ceil(space_top/512);
-  var no_right = Math.ceil(space_right/512);
-  var no_bottom = Math.ceil(space_bottom/512);
+  var no_left = Math.ceil(space_left/512) + 1;
+  var no_top = Math.ceil(space_top/512) + 1;
+  var no_right = Math.ceil(space_right/512) + 1;
+  var no_bottom = Math.ceil(space_bottom/512) + 1;
   // console.log(no_right)
   for (var l=1; l<=no_left; l++) {
     var new_x = x-l;

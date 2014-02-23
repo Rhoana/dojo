@@ -46,7 +46,7 @@ J.viewer = function(container) {
   this._controller = new J.controller(this);
   this._offscreen_renderer = new J.offscreen_renderer(this);
 
-  this._webgl_supported = true;
+  this._webgl_supported = false;
   this._drawer = null;
 
   if (!this._offscreen_renderer.init('vs1', 'fs1')) {
@@ -195,8 +195,17 @@ J.viewer.prototype.draw_canvas = function(x,y,z,w,i,s) {
   var right_border = 1;
   var left_border = 0;
 
+  var i = 0;
+  var j = 0;
+
   // run through all 512*512 bytes
   for (var p=0; p<262144; p++) {
+
+    i++;
+    if (i == 512) {
+      i = 0;
+      j++;
+    }
 
     var id = this.lookup_id(segmentation_data[p]);
 
@@ -225,14 +234,38 @@ J.viewer.prototype.draw_canvas = function(x,y,z,w,i,s) {
     //   continue;
     // }
 
-    pixel_data_data[pos++] = color[0];
-    pixel_data_data[pos++] = color[1];
-    pixel_data_data[pos++] = color[2];
+    if (this.is_locked(id)) {
 
-    if (id == highlighted_id || id == activated_id) {
-      pixel_data_data[pos++] = 200;
-    } else {    
-      pixel_data_data[pos++] = opacity;
+      var striped = (i/512 % 0.05 < 0.01) || (j/512 % 0.05 < 0.01);
+
+      if (striped) {
+
+        pixel_data_data[pos++] = color[0] - 70;
+        pixel_data_data[pos++] = color[1] - 70;
+        pixel_data_data[pos++] = color[2] - 70;
+        pixel_data_data[pos++] = opacity;
+
+      } else {
+
+        pixel_data_data[pos++] = color[0];
+        pixel_data_data[pos++] = color[1];
+        pixel_data_data[pos++] = color[2];        
+        pixel_data_data[pos++] = 0.3*255;
+
+      }
+
+    } else {
+
+      pixel_data_data[pos++] = color[0];
+      pixel_data_data[pos++] = color[1];
+      pixel_data_data[pos++] = color[2];
+
+      if (id == highlighted_id || id == activated_id) {
+        pixel_data_data[pos++] = 200;
+      } else {    
+        pixel_data_data[pos++] = opacity;
+      }
+
     }
 
   }  

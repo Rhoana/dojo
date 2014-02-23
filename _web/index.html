@@ -182,12 +182,16 @@
 
       // locked
       if (is_locked(id)) {
+        
         if (mod(vTexturePosition.x, 0.05) < 0.01) {
           color *= 1.5;
         }
         else if (mod(vTexturePosition.y, 0.05) < 0.01) {
           color *= 1.5;
+        } else {
+          color.a = 0.3;
         }
+
       } else {
 
         // highlight active labels
