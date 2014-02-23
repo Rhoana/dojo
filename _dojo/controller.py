@@ -30,7 +30,7 @@ class Controller(object):
     '''
     output = {}
     output['name'] = 'REDRAW'
-    output['origin'] = origin
+    output['origin'] = 'SERVER'
     output['value'] = ''
 
     self.__websocket.send(json.dumps(output))

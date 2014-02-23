@@ -177,8 +177,7 @@ J.loader.prototype.load_tiles = function(x, y, z, w, w_new, no_draw) {
   // don't recalculate I,J here
   var i_j = this._viewer._camera._i_j;
   if (i_j[0] == -1 || i_j[1] == -1) {
-    this._viewer.loading(false);
-    return;
+    i_j = [0,0];
   }
 
   // console.log(x,y,i_j);

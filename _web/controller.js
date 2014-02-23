@@ -106,6 +106,12 @@ J.controller.prototype.send_merge_table = function() {
 
 };
 
+J.controller.prototype.send_lock_table = function() {
+
+  this.send('LOCKTABLE', this._lock_table);
+
+};
+
 J.controller.prototype.update_lock_table = function(data) {
 
   // console.log('Received new lock table', data);
@@ -138,15 +144,27 @@ J.controller.prototype.lock = function(x, y) {
 
   this._viewer.get_segmentation_id(i_j[0], i_j[1], function(id) {
 
+    var verb = 'locked';
+
     if (id in this._lock_table) {
       delete this._lock_table[id];
-      console.log('Unlocking', id);
+
+      // console.log('Unlocking', id);
+      verb = 'unlocked';
     } else {
       this._lock_table[id] = true;
-      console.log('Locking', id);
+      // console.log('Locking', id);
     }
 
+    var color1 = DOJO.viewer.get_color(id);
+    var color1_hex = rgbToHex(color1[0], color1[1], color1[2]);
+    var log = 'User '+this._origin+' '+verb+' label <font color="'+color1_hex+'">'+id+'</font>.';
+
+    this.send_log(log);
+
     this.create_gl_lock_table();
+
+    this.send_lock_table();
 
     this._viewer.redraw();
 
@@ -170,7 +188,7 @@ J.controller.prototype.merge = function(id) {
 
   if (this._last_id == id) return;
 
-  console.log('Merging', this._last_id, id);
+  // console.log('Merging', this._last_id, id);
 
   // if (!(id in this._merge_table)) {
   //   this._merge_table[id] = [];

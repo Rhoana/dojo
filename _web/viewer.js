@@ -46,7 +46,7 @@ J.viewer = function(container) {
   this._controller = new J.controller(this);
   this._offscreen_renderer = new J.offscreen_renderer(this);
 
-  this._webgl_supported = false;
+  this._webgl_supported = true;
   this._drawer = null;
 
   if (!this._offscreen_renderer.init('vs1', 'fs1')) {
@@ -210,29 +210,6 @@ J.viewer.prototype.draw_canvas = function(x,y,z,w,i,s) {
     var id = this.lookup_id(segmentation_data[p]);
 
     var color = this.get_color(id);
-
-    // if (++right_border == 511) {
-    //   right_border = 1;
-    // }
-
-    // if (++left_border == 512) {
-    //   left_border = 0;
-    // }
-
-    // var border = false;
-    // border = (p>0 && left_border > 0 && id != this.lookup_id(segmentation_data[p-1])) || // left
-    //          (p<262143 && right_border > 1 && id != this.lookup_id(segmentation_data[p+1])) //|| // right
-    //          // (p>511 && id != segmentation_data[p-512]) || // top
-    //          // (p<261631 && id != segmentation_data[p+512]); // bottom
-    
-    // if (border) {
-    //   // console.log('border')
-    //   pixel_data_data[pos++] = 0;
-    //   pixel_data_data[pos++] = 0;
-    //   pixel_data_data[pos++] = 0;
-    //   pixel_data_data[pos++] = 255;
-    //   continue;
-    // }
 
     if (this.is_locked(id)) {
 
