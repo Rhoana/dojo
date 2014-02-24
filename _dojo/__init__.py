@@ -3,3 +3,4 @@ from segmentation import Segmentation
 from viewer import Viewer
 from websockets import Websockets
 from controller import Controller
+from database import Database

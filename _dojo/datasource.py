@@ -5,7 +5,8 @@ import re
 import h5py
 import json
 import xml.etree.ElementTree as ET
-import sqlite3
+
+from database import Database
 
 class Datasource(object):
 
@@ -43,6 +44,8 @@ class Datasource(object):
     self.__query_tilesource_regex = re.compile('^/' + self.__query + '/\d+/$')
     self.__query_tile_regex = re.compile('^/' + self.__query + '/\d+/\d+/\d+_\d+.' + self.__output_format + '$')
     self.__query_colormap_regex = re.compile('^/' + self.__query + '/colormap$')
+    self.__query_segmentinfo_regex = re.compile('^/' + self.__query + '/segmentinfo$')
+    self.__query_id_tile_index_regex = re.compile('^/' + self.__query + '/id_tile_index/\d+$')
 
     self.__setup()
 
@@ -78,7 +81,7 @@ class Datasource(object):
 
         # segmentinfo database
         elif self.__segmentinfo_file_regex.match(os.path.join(root,f)):
-          self.__database = sqlite3.connect(os.path.join(root,f))
+          self.__database = Database(os.path.join(root,f))
 
 
   def get_info_xml(self):
@@ -120,6 +123,17 @@ class Datasource(object):
     elif self.__query_colormap_regex.match(request.uri) and self.__has_colormap:
       content_type = 'text/html'
       content = json.dumps(self.__colormap.tolist())
+
+    # segmentinfo
+    elif self.__query_segmentinfo_regex.match(request.uri):
+      content_type = 'text/html'
+      content = json.dumps(self.__database.get_segment_info())
+
+    elif self.__query_id_tile_index_regex.match(request.uri):
+      content_type = 'text/html'
+      request_splitted = request.uri.split('/')
+      tile_id = request_splitted[-1]
+      content = json.dumps(self.__database.get_id_tile_index(tile_id))
 
     # tile
     elif self.__query_tile_regex.match(request.uri):
