@@ -34,6 +34,8 @@ class Datasource(object):
     self.__colormap = None
     self.__database = None
 
+    self.__volume = None
+
     # file system regex
     self.__info_regex = re.compile('.*' + self.__sub_dir + '/tiledVolumeDescription.xml$')
     self.__colormap_file_regex = re.compile('.*' + self.__sub_dir + '/colorMap.hdf5$')
@@ -43,6 +45,7 @@ class Datasource(object):
     self.__query_toc_regex = re.compile('^/' + self.__query + '/contents$')
     self.__query_tilesource_regex = re.compile('^/' + self.__query + '/\d+/$')
     self.__query_tile_regex = re.compile('^/' + self.__query + '/\d+/\d+/\d+_\d+.' + self.__output_format + '$')
+    self.__query_volume_regex = re.compile('^/' + self.__query + '/volume/\d+/$')
     self.__query_colormap_regex = re.compile('^/' + self.__query + '/colormap$')
     self.__query_segmentinfo_regex = re.compile('^/' + self.__query + '/segmentinfo$')
     self.__query_id_tile_index_regex = re.compile('^/' + self.__query + '/id_tile_index/\d+$')
@@ -97,6 +100,24 @@ class Datasource(object):
     '''
     pass
 
+  def get_volume(self, zoomlevel):
+    '''
+    '''
+
+    w_path = os.path.join(self.__mojo_dir, self.__sub_dir, 'tiles', 'w='+str(zoomlevel).zfill(8))
+    
+    dirs = sorted(os.listdir(w_path))
+
+    tile_files = []
+
+    for d in dirs:
+      files = os.listdir(os.path.join(w_path,d))
+
+      for f in files:
+        tile_files.append(os.path.join(w_path, d, f))
+
+    return tile_files
+
   def handle(self, request, content, content_type):
     '''
     React to a HTTP request.
@@ -134,6 +155,15 @@ class Datasource(object):
       request_splitted = request.uri.split('/')
       tile_id = request_splitted[-1]
       content = json.dumps(self.__database.get_id_tile_index(tile_id))
+
+    # volume
+    elif self.__query_volume_regex.match(request.uri):
+      
+      request_splitted = request.uri.split('/')
+      print request_splitted
+      zoomlevel = int(request_splitted[-2])
+
+      content, content_type = self.get_volume(zoomlevel)
 
     # tile
     elif self.__query_tile_regex.match(request.uri):
