@@ -37,28 +37,19 @@ class Image(Datasource):
       input_image = tif.imread(f)
 
       if out_is_there:
-        out = np.dstack([out, input_image])
+        #out = np.dstack([out, input_image])
+        out = np.concatenate([out, input_image.flatten()])
       else:
-        out = input_image
+        #out = input_image
+        out = input_image.flatten()
         out_is_there = True
 
-    cmap = AffineTransform('kji','zxy', np.eye(4))
-    img = NImage(out, cmap)
+    c_image_data = zlib.compress(out)
 
-    # c_image_data = zlib.compress(img.get_data())
+    output = StringIO.StringIO()
+    output.write(c_image_data)
 
-    from tempfile import mkstemp
-    fd, name = mkstemp(suffix='.nii.gz')
-    tmpfile = open(name)
-    save_image(img, tmpfile.name)
-    tmpfile.close()
-    tmpfile = open(name)
-
-    # output = StringIO.StringIO()
-    # save_image(img, output)
-    # output.write(c_image_data)
-
-    content = tmpfile.read()
+    content = output.getvalue()
     content_type = 'application/octstream'
 
     return content, content_type

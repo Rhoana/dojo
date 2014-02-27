@@ -45,7 +45,7 @@ class Datasource(object):
     self.__query_toc_regex = re.compile('^/' + self.__query + '/contents$')
     self.__query_tilesource_regex = re.compile('^/' + self.__query + '/\d+/$')
     self.__query_tile_regex = re.compile('^/' + self.__query + '/\d+/\d+/\d+_\d+.' + self.__output_format + '$')
-    self.__query_volume_regex = re.compile('^/' + self.__query + '/volume/\d+/$')
+    self.__query_volume_regex = re.compile('^/' + self.__query + '/volume/\d+/&.RZ$')
     self.__query_colormap_regex = re.compile('^/' + self.__query + '/colormap$')
     self.__query_segmentinfo_regex = re.compile('^/' + self.__query + '/segmentinfo$')
     self.__query_id_tile_index_regex = re.compile('^/' + self.__query + '/id_tile_index/\d+$')
