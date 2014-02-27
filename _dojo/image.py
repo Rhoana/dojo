@@ -6,8 +6,6 @@ from PIL import Image as PILImage
 import zlib
 
 import numpy as np
-from nipy.core.api import Image as NImage, AffineTransform
-from nipy.io.api import save_image
 
 import tifffile as tif
 

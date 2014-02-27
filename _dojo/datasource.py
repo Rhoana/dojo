@@ -160,7 +160,6 @@ class Datasource(object):
     elif self.__query_volume_regex.match(request.uri):
       
       request_splitted = request.uri.split('/')
-      print request_splitted
       zoomlevel = int(request_splitted[-2])
 
       content, content_type = self.get_volume(zoomlevel)
