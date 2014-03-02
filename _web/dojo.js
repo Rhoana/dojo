@@ -122,6 +122,8 @@ DOJO.update_label = function(x, y) {
 
   DOJO.viewer.get_segmentation_id(i_j[0], i_j[1], function(id) {
 
+    if (!id) return;
+
     var color = DOJO.viewer.get_color(id);
     var color_hex = rgbToHex(color[0], color[1], color[2]);
 
@@ -155,6 +157,7 @@ DOJO.init_threeD = function() {
 
   vol = new X.volume();
   vol.dimensions = [512,512,75];
+  vol.spacing = [1,1,3];
   vol.file = 'http://localhost:1337/image/volume/00000001/&.RZ';
   //vol.file = 'http://localhost:1337/segmentation/volume/00000001/&.RZ';
   vol.labelmap._32bit = true;
