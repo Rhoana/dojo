@@ -157,10 +157,10 @@ DOJO.init_threeD = function() {
   vol.dimensions = [512,512,75];
   vol.file = 'http://localhost:1337/image/volume/00000001/&.RZ';
   //vol.file = 'http://localhost:1337/segmentation/volume/00000001/&.RZ';
-  // vol.labelmap._32bit = true;
-  // vol.labelmap.file = 'http://localhost:1337/segmentation/volume/00000001/&.RZ';
-  // vol.labelmap.dimensions = vol.dimensions;
-  // vol.labelmap.opacity = 0.5;
+  vol.labelmap._32bit = true;
+  vol.labelmap.file = 'http://localhost:1337/segmentation/volume/00000001/&.RZ';
+  vol.labelmap.dimensions = vol.dimensions;
+  vol.labelmap.opacity = 0.5;
   // vol.labelmap._dirty = true;
 
   r.updateFromDojo(DOJO.viewer._gl_colormap, DOJO.viewer._max_colors,DOJO.viewer._controller._gl_merge_table_keys, DOJO.viewer._controller._gl_merge_table_values, DOJO.viewer._controller._merge_table_length);
