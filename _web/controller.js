@@ -68,6 +68,7 @@ J.controller.prototype.receive = function(data) {
   } else if (input.name == 'REDRAW') {
 
     this._viewer.redraw();
+    this.update_threeD();
 
   }
 
@@ -89,6 +90,17 @@ J.controller.prototype.send = function(name, data) {
 ///
 ///
 
+J.controller.prototype.update_threeD = function() {
+
+  if (DOJO.threeD) {
+    DOJO.threeD.renderer.updateFromDojo(this._viewer._gl_colormap, 
+                     this._viewer._max_colors,
+                     this._gl_merge_table_keys, 
+                     this._gl_merge_table_values, 
+                     this._merge_table_length);
+  }
+
+};
 
 J.controller.prototype.update_merge_table = function(data) {
 

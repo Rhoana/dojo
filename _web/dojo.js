@@ -155,13 +155,13 @@ DOJO.init_threeD = function() {
   r.container = 'threeD';
   r.init();
 
-  vol = new X.volume();
+  var vol = new X.volume();
   vol.dimensions = [512,512,75];
   vol.spacing = [1,1,3];
-  vol.file = 'http://localhost:1337/image/volume/00000001/&.RZ';
+  vol.file = '/image/volume/00000001/&.RZ';
   //vol.file = 'http://localhost:1337/segmentation/volume/00000001/&.RZ';
-  vol.labelmap._32bit = true;
-  vol.labelmap.file = 'http://localhost:1337/segmentation/volume/00000001/&.RZ';
+  vol.labelmap.use32bit = true;
+  vol.labelmap.file = '/segmentation/volume/00000001/&.RZ';
   vol.labelmap.dimensions = vol.dimensions;
   vol.labelmap.opacity = 0.5;
   // vol.labelmap._dirty = true;
@@ -171,8 +171,18 @@ DOJO.init_threeD = function() {
   r.add(vol);
   // r.add(s)
 
+  r.camera.position = [-100,-400,-700]
+
   r.render(); // ..and render it
 
+  r.onShowtime = function() {
+
+    vol.volumeRendering = true;
+    vol.opacity = 0.3;
+
+  }
+
   DOJO.threeD.volume = vol;
+  DOJO.threeD.renderer = r;
 
 };
