@@ -7,7 +7,7 @@
   <link rel="stylesheet" type="text/css" href="css/opentip.css">
 
   <script type="text/javascript" src='lib/zlib.min.js'></script>
-  <script type="text/javascript" src='lib/xtk.js'></script>
+  <!-- // <script type="text/javascript" src='lib/xtk.js'></script> -->
   <script type="text/javascript" src='lib/opentip-native.min.js'></script>
 
   <script type='text/javascript' src='dojo.js'></script>
@@ -19,9 +19,9 @@
   <script type='text/javascript' src='websocket.js'></script>
   <script type='text/javascript' src='offscreen_renderer.js'></script>
   <script type='text/javascript' src='util.js'></script>
-
-<!--   // <script type="text/javascript" src="X/lib/google-closure-library/closure/goog/base.js"></script>
-  // <script type="text/javascript" src="X/xtk-deps.js"></script> -->
+  
+  <script type="text/javascript" src="X/lib/google-closure-library/closure/goog/base.js"></script> 
+  <script type="text/javascript" src="X/xtk-deps.js"></script>
 
   <!-- SHADERS -->
   <script id="fs1" type="x-shader/x-fragment">
@@ -283,8 +283,8 @@
 
   Opentip.defaultStyle = 'dark';
     
-  // goog.require('X.renderer3D');
-  // goog.require('X.volume');
+  goog.require('X.renderer3D');
+  goog.require('X.volume');
 
   window.onload = function() {
 

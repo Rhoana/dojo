@@ -166,10 +166,72 @@ DOJO.init_threeD = function() {
   vol.labelmap.opacity = 0.5;
   // vol.labelmap._dirty = true;
 
-  r.updateFromDojo(DOJO.viewer._gl_colormap, DOJO.viewer._max_colors,DOJO.viewer._controller._gl_merge_table_keys, DOJO.viewer._controller._gl_merge_table_values, DOJO.viewer._controller._merge_table_length);
-  
+
+  DOJO.threeD.volume = vol;
+  DOJO.threeD.renderer = r;  
+
+  DOJO.viewer._controller.update_threeD();
+
   r.add(vol);
   // r.add(s)
+
+  
+  var box = new X.object();
+  box.points = new X.triplets(72);
+  box.normals = new X.triplets(72);
+  box.type = 'LINES';
+  var _x = vol.dimensions[0]*vol.spacing[0] / 2;
+  var _y = vol.dimensions[1]*vol.spacing[1] / 2;
+  var _z = vol.dimensions[2]*vol.spacing[2] / 2;
+  box.points.add(_x, -_y, _z);
+  box.points.add(-_x, -_y, _z);
+  box.points.add(_x, _y, _z);
+  box.points.add(-_x, _y, _z);
+  box.points.add(_x, -_y, -_z);
+  box.points.add(-_x, -_y, -_z);
+  box.points.add(_x, _y, -_z);
+  box.points.add(-_x, _y, -_z);
+  box.points.add(_x, -_y, _z);
+  box.points.add(_x, -_y, -_z);
+  box.points.add(-_x, -_y, _z);
+  box.points.add(-_x, -_y, -_z);
+  box.points.add(_x, _y, _z);
+  box.points.add(_x, _y, -_z);
+  box.points.add(-_x, _y, _z);
+  box.points.add(-_x, _y, -_z);
+  box.points.add(_x, _y, _z);
+  box.points.add(_x, -_y, _z);
+  box.points.add(-_x, _y, _z);
+  box.points.add(-_x, -_y, _z);
+  box.points.add(-_x, _y, -_z);
+  box.points.add(-_x, -_y, -_z);
+  box.points.add(_x, _y, -_z);
+  box.points.add(_x, -_y, -_z);
+  for ( var i = 0; i < 24; ++i) {
+    box.normals.add(0, 0, 0);
+  }
+  r.add(box);
+
+  var slice = new X.object();
+  slice.points = new X.triplets(24);
+  slice.normals = new X.triplets(24);
+  slice.type = 'LINES';
+  slice.points.add(_x, _y, 0);
+  slice.points.add(-_x, _y, 0);
+  slice.points.add(_x, _y, 0);
+  slice.points.add(_x, -_y, 0);
+  slice.points.add(_x, -_y, 0);  
+  slice.points.add(-_x, -_y, 0);  
+  slice.points.add(-_x, _y, 0);  
+  slice.points.add(-_x, -_y, 0);
+  slice.color = [1,0,0];
+  for ( var i = 0; i < 8; ++i) {
+    slice.normals.add(0, 0, 0);
+  }
+  slice.transform.translateZ(-vol.dimensions[2]*vol.spacing[2]);
+  r.add(slice);
+
+  DOJO.threeD.slice = slice;
 
   r.camera.position = [-100,-400,-700]
 
@@ -182,7 +244,5 @@ DOJO.init_threeD = function() {
 
   }
 
-  DOJO.threeD.volume = vol;
-  DOJO.threeD.renderer = r;
 
 };
