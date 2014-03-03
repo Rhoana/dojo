@@ -228,7 +228,7 @@ DOJO.init_threeD = function() {
   for ( var i = 0; i < 8; ++i) {
     slice.normals.add(0, 0, 0);
   }
-  slice.transform.translateZ(-vol.dimensions[2]*vol.spacing[2]);
+  slice.transform.translateZ(-vol.dimensions[2]/2*vol.spacing[2]);
   r.add(slice);
 
   DOJO.threeD.slice = slice;
