@@ -360,6 +360,12 @@ J.controller.prototype.create_gl_3d_labels = function() {
 
 };
 
+J.controller.prototype.is_3d_label = function(id) {
+
+  return (id in this._3d_labels);
+
+};
+
 J.controller.prototype.add_3d_label = function(id) {
 
   this._3d_labels[id] = true;

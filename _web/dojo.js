@@ -5,9 +5,9 @@ var DOJO = DOJO || {};
 DOJO.mode = null;
 DOJO.modes = {
   pan_zoom:0, 
-  merge:1,
-  threeD:2
+  merge:1
 };
+DOJO.threeD_active = false;
 
 DOJO.init = function() {
 
@@ -54,20 +54,24 @@ DOJO.setup_buttons = function() {
 
     merge.style.border = '';
 
-    if (DOJO.mode != DOJO.modes.threeD) {
+    if (!DOJO.threeD_active) {
 
       threed.style.border = '1px solid white';
 
-      DOJO.mode = DOJO.modes.threeD;
+      document.getElementById('threeD').style.display = 'block';
+
+      if (!DOJO.threeD)
+        DOJO.init_threeD();
+
+      DOJO.threeD_active = true;
 
     } else {
 
       threed.style.border = '';
 
-      DOJO.mode = DOJO.modes.pan_zoom;
+      document.getElementById('threeD').style.display = 'none';
 
-      DOJO.viewer._controller.activate(null);
-      DOJO.viewer._controller.highlight(null);      
+      DOJO.threeD_active = false;
 
     }
 
@@ -86,15 +90,30 @@ DOJO.onleftclick = function(x, y) {
     
     // now we have the segmentation id
 
-    if (DOJO.mode == DOJO.modes.threeD) {
-      threeD_window = window.open("3d/?id=" + id,"","location=no,width=800,height=600");
+    // if (DOJO.mode == DOJO.modes.threeD) {
+    //   threeD_window = window.open("3d/?id=" + id,"","location=no,width=800,height=600");
 
-      DOJO.viewer._controller.activate(id);
-    } else if (DOJO.mode == DOJO.modes.merge) {
+    //   DOJO.viewer._controller.activate(id);
+    // } else
+    if (DOJO.mode == DOJO.modes.merge) {
 
       if (!DOJO.viewer.is_locked(id))
         DOJO.viewer._controller.merge(id);
       
+    } else {
+
+      if (DOJO.threeD_active) {
+
+        DOJO.viewer._controller._use_3d_labels = true;
+
+        if (!DOJO.viewer._controller.is_3d_label(id)) {
+          DOJO.viewer._controller.add_3d_label(id);
+        } else {
+          DOJO.viewer._controller.remove_3d_label(id);
+        }
+
+      }
+
     }
     
 
@@ -240,7 +259,7 @@ DOJO.init_threeD = function() {
   r.onShowtime = function() {
 
     vol.volumeRendering = true;
-    vol.opacity = 0.3;
+    vol.opacity = 0.8;
 
   }
 
