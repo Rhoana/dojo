@@ -146,3 +146,9 @@ function from32bitTo8bit(value) {
   return [b0, b1, b2, b3];
 
 }
+
+function fire_resize_event() {
+  var evt = document.createEvent('UIEvents');
+  evt.initUIEvent('resize', true, false, window, 0);
+  window.dispatchEvent(evt);  
+}

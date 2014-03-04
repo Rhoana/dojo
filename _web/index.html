@@ -5,9 +5,12 @@
 
   <link rel="stylesheet" type="text/css" href="css/dojo.css">
   <link rel="stylesheet" type="text/css" href="css/opentip.css">
+  <link rel="stylesheet" type="text/css" href="css/dragresize.css">
 
   <script type="text/javascript" src='lib/zlib.min.js'></script>
+  <script type="text/javascript" src='lib/xtk.js'></script> 
   <script type="text/javascript" src='lib/opentip-native.min.js'></script>
+  <script type="text/javascript" src='lib/dragresize.js'></script>
 
   <script type='text/javascript' src='dojo.js'></script>
   <script type='text/javascript' src='viewer.js'></script>
@@ -18,7 +21,10 @@
   <script type='text/javascript' src='websocket.js'></script>
   <script type='text/javascript' src='offscreen_renderer.js'></script>
   <script type='text/javascript' src='util.js'></script>
-
+  
+<!--   // <script type="text/javascript" src="X/lib/google-closure-library/closure/goog/base.js"></script> 
+  // <script type="text/javascript" src="X/xtk-deps.js"></script>
+ -->
   <!-- SHADERS -->
   <script id="fs1" type="x-shader/x-fragment">
     precision mediump float;
@@ -279,6 +285,9 @@
 
   Opentip.defaultStyle = 'dark';
     
+  // goog.require('X.renderer3D');
+  // goog.require('X.volume');
+
   window.onload = function() {
 
     DOJO.init();
@@ -300,11 +309,14 @@
 
   <div id='info' class='infopanel'>
     <div><div id='slicenumber'>1/75</div><div id='label'>Label n/a</div></div>
-    <div><strong>Q</strong>: next slice</div>
-    <div><strong>A</strong>: previous slice</div>
+    <div><strong>W</strong>: next slice</div>
+    <div><strong>S</strong>: previous slice</div>
   </div>
 
   <div id='log' class='logpanel'>
+  </div>
+
+  <div id='threeD' class='threeDpanel'>
   </div>
 
 </body>

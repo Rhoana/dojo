@@ -21,7 +21,15 @@ J.controller = function(viewer) {
 
   this._activated_id = null;
 
+  this._use_3d_labels = false;
+  this._3d_labels = {};
+  this._fixed_3d_labels = {};
+  this._gl_3d_labels = null;
+  this._gl_3d_labels_length = -1;
+
   this._origin = makeid() // TODO
+
+  this.create_gl_3d_labels();
 
 };
 
@@ -31,14 +39,22 @@ J.controller.prototype.activate = function(id) {
   this._activated_id = id;
 
   this._viewer.redraw();
+
+  if (DOJO.threeD)
+    this.add_3d_label(id);
+
 }
 
 J.controller.prototype.highlight = function(id) {
   if (this._highlighted_id == id) return;
 
+  if (DOJO.threeD)
+    this.highlight_in_3d(id);
+
   this._highlighted_id = id;
 
-  this._viewer.redraw(); 
+  this._viewer.redraw();   
+
 }
 
 J.controller.prototype.receive = function(data) {
@@ -68,6 +84,7 @@ J.controller.prototype.receive = function(data) {
   } else if (input.name == 'REDRAW') {
 
     this._viewer.redraw();
+    this.update_threeD();
 
   }
 
@@ -89,6 +106,20 @@ J.controller.prototype.send = function(name, data) {
 ///
 ///
 
+J.controller.prototype.update_threeD = function() {
+
+  if (DOJO.threeD) {
+    DOJO.threeD.renderer.updateFromDojo(this._viewer._gl_colormap, 
+                     this._viewer._max_colors,
+                     this._gl_merge_table_keys, 
+                     this._gl_merge_table_values, 
+                     this._merge_table_length,
+                     this._gl_3d_labels,
+                     this._gl_3d_labels_length,
+                     this._use_3d_labels);
+  }
+
+};
 
 J.controller.prototype.update_merge_table = function(data) {
 
@@ -302,6 +333,125 @@ J.controller.prototype.create_gl_lock_table = function() {
     this._gl_lock_table[pos++] = b[3];
 
   }
+
+};
+
+J.controller.prototype.create_gl_3d_labels = function() {
+
+  var keys = Object.keys(this._3d_labels);
+  var no_keys = keys.length;
+
+  if (no_keys == 0) {
+
+    // we need to pass an empty array to the GPU
+    this._gl_3d_labels_length = 2;
+    this._gl_3d_labels = new Uint8Array(4 * 2);
+    return;
+
+  }
+
+  var new_length = Math.pow(2,Math.ceil(Math.log(no_keys)/Math.log(2)));
+
+  this._gl_3d_labels = new Uint8Array(4 * new_length);
+
+  this._gl_3d_labels_length = new_length;
+
+  var pos = 0;
+  for (var i=0; i<no_keys; i++) {
+
+    var b = from32bitTo8bit(keys[i]);
+    this._gl_3d_labels[pos++] = b[0];
+    this._gl_3d_labels[pos++] = b[1];
+    this._gl_3d_labels[pos++] = b[2];
+    this._gl_3d_labels[pos++] = b[3];
+
+  }
+
+};
+
+J.controller.prototype.is_3d_label = function(id) {
+
+  return (id in this._3d_labels && id != this._highlighted_id);
+
+};
+
+J.controller.prototype.add_3d_label = function(id) {
+
+  this._3d_labels[id] = true;
+
+  this.create_gl_3d_labels();
+  this.update_threeD();
+
+};
+
+J.controller.prototype.add_fixed_3d_label = function(id) {
+  this._fixed_3d_labels[id] = true;
+
+
+};
+
+J.controller.prototype.remove_3d_label = function(id) {
+
+  delete this._3d_labels[id];
+
+  this.create_gl_3d_labels();
+  this.update_threeD();
+
+};
+
+J.controller.prototype.remove_fixed_3d_label = function(id) {
+
+  delete this._fixed_3d_labels[id];
+
+};
+
+J.controller.prototype.reset_3d_labels = function() {
+
+  this._3d_labels = {};
+
+  this._use_3d_labels = false;
+
+  for (var k in this._fixed_3d_labels) {
+    this._3d_labels[k] = true;
+
+    this._use_3d_labels = true;
+  }
+
+  this.create_gl_3d_labels();
+
+  
+
+  this.update_threeD();
+
+
+};
+
+J.controller.prototype.reset_fixed_3d_labels = function() {
+
+  this._fixed_3d_labels = {};
+
+};
+
+J.controller.prototype.highlight_in_3d = function(id, clear) {
+
+  if (this._highlighted_id && !(this._highlighted_id in this._fixed_3d_labels))
+    this.remove_3d_label(this._highlighted_id);
+
+  this.add_3d_label(id);
+
+  if (this._activated_id) {
+    this.add_3d_label(this._activated_id);    
+  }
+
+  this._use_3d_labels = true;
+
+};
+
+J.controller.prototype.toggle_3d_labels = function() {
+
+  this._use_3d_labels = !this._use_3d_labels;
+
+  this.update_threeD();
 
 };
 
