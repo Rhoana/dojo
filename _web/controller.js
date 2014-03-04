@@ -23,6 +23,7 @@ J.controller = function(viewer) {
 
   this._use_3d_labels = false;
   this._3d_labels = {};
+  this._fixed_3d_labels = {};
   this._gl_3d_labels = null;
   this._gl_3d_labels_length = -1;
 
@@ -38,14 +39,22 @@ J.controller.prototype.activate = function(id) {
   this._activated_id = id;
 
   this._viewer.redraw();
+
+  if (DOJO.threeD)
+    this.add_3d_label(id);
+
 }
 
 J.controller.prototype.highlight = function(id) {
   if (this._highlighted_id == id) return;
 
+  if (DOJO.threeD)
+    this.highlight_in_3d(id);
+
   this._highlighted_id = id;
 
-  this._viewer.redraw(); 
+  this._viewer.redraw();   
+
 }
 
 J.controller.prototype.receive = function(data) {
@@ -362,7 +371,7 @@ J.controller.prototype.create_gl_3d_labels = function() {
 
 J.controller.prototype.is_3d_label = function(id) {
 
-  return (id in this._3d_labels);
+  return (id in this._3d_labels && id != this._highlighted_id);
 
 };
 
@@ -375,12 +384,66 @@ J.controller.prototype.add_3d_label = function(id) {
 
 };
 
+J.controller.prototype.add_fixed_3d_label = function(id) {
+  this._fixed_3d_labels[id] = true;
+
+
+};
+
 J.controller.prototype.remove_3d_label = function(id) {
 
   delete this._3d_labels[id];
 
   this.create_gl_3d_labels();
   this.update_threeD();
+
+};
+
+J.controller.prototype.remove_fixed_3d_label = function(id) {
+
+  delete this._fixed_3d_labels[id];
+
+};
+
+J.controller.prototype.reset_3d_labels = function() {
+
+  this._3d_labels = {};
+
+  this._use_3d_labels = false;
+
+  for (var k in this._fixed_3d_labels) {
+    this._3d_labels[k] = true;
+
+    this._use_3d_labels = true;
+  }
+
+  this.create_gl_3d_labels();
+
+  
+
+  this.update_threeD();
+
+
+};
+
+J.controller.prototype.reset_fixed_3d_labels = function() {
+
+  this._fixed_3d_labels = {};
+
+};
+
+J.controller.prototype.highlight_in_3d = function(id, clear) {
+
+  if (this._highlighted_id && !(this._highlighted_id in this._fixed_3d_labels))
+    this.remove_3d_label(this._highlighted_id);
+
+  this.add_3d_label(id);
+
+  if (this._activated_id) {
+    this.add_3d_label(this._activated_id);    
+  }
+
+  this._use_3d_labels = true;
 
 };
 

@@ -28,13 +28,15 @@ DOJO.setup_buttons = function() {
 
   merge.onclick = function() {
 
-    threed.style.border = '';
-
     if (DOJO.mode != DOJO.modes.merge) {
 
       merge.style.border = '1px solid white';
 
       DOJO.mode = DOJO.modes.merge;
+
+      // reset 3d view
+      DOJO.viewer._controller.reset_fixed_3d_labels();
+      DOJO.viewer._controller.reset_3d_labels();
 
     } else {
 
@@ -43,6 +45,10 @@ DOJO.setup_buttons = function() {
       DOJO.mode = DOJO.modes.pan_zoom;
 
       DOJO.viewer._controller.end_merge();
+
+      // reset 3d view
+      DOJO.viewer._controller.reset_fixed_3d_labels();
+      DOJO.viewer._controller.reset_3d_labels();      
 
     }
 
@@ -59,8 +65,6 @@ DOJO.setup_buttons = function() {
       threed.style.border = '1px solid white';
 
       document.getElementById('threeD').style.display = 'block';
-
-
 
       if (!DOJO.threeD) {
         DOJO.make_resizable();
@@ -88,7 +92,11 @@ DOJO.onleftclick = function(x, y) {
   // get pixel coordinates
   var i_j = DOJO.viewer.xy2ij(x,y);
 
-  if (i_j[0] == -1) return;
+  if (i_j[0] == -1) {
+    DOJO.viewer._controller.reset_fixed_3d_labels();
+    DOJO.viewer._controller.reset_3d_labels();
+    return;
+  }
   
   DOJO.viewer.get_segmentation_id(i_j[0], i_j[1], function(id) {
     
@@ -111,8 +119,10 @@ DOJO.onleftclick = function(x, y) {
         DOJO.viewer._controller._use_3d_labels = true;
 
         if (!DOJO.viewer._controller.is_3d_label(id)) {
+          DOJO.viewer._controller.add_fixed_3d_label(id);
           DOJO.viewer._controller.add_3d_label(id);
         } else {
+          DOJO.viewer._controller.remove_fixed_3d_label(id);
           DOJO.viewer._controller.remove_3d_label(id);
         }
 
@@ -140,6 +150,8 @@ DOJO.update_label = function(x, y) {
 
   if (i_j[0] == -1) {
     label.innerHTML = 'Label n/a';
+    if (DOJO.mode != DOJO.modes.merge)
+      DOJO.viewer._controller.reset_3d_labels();
     return;
   }
 
