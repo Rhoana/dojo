@@ -143,6 +143,12 @@ J.controller.prototype.send_lock_table = function() {
 
 };
 
+J.controller.prototype.send_mouse_move = function(i_j_k) {
+
+  this.send('MOUSEMOVE', i_j_k);
+
+}
+
 J.controller.prototype.update_lock_table = function(data) {
 
   // console.log('Received new lock table', data);

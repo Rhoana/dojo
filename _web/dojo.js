@@ -8,6 +8,8 @@ DOJO.modes = {
   merge:1
 };
 DOJO.threeD_active = false;
+DOJO.link_active = false;
+DOJO.mousemove_timeout = null;
 
 DOJO.init = function() {
 
@@ -58,8 +60,6 @@ DOJO.setup_buttons = function() {
 
   threed.onclick = function() {
 
-    merge.style.border = '';
-
     if (!DOJO.threeD_active) {
 
       threed.style.border = '1px solid white';
@@ -82,6 +82,27 @@ DOJO.setup_buttons = function() {
       DOJO.threeD_active = false;
 
     }
+
+  };
+
+  var link = document.getElementById('link');
+
+  link.onclick = function() {
+
+    if (!DOJO.link_active) {
+
+      link.style.border = '1px solid white';
+
+      DOJO.link_active = true;
+
+    } else {
+
+      link.style.border = '';
+
+      DOJO.link_active = false;
+
+    }
+
 
   };
 
@@ -132,6 +153,26 @@ DOJO.onleftclick = function(x, y) {
     
 
   });
+
+};
+
+DOJO.onmousemove = function(x, y) {
+
+  if (DOJO.link_active) {
+
+    var i_j = DOJO.viewer.xy2ij(x,y);
+
+    if (i_j[0] == -1) return;
+
+    if (DOJO.mousemove_timeout) {
+      clearTimeout(DOJO.mousemove_timeout);
+    }
+
+    DOJO.mousemove_timeout = setTimeout(function() {
+      DOJO.viewer._controller.send_mouse_move([i_j[0], i_j[1], DOJO.viewer._camera._z]);
+    }, 100);
+
+  }
 
 };
 

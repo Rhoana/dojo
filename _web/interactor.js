@@ -48,6 +48,8 @@ J.interactor.prototype.onmousemove = function(e) {
 
   //var u_v = this._viewer.xy2uv(x, y);
 
+  DOJO.onmousemove(x, y);
+
   if (this._left_down) {
 
   } else if (this._right_down) {
