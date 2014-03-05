@@ -27,12 +27,16 @@ DOJO.init = function() {
 DOJO.setup_buttons = function() {
 
   var merge = document.getElementById('merge');
+  var merge_selected = document.getElementById('merge_selected');
 
-  merge.onclick = function() {
+  merge.onclick = merge_selected.onclick = function() {
 
     if (DOJO.mode != DOJO.modes.merge) {
 
-      merge.style.border = '1px solid white';
+      // merge.style.border = '1px solid white';
+
+      merge.style.display = 'none';
+      merge_selected.style.display = 'block';      
 
       DOJO.mode = DOJO.modes.merge;
 
@@ -42,7 +46,9 @@ DOJO.setup_buttons = function() {
 
     } else {
 
-      merge.style.border = '';
+
+      merge.style.display = 'block';
+      merge_selected.style.display = 'none';    
 
       DOJO.mode = DOJO.modes.pan_zoom;
 
@@ -57,12 +63,16 @@ DOJO.setup_buttons = function() {
   };
 
   var threed = document.getElementById('3d');
+  var threed_selected = document.getElementById('3d_selected');
 
-  threed.onclick = function() {
+  threed.onclick = threed_selected.onclick = function() {
 
     if (!DOJO.threeD_active) {
 
-      threed.style.border = '1px solid white';
+      // threed.style.border = '1px solid white';
+
+      threed.style.display = 'none';
+      threed_selected.style.display = 'block';
 
       document.getElementById('threeD').style.display = 'block';
 
@@ -75,7 +85,9 @@ DOJO.setup_buttons = function() {
 
     } else {
 
-      threed.style.border = '';
+      // threed.style.border = '';
+      threed.style.display = 'block';
+      threed_selected.style.display = 'none';      
 
       document.getElementById('threeD').style.display = 'none';
 
@@ -86,18 +98,23 @@ DOJO.setup_buttons = function() {
   };
 
   var link = document.getElementById('link');
+  var link_selected = document.getElementById('link_selected');
 
-  link.onclick = function() {
+  link.onclick = link_selected.onclick = function() {
 
     if (!DOJO.link_active) {
 
-      link.style.border = '1px solid white';
+      // link.style.border = '1px solid white';
+      link.style.display = 'none';
+      link_selected.style.display = 'block';
 
       DOJO.link_active = true;
 
     } else {
 
-      link.style.border = '';
+      // link.style.border = '';
+      link.style.display = 'block';
+      link_selected.style.display = 'none';
 
       DOJO.viewer._controller.reset_cursors();
 
