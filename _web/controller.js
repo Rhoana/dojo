@@ -95,7 +95,8 @@ J.controller.prototype.receive = function(data) {
 
   } else if (input.name == 'MOUSEMOVE') {
 
-    this.on_mouse_move(input.origin, input.id, input.value);
+    if (DOJO.link_active)
+      this.on_mouse_move(input.origin, input.id, input.value);
 
   }
 
@@ -109,7 +110,9 @@ J.controller.prototype.on_mouse_move = function(origin, id, value) {
 
   if (k != this._viewer._camera._z) return;
 
-  var color = this._viewer.get_color(id);
+  var x_y = this._viewer.ij2xy(i, j);
+
+  var color = this._viewer.get_color(id+100);
 
   var cursor = this._cursors[id];
 
@@ -124,18 +127,31 @@ J.controller.prototype.on_mouse_move = function(origin, id, value) {
 
     cursor.id = '';
 
+    cursor.style.left = x_y[0];
+    cursor.style.top = x_y[1];
+
     document.body.appendChild(cursor);
 
     this._cursors[id] = cursor;
 
   } else {
 
-    cursor.style.left = i;
-    cursor.style.top = j;
+    cursor.style.left = x_y[0];
+    cursor.style.top = x_y[1];
+
+    cursor.style.display = 'block';
 
   }
 
-  
+};
+
+J.controller.prototype.reset_cursors = function() {
+
+  for (c in this._cursors) {
+    document.body.removeChild(this._cursors[c]);
+  }
+
+  this._cursors = {};
 
 };
 

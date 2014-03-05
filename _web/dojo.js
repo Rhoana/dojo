@@ -99,6 +99,8 @@ DOJO.setup_buttons = function() {
 
       link.style.border = '';
 
+      DOJO.viewer._controller.reset_cursors();
+
       DOJO.link_active = false;
 
     }
@@ -122,12 +124,6 @@ DOJO.onleftclick = function(x, y) {
   DOJO.viewer.get_segmentation_id(i_j[0], i_j[1], function(id) {
     
     // now we have the segmentation id
-
-    // if (DOJO.mode == DOJO.modes.threeD) {
-    //   threeD_window = window.open("3d/?id=" + id,"","location=no,width=800,height=600");
-
-    //   DOJO.viewer._controller.activate(id);
-    // } else
     if (DOJO.mode == DOJO.modes.merge) {
 
       if (!DOJO.viewer.is_locked(id))
@@ -180,6 +176,11 @@ DOJO.update_slice_number = function(n) {
 
   var slicenumber = document.getElementById('slicenumber');
   slicenumber.innerHTML = n+'/'+DOJO.viewer._image.max_z_tiles;
+
+  // reset the cursors if we are in collab mode
+  if (DOJO.link_active) {
+    DOJO.viewer._controller.reset_cursors();
+  }
 
 };
 
@@ -370,27 +371,4 @@ DOJO.init_threeD = function() {
 
   }
 
-
-  // r.interactor.onMouseDown = function() {
-
-  //   this._touch_started = Date.now();
-
-  // }
-
-  // r.interactor.onMouseUp = function() {
-
-  //   this._touch_ended = Date.now();
-
-  //   if (typeof this._touch_started == 'undefined') {
-  //     this._touch_started = this._touch_ended;
-  //   }
-
-  //   if (this._touch_ended - this._touch_started < 200) {
-  //     var m = r.interactor.mousePosition;
-  //     var o = r.pick(m[0], m[1]);
-  //     var o2 = r.pick3d(m[0], m[1], null, null, box);
-  //     console.log(m, o, o2);
-  //   }
-
-  // }
 };

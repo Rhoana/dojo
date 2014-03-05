@@ -361,7 +361,7 @@ J.viewer.prototype.ij2xy = function(i, j) {
   var v = ((j * this._camera._view[4])/this._image.zoom_levels[0][3]) * this._image.zoom_levels[this._camera._w][3];
    
 
-  return uv2xy(u, v);
+  return this.uv2xy(u, v);
 
 };
 
