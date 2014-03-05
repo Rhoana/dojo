@@ -308,8 +308,8 @@
     <img src='gfx/split_selected.png' id='split_selected' class='tool' style='display:none' data-ot='Stop Split Mode' data-ot-target='true' data-ot-tip-joint='right'>
     <img src='gfx/adjust.png' id='adjust' class='tool' data-ot='Adjust Mode' data-ot-target='true' data-ot-tip-joint='right'>         
     <img src='gfx/adjust_selected.png' id='adjust_selected' class='tool' style='display:none' data-ot='Stop Adjust Mode' data-ot-target='true' data-ot-tip-joint='right'>         
-    <img src='gfx/3d.png' id='3d' class='tool' data-ot='3D Rendering' data-ot-target='true' data-ot-tip-joint='right'>
-    <img src='gfx/3d_selected.png' id='3d_selected' class='tool' style='display:none' data-ot='Stop 3D Rendering' data-ot-target='true' data-ot-tip-joint='right'>
+    <img src='gfx/3d.png' id='3d' class='tool' style='margin-top:3px;' data-ot='3D Rendering' data-ot-target='true' data-ot-tip-joint='right'>
+    <img src='gfx/3d_selected.png' id='3d_selected' class='tool' style='margin-top:3px;display:none' data-ot='Stop 3D Rendering' data-ot-target='true' data-ot-tip-joint='right'>
     <img src='gfx/link.png' id='link' class='tool' data-ot='Collaboration Mode' data-ot-target='true' data-ot-tip-joint='right'>      
     <img src='gfx/link_selected.png' id='link_selected' class='tool' style='display:none' data-ot='Stop Collaboration Mode' data-ot-target='true' data-ot-tip-joint='right'>      
   </div>
@@ -318,6 +318,10 @@
     <div><div id='slicenumber'>1/75</div><div id='label'>Label n/a</div></div>
     <div><strong>W</strong>: next slice</div>
     <div><strong>S</strong>: previous slice</div>
+    <div><strong>C</strong>: zoom in</div>
+    <div><strong>X</strong>: zoom out</div>    
+    <div><strong>Z</strong>: mark problem</div>
+    <div><strong>L</strong>: lock/unlock segment</div>    
   </div>
 
   <div id='log' class='logpanel'>
@@ -327,6 +331,7 @@
   </div>
 
   <div id='cursor' style='border:1px solid white;width:5px;height:5px;position:absolute;display:none;'></div>
+  <div id='exclamationmark' style='display:none;position:absolute;height:30px; width:6px'><img src='gfx/exclamationmark.png'></div>
 
 </body>
 
