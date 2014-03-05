@@ -212,12 +212,12 @@ DOJO.update_label = function(x, y) {
 
 };
 
-DOJO.update_log = function(message) {
+DOJO.update_log = function(input) {
 
   var log = document.getElementById('log');
 
   // add timestamp
-  message = timestamp() + ' ' + message;
+  var message = timestamp() + ' ' + input.message;
 
   log.innerHTML = message + '<br>' + log.innerHTML;
 

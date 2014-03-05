@@ -46,6 +46,7 @@ body {
   opacity: 1;
   border: solid 1px white;  
   display: none;
+  z-index: 1000;
 }
 
 #slicenumber {

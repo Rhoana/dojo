@@ -65,7 +65,7 @@ J.controller.prototype.receive = function(data) {
   var input = JSON.parse(data.data);
 
   if (input.name == 'LOG') {
-    DOJO.update_log(input.value);
+    DOJO.update_log(input);
     return;
   }
 
