@@ -302,7 +302,7 @@ J.controller.prototype.lock = function(x, y) {
 
     var color1 = DOJO.viewer.get_color(id);
     var color1_hex = rgbToHex(color1[0], color1[1], color1[2]);
-    var log = 'User '+this._origin+' '+verb+' label <font color="'+color1_hex+'">'+id+'</font>.';
+    var log = 'User $USER '+verb+' label <font color="'+color1_hex+'">'+id+'</font>.';
 
     this.send_log(log);
 
@@ -350,7 +350,7 @@ J.controller.prototype.merge = function(id) {
   var colored_id1 = id;
   var colored_id2 = this._last_id;
 
-  var log = 'User '+this._origin+' merged labels <font color="'+color1_hex+'">'+colored_id1+'</font> and <font color="'+color2_hex+'">' +colored_id2 + '</font>.';
+  var log = 'User $USER merged labels <font color="'+color1_hex+'">'+colored_id1+'</font> and <font color="'+color2_hex+'">' +colored_id2 + '</font>.';
 
   this.send_log(log);
   // shouldn't be required

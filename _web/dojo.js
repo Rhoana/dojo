@@ -230,11 +230,18 @@ DOJO.update_label = function(x, y) {
 };
 
 DOJO.update_log = function(input) {
-
+  console.log(input);
   var log = document.getElementById('log');
 
+  var m = input.value;
+
+  var color1 = DOJO.viewer.get_color(input.id+100);
+  var color1_hex = rgbToHex(color1[0], color1[1], color1[2]);
+
+  m = m.replace('$USER', '<font color="'+color1_hex+'">'+input.origin+'</font>');
+
   // add timestamp
-  var message = timestamp() + ' ' + input.message;
+  var message = timestamp() + ' ' + m;
 
   log.innerHTML = message + '<br>' + log.innerHTML;
 
