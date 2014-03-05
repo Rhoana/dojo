@@ -30,6 +30,7 @@ J.controller = function(viewer) {
   this._origin = makeid() // TODO
 
   this._cursors = {};
+  this._cursors_3d = {};
 
 
   this.create_gl_3d_labels();
@@ -108,11 +109,13 @@ J.controller.prototype.on_mouse_move = function(origin, id, value) {
   var j = value[1];
   var k = value[2];
 
+  // special case for 3d (we always show then)
+  if (DOJO.threeD)
+    this.on_mouse_move_3d(origin, id, i, j, k);
+
   if (k != this._viewer._camera._z) return;
 
   var x_y = this._viewer.ij2xy(i, j);
-
-  var color = this._viewer.get_color(id+100);
 
   var cursor = this._cursors[id];
 
@@ -121,27 +124,66 @@ J.controller.prototype.on_mouse_move = function(origin, id, value) {
     // clone the cursor
     cursor = document.getElementById('cursor').cloneNode();
 
+    var color = this._viewer.get_color(id+100);
+
     cursor.style.backgroundColor = 'rgb('+color[0]+','+color[1]+','+color[2]+')';
 
-    cursor.style.display = 'block';
-
     cursor.id = '';
-
-    cursor.style.left = x_y[0];
-    cursor.style.top = x_y[1];
 
     document.body.appendChild(cursor);
 
     this._cursors[id] = cursor;
 
-  } else {
+  } 
 
-    cursor.style.left = x_y[0];
-    cursor.style.top = x_y[1];
+  cursor.style.left = x_y[0];
+  cursor.style.top = x_y[1];
 
-    cursor.style.display = 'block';
+  cursor.style.display = 'block';
+
+};
+
+J.controller.prototype.on_mouse_move_3d = function(origin, id, i, j, k) {
+
+  var cursor = this._cursors_3d[id];
+
+  var height = DOJO.threeD.volume.dimensions[2]*DOJO.threeD.volume.spacing[2] + 50;
+
+  var x_y_z = this._viewer.ijk2xyz(i, j, k);
+
+  if (!cursor) {
+
+    var color = this._viewer.get_color(id+100);    
+
+    cursor = new X.cube();
+    cursor.lengthX = cursor.lengthY = cursor.lengthZ = 10;
+    cursor.center = [0,0,-height];
+    cursor.color = [color[0]/255, color[1]/255, color[2]/255];
+    var line = new X.object();
+    line.points = new X.triplets(6);
+    line.normals = new X.triplets(6);
+    line.type = 'LINES';
+    line.points.add(0,0,0);
+    line.points.add(0,0,-height);
+    line.normals.add(0,0,0);
+    line.normals.add(0,0,0);
+    line.color = cursor.color;
+    cursor.children.push(line);
+
+    DOJO.threeD.renderer.add(cursor);
+
+    this._cursors_3d[id] = cursor;
 
   }
+
+  cursor.transform.matrix[12] = x_y_z[0];
+  cursor.transform.matrix[13] = x_y_z[1];
+  cursor.transform.matrix[14] = x_y_z[2];
+
+  cursor.children[0].transform.matrix[12] = x_y_z[0];
+  cursor.children[0].transform.matrix[13] = x_y_z[1];
+  cursor.children[0].transform.matrix[14] = x_y_z[2];
+
 
 };
 

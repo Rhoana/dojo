@@ -365,6 +365,12 @@ J.viewer.prototype.ij2xy = function(i, j) {
 
 };
 
+J.viewer.prototype.ijk2xyz = function(i, j, k) {
+
+  return [Math.floor((i/this._image.height)*512) - 256, Math.floor((j/this._image.width)*512) - 256, (Math.floor((k/this._image.max_z_tiles)*this._image.max_z_tiles) - Math.floor(this._image.max_z_tiles/2))*DOJO.threeD.volume.spacing[2]];
+
+};
+
 J.viewer.prototype.get_segmentation_id = function(i, j, callback) {
 
   var x = Math.floor(i / 512);

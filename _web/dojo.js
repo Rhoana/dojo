@@ -283,7 +283,7 @@ DOJO.init_threeD = function() {
   r.init();
 
   var vol = new X.volume();
-  vol.dimensions = [512,512,75];
+  vol.dimensions = [512,512,DOJO.viewer._image.max_z_tiles];
   vol.spacing = [1,1,3];
   vol.file = '/image/volume/00000001/&.RZ';
   //vol.file = 'http://localhost:1337/segmentation/volume/00000001/&.RZ';
