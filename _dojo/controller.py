@@ -11,10 +11,14 @@ class Controller(object):
 
     self.__lock_table = {}
 
+    self.__users = []
+
   def handshake(self, websocket):
     '''
     '''
     self.__websocket = websocket
+
+    self.send_welcome()
 
     # always send the merge table first thing
     self.send_merge_table('SERVER')
@@ -23,6 +27,17 @@ class Controller(object):
 
     # then send the redraw command
     self.send_redraw('SERVER')
+
+
+  def send_welcome(self):
+    '''
+    '''
+    output = {}
+    output['name'] = 'WELCOME'
+    output['origin'] = 'SERVER'
+    output['value'] = ''
+
+    self.__websocket.send(json.dumps(output))
 
 
   def send_redraw(self, origin):
@@ -73,7 +88,11 @@ class Controller(object):
     print message
     input = json.loads(message)
 
-    if input['name'] == 'MERGETABLE':
+    if input['name'] == 'WELCOME':
+
+      self.__users.append(input['origin'])
+
+    elif input['name'] == 'MERGETABLE':
       self.__merge_table = input['value']
 
       self.send_merge_table(input['origin'])
@@ -89,4 +108,11 @@ class Controller(object):
 
     elif input['name'] == 'LOG':
       # just echo it
+      input['id'] = self.__users.index(input['origin'])
       self.__websocket.send(json.dumps(input))
+
+    elif input['name'] == 'MOUSEMOVE':
+      # just echo it
+      input['id'] = self.__users.index(input['origin'])
+      self.__websocket.send(json.dumps(input))
+

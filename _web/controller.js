@@ -29,6 +29,9 @@ J.controller = function(viewer) {
 
   this._origin = makeid() // TODO
 
+  this._cursors = {};
+
+
   this.create_gl_3d_labels();
 
 };
@@ -71,7 +74,11 @@ J.controller.prototype.receive = function(data) {
     return;
   }
 
-  if (input.name == 'MERGETABLE') {
+  if (input.name == 'WELCOME') {
+
+    this.send('WELCOME', {});
+
+  } else if (input.name == 'MERGETABLE') {
 
     // received new merge table
     this._viewer._controller.update_merge_table(input.value);
@@ -86,7 +93,49 @@ J.controller.prototype.receive = function(data) {
     this._viewer.redraw();
     this.update_threeD();
 
+  } else if (input.name == 'MOUSEMOVE') {
+
+    this.on_mouse_move(input.origin, input.id, input.value);
+
   }
+
+};
+
+J.controller.prototype.on_mouse_move = function(origin, id, value) {
+
+  var i = value[0];
+  var j = value[1];
+  var k = value[2];
+
+  if (k != this._viewer._camera._z) return;
+
+  var color = this._viewer.get_color(id);
+
+  var cursor = this._cursors[id];
+
+  if (!cursor) {
+
+    // clone the cursor
+    cursor = document.getElementById('cursor').cloneNode();
+
+    cursor.style.backgroundColor = 'rgb('+color[0]+','+color[1]+','+color[2]+')';
+
+    cursor.style.display = 'block';
+
+    cursor.id = '';
+
+    document.body.appendChild(cursor);
+
+    this._cursors[id] = cursor;
+
+  } else {
+
+    cursor.style.left = i;
+    cursor.style.top = j;
+
+  }
+
+  
 
 };
 
