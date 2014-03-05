@@ -333,6 +333,12 @@ J.viewer.prototype.xy2uv = function(x, y) {
 
 };
 
+J.viewer.prototype.uv2xy = function(u, v) {
+
+  return [u + this._camera._view[6], v + this._camera._view[7]];
+
+};
+
 // returns the pixel coordinates looking at the largest image
 J.viewer.prototype.xy2ij = function(x, y) {
 
