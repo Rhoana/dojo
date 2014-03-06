@@ -208,16 +208,23 @@ J.controller.prototype.reset_cursors = function() {
 
 J.controller.prototype.pick3d = function(o) {
 
-  console.log(o);
+  var x = o.transform.matrix[12];
+  var y = o.transform.matrix[13];
+  var z = o.transform.matrix[14];
+
+  var i_j_k = this._viewer.xyz2ijk(x, y, z);
+
 
   if (o.dojo_type == '3dcursor') {
-    var x = o.transform.matrix[12];
-    var y = o.transform.matrix[13];
-    var z = o.transform.matrix[14];
+    
+    this._viewer._camera.jump(i_j_k[0], i_j_k[1], i_j_k[2]);
 
-    var i_j_k = this._viewer.xyz2ijk(x, y, z);
+  } else if (o.dojo_type == '3dproblem') {
 
     this._viewer._camera.jump(i_j_k[0], i_j_k[1], i_j_k[2]);
+
+    this.redraw_exclamationmarks();
+
   }
 
 };
@@ -266,6 +273,7 @@ J.controller.prototype.update_problem_table = function(data) {
 J.controller.prototype.redraw_exclamationmarks = function() {
 
   this.clear_exclamationmarks();
+  this.clear_exclamationmarks3d();
 
   for (var e in this._problem_table) {
     var i_j_k = this._problem_table[e];
@@ -299,13 +307,17 @@ J.controller.prototype.add_exclamationmark = function(x, y) {
 
 };
 
-J.controller.prototype.clear_exclamationmarks = function() {
+J.controller.prototype.clear_exclamationmarks3d = function() {
 
   for (var e in this._exclamationmarks_3d) {
     DOJO.threeD.renderer.remove(this._exclamationmarks_3d[e]);
   }
 
   this._exclamationmarks_3d = {};
+
+};
+
+J.controller.prototype.clear_exclamationmarks = function() {
 
   for (var e in this._exclamationmarks_2d) {
     document.body.removeChild(this._exclamationmarks_2d[e]);
@@ -368,9 +380,11 @@ J.controller.prototype.create_exclamationmark_3d = function(i, j, k, id) {
   var x_y_z = this._viewer.ijk2xyz(i, j, k);
 
   var e = new X.cube();
+  e.dojo_type = '3dproblem';
   e.center = [0,0,-height];
   e.lengthX = e.lengthY = e.lengthZ = 10;
   var e_top = new X.cube();
+  e_top.dojo_type = '3dproblem';
   e_top.center = [0,0,-height - 40];
   e_top.lengthX = e_top.lengthY = 10;
   e_top.lengthZ = 50;
@@ -403,7 +417,7 @@ J.controller.prototype.create_exclamationmark_3d = function(i, j, k, id) {
 
   DOJO.threeD.renderer.add(e);
 
-  DOJO.threeD.renderer.resetBoundingBox();
+  // DOJO.threeD.renderer.resetBoundingBox();
 
 };
 

@@ -61,16 +61,18 @@ J.camera.prototype.zoom_end = function() {
 
 };
 
-J.camera.prototype.jump = function(x, y, z) {
+J.camera.prototype.jump = function(i, j, k) {
 
-  this._z = z;
+  this._z = k;
+
+  var x_y_z = this._viewer.ijk2xyz(i, j, k);
 
   if (DOJO.threeD)
-    DOJO.threeD.slice.transform.matrix[14] = z;
+    DOJO.threeD.slice.transform.matrix[14] = x_y_z[2];
 
-  DOJO.update_slice_number(this._z+1);
+  DOJO.update_slice_number(k+1);
 
-  this._loader.load_tiles(x, y, z, this._w, this._w, false);
+  this._loader.load_tiles(i, j, k, this._w, this._w, false);
 
 };
 
@@ -79,6 +81,9 @@ J.camera.prototype.zoom = function(x, y, delta) {
 
   // perform linear zooming until a new image zoom level is reached
   // then reset scale to 1 and show the image
+
+  this._viewer._controller.clear_exclamationmarks();
+  this._viewer._controller.reset_cursors();
 
   var u_v = this._viewer.xy2uv(x,y);
 
@@ -165,6 +170,9 @@ J.camera.prototype.pan = function(dx, dy) {
   this._view[6] += dx;
   this._view[7] += dy;
 
+  this._viewer._controller.clear_exclamationmarks();
+  this._viewer._controller.reset_cursors();
+
   this._loader.load_tiles(this._x, this._y, this._z, this._w, this._w, false);
 
 };
@@ -172,6 +180,9 @@ J.camera.prototype.pan = function(dx, dy) {
 J.camera.prototype.slice_up = function() {
 
   if (this._z == this._viewer._image.max_z_tiles-1) return;
+
+  this._viewer._controller.clear_exclamationmarks();
+  this._viewer._controller.reset_cursors();
 
   this._viewer.loading(true);
   this._loader.load_tiles(this._x, this._y, ++this._z, this._w, this._w, false);
@@ -186,6 +197,9 @@ J.camera.prototype.slice_up = function() {
 J.camera.prototype.slice_down = function() {
 
   if (this._z == 0) return;
+
+  this._viewer._controller.clear_exclamationmarks();
+  this._viewer._controller.reset_cursors();
 
   this._viewer.loading(true);
   this._loader.load_tiles(this._x, this._y, --this._z, this._w, this._w, false);
