@@ -11,6 +11,8 @@ class Controller(object):
 
     self.__lock_table = {}
 
+    self.__problem_table = []
+
     self.__users = []
 
   def handshake(self, websocket):
@@ -24,6 +26,8 @@ class Controller(object):
     self.send_merge_table('SERVER')
     # then the lock table
     self.send_lock_table('SERVER')
+    # then the problem table
+    self.send_problem_table('SERVER')
 
     # then send the redraw command
     self.send_redraw('SERVER')
@@ -60,6 +64,11 @@ class Controller(object):
     '''
     return self.__lock_table
 
+  def get_problem_table(self):
+    '''
+    '''
+    return self.__problem_table
+
   def send_merge_table(self, origin):
     '''
     '''
@@ -81,6 +90,18 @@ class Controller(object):
     output['value'] = self.get_lock_table()
 
     self.__websocket.send(json.dumps(output))
+
+  def send_problem_table(self, origin):
+    '''
+    '''
+
+    output = {}
+    output['name'] = 'PROBLEMTABLE'
+    output['origin'] = origin
+    output['value'] = self.get_problem_table()
+
+    self.__websocket.send(json.dumps(output))
+
 
   def on_message(self, message):
     '''
@@ -105,6 +126,11 @@ class Controller(object):
       self.send_lock_table(input['origin'])
 
       self.send_redraw(input['origin'])
+
+    elif input['name'] == 'PROBLEMTABLE':
+      self.__problem_table = input['value']
+
+      self.send_problem_table(input['origin'])
 
     elif input['name'] == 'LOG':
       # just echo it

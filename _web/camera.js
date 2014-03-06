@@ -55,7 +55,9 @@ J.camera.prototype.reset = function() {
 
 J.camera.prototype.zoom_end = function() {
 
-  this._loader.load_tiles(this._x, this._y, this._z, this._w, this._w, false);
+  // this._loader.load_tiles(this._x, this._y, this._z, this._w, this._w, false);
+
+
 
 };
 

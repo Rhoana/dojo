@@ -32,6 +32,9 @@ J.controller = function(viewer) {
   this._cursors = {};
   this._cursors_3d = {};
 
+  this._problem_table = null;
+  this._exclamationmarks_2d = {};
+  this._exclamationmarks_3d = {};
 
   this.create_gl_3d_labels();
 
@@ -99,9 +102,14 @@ J.controller.prototype.receive = function(data) {
     if (DOJO.link_active)
       this.on_mouse_move(input.origin, input.id, input.value);
 
+  } else if (input.name == 'PROBLEMTABLE') {
+
+    this.update_problem_table(input.value);
+
   }
 
 };
+
 
 J.controller.prototype.on_mouse_move = function(origin, id, value) {
 
@@ -225,6 +233,166 @@ J.controller.prototype.update_threeD = function() {
                      this._gl_3d_labels_length,
                      this._use_3d_labels);
   }
+
+};
+
+
+J.controller.prototype.update_problem_table = function(data) {
+  
+  this._problem_table = data;
+
+  if (DOJO.link_active)
+    this.redraw_exclamationmarks();
+
+};
+
+J.controller.prototype.redraw_exclamationmarks = function() {
+
+  this.clear_exclamationmarks();
+
+  for (var e in this._problem_table) {
+    var i_j_k = this._problem_table[e];
+    var i = i_j_k[0];
+    var j = i_j_k[1];
+    var k = i_j_k[2];
+
+    // 3d
+    if (DOJO.threeD)
+      this.create_exclamationmark_3d(i, j, k, e);
+
+    // 2d
+    if (k == this._viewer._camera._z)
+      this.create_exclamationmark_2d(i, j, e);
+
+  }
+
+};
+
+J.controller.prototype.add_exclamationmark = function(x, y) {
+
+  var i_j = DOJO.viewer.xy2ij(x, y);
+
+  if (i_j[0] == -1) return;
+
+  this._problem_table.push([i_j[0], i_j[1], DOJO.viewer._camera._z]);
+
+  this.redraw_exclamationmarks();
+
+  this.send_problem_table();
+
+};
+
+J.controller.prototype.clear_exclamationmarks = function() {
+
+  for (var e in this._exclamationmarks_3d) {
+    DOJO.threeD.renderer.remove(this._exclamationmarks_3d[e]);
+  }
+
+  this._exclamationmarks_3d = {};
+
+  for (var e in this._exclamationmarks_2d) {
+    document.body.removeChild(this._exclamationmarks_2d[e]);
+  }
+
+  this._exclamationmarks_2d = {};
+
+};
+
+J.controller.prototype.remove_exclamationmark_2d = function(id) {
+
+    var e = document.getElementById('em'+id);
+    document.body.removeChild(e);
+
+    delete this._exclamationmarks_2d[id];
+    this._problem_table.splice(id,1);
+
+    this.send_problem_table();
+
+};
+
+J.controller.prototype.remove_exclamationmark_3d = function(id) {
+  
+  DOJO.threeD.renderer.remove(this._exclamationmarks_3d[id]);
+
+};
+
+J.controller.prototype.create_exclamationmark_2d = function(i, j, id) {
+
+  var x_y = this._viewer.ij2xy(i, j);
+
+  // clone the exclamationmark
+  var e = document.getElementById('exclamationmark').cloneNode(true);
+
+  e.id = 'em'+id;
+
+  document.body.appendChild(e);
+
+  e.style.display = 'block';
+
+  e.style.left = x_y[0]-3;
+  e.style.top = x_y[1]-15;
+
+  e.onclick = function(id) {
+    
+    this.remove_exclamationmark_3d(id);    
+    this.remove_exclamationmark_2d(id);
+
+  }.bind(this, id);
+
+
+  this._exclamationmarks_2d[id] = e;
+
+};
+
+J.controller.prototype.create_exclamationmark_3d = function(i, j, k, id) {
+
+  var height = DOJO.threeD.volume.dimensions[2]*DOJO.threeD.volume.spacing[2] + 50;  
+
+  var x_y_z = this._viewer.ijk2xyz(i, j, k);
+
+  var e = new X.cube();
+  e.center = [0,0,-height];
+  e.lengthX = e.lengthY = e.lengthZ = 10;
+  var e_top = new X.cube();
+  e_top.center = [0,0,-height - 40];
+  e_top.lengthX = e_top.lengthY = 10;
+  e_top.lengthZ = 50;
+  e_top.modified();
+  e.children.push(e_top);
+
+  var line = new X.object();
+  line.points = new X.triplets(6);
+  line.normals = new X.triplets(6);
+  line.type = 'LINES';
+  line.points.add(0,0,0);
+  line.points.add(0,0,-height);
+  line.normals.add(0,0,0);
+  line.normals.add(0,0,0);
+  e.children.push(line);
+
+  e.transform.matrix[12] = x_y_z[0];
+  e.transform.matrix[13] = x_y_z[1];
+  e.transform.matrix[14] = x_y_z[2];
+
+  e.children[0].transform.matrix[12] = x_y_z[0];
+  e.children[0].transform.matrix[13] = x_y_z[1];
+  e.children[0].transform.matrix[14] = x_y_z[2];
+
+  e.children[1].transform.matrix[12] = x_y_z[0];
+  e.children[1].transform.matrix[13] = x_y_z[1];
+  e.children[1].transform.matrix[14] = x_y_z[2];  
+
+  this._exclamationmarks_3d[id] = e;
+
+  DOJO.threeD.renderer.add(e);
+
+  DOJO.threeD.renderer.resetBoundingBox();
+
+};
+
+J.controller.prototype.send_problem_table = function() {
+
+  this.send('PROBLEMTABLE', this._problem_table);
 
 };
 

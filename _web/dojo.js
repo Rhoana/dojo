@@ -116,6 +116,7 @@ DOJO.setup_buttons = function() {
       link.style.display = 'block';
       link_selected.style.display = 'none';
 
+
       DOJO.viewer._controller.reset_cursors();
 
       DOJO.link_active = false;
@@ -392,6 +393,9 @@ DOJO.init_threeD = function() {
 
     vol.volumeRendering = true;
     vol.opacity = 0.5;
+
+    // we also need to redraw the problem table
+    DOJO.viewer._controller.redraw_exclamationmarks();
 
   }
 
