@@ -399,4 +399,35 @@ DOJO.init_threeD = function() {
 
   }
 
+  r.interactor.onMouseDown = function() {
+
+    this._touch_started = Date.now();
+
+  }
+
+  r.interactor.onMouseUp = function() {
+
+    this._touch_ended = Date.now();
+
+    if (typeof this._touch_started == 'undefined') {
+      this._touch_started = this._touch_ended;
+    }
+
+    if (this._touch_ended - this._touch_started < 200) {
+      var m = r.interactor.mousePosition;
+      var id = r.pick(m[0], m[1]);
+      if (id > 0){
+        var o = r.get(id);
+
+        if (id) {
+          DOJO.viewer._controller.pick3d(o);
+        }
+
+      }
+      // var o2 = r.pick3d(m[0], m[1], null, null, box);
+
+    }
+
+  }  
+
 };

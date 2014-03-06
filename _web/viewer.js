@@ -367,7 +367,21 @@ J.viewer.prototype.ij2xy = function(i, j) {
 
 J.viewer.prototype.ijk2xyz = function(i, j, k) {
 
-  return [Math.floor((i/this._image.height)*512) - 256, Math.floor((j/this._image.width)*512) - 256, (Math.floor((k/this._image.max_z_tiles)*this._image.max_z_tiles) - Math.floor(this._image.max_z_tiles/2))*DOJO.threeD.volume.spacing[2]];
+  return [Math.floor((i*512)/this._image.height) - 256, Math.floor((j*512)/this._image.width) - 256, Math.floor(k - (this._image.max_z_tiles-1)/2)*DOJO.threeD.volume.spacing[2]];
+
+};
+
+J.viewer.prototype.xyz2ijk = function(x, y, z) {
+
+  var i = Math.floor((x + 256)*this._image.height/512);
+  var j = Math.floor((y + 256)*this._image.width/512);
+  // var adjusted_z_range = Math.floor(this._image.max_z_tiles*DOJO.threeD.volume.spacing[2]);
+  // var k = Math.floor((z/adjusted_z_range)*adjusted_z_range;
+
+  // var k = z + Math.floor(this._image.max_z_tiles/2) * DOJO.threeD.volume.spacing[2];
+  var k = z/DOJO.threeD.volume.spacing[2] + Math.floor(this._image.max_z_tiles/2);
+
+  return [i, j, k];
 
 };
 

@@ -164,6 +164,7 @@ J.controller.prototype.on_mouse_move_3d = function(origin, id, i, j, k) {
     var color = this._viewer.get_color(id+100);    
 
     cursor = new X.cube();
+    cursor.dojo_type = '3dcursor';
     cursor.lengthX = cursor.lengthY = cursor.lengthZ = 10;
     cursor.center = [0,0,-height];
     cursor.color = [color[0]/255, color[1]/255, color[2]/255];
@@ -202,6 +203,22 @@ J.controller.prototype.reset_cursors = function() {
   }
 
   this._cursors = {};
+
+};
+
+J.controller.prototype.pick3d = function(o) {
+
+  console.log(o);
+
+  if (o.dojo_type == '3dcursor') {
+    var x = o.transform.matrix[12];
+    var y = o.transform.matrix[13];
+    var z = o.transform.matrix[14];
+
+    var i_j_k = this._viewer.xyz2ijk(x, y, z);
+
+    this._viewer._camera.jump(i_j_k[0], i_j_k[1], i_j_k[2]);
+  }
 
 };
 

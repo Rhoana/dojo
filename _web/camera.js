@@ -61,6 +61,19 @@ J.camera.prototype.zoom_end = function() {
 
 };
 
+J.camera.prototype.jump = function(x, y, z) {
+
+  this._z = z;
+
+  if (DOJO.threeD)
+    DOJO.threeD.slice.transform.matrix[14] = z;
+
+  DOJO.update_slice_number(this._z+1);
+
+  this._loader.load_tiles(x, y, z, this._w, this._w, false);
+
+};
+
 ///
 J.camera.prototype.zoom = function(x, y, delta) {
 
