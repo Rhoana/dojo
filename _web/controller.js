@@ -305,6 +305,9 @@ J.controller.prototype.add_exclamationmark = function(x, y) {
 
   this.send_problem_table();
 
+  var log = 'User $USER marked a <font color="red">problem</font> in slice <strong>'+(DOJO.viewer._camera._z+1)+'</strong>.';
+  this.send_log(log);  
+
 };
 
 J.controller.prototype.clear_exclamationmarks3d = function() {
@@ -337,11 +340,15 @@ J.controller.prototype.remove_exclamationmark_2d = function(id) {
 
     this.send_problem_table();
 
+    var log = 'User $USER resolved a <font color="green">problem</font> in slice <strong>'+(DOJO.viewer._camera._z+1)+'</strong>.';
+    this.send_log(log);      
+
 };
 
 J.controller.prototype.remove_exclamationmark_3d = function(id) {
   
-  DOJO.threeD.renderer.remove(this._exclamationmarks_3d[id]);
+  if (DOJO.threeD)
+    DOJO.threeD.renderer.remove(this._exclamationmarks_3d[id]);
 
 };
 
