@@ -29,6 +29,13 @@ J.controller = function(viewer) {
 
   this._origin = makeid() // TODO
 
+  this._cursors = {};
+  this._cursors_3d = {};
+
+  this._problem_table = null;
+  this._exclamationmarks_2d = {};
+  this._exclamationmarks_3d = {};
+
   this.create_gl_3d_labels();
 
 };
@@ -62,7 +69,7 @@ J.controller.prototype.receive = function(data) {
   var input = JSON.parse(data.data);
 
   if (input.name == 'LOG') {
-    DOJO.update_log(input.value);
+    DOJO.update_log(input);
     return;
   }
 
@@ -71,7 +78,11 @@ J.controller.prototype.receive = function(data) {
     return;
   }
 
-  if (input.name == 'MERGETABLE') {
+  if (input.name == 'WELCOME') {
+
+    this.send('WELCOME', {});
+
+  } else if (input.name == 'MERGETABLE') {
 
     // received new merge table
     this._viewer._controller.update_merge_table(input.value);
@@ -85,6 +96,134 @@ J.controller.prototype.receive = function(data) {
 
     this._viewer.redraw();
     this.update_threeD();
+
+  } else if (input.name == 'MOUSEMOVE') {
+
+    if (DOJO.link_active)
+      this.on_mouse_move(input.origin, input.id, input.value);
+
+  } else if (input.name == 'PROBLEMTABLE') {
+
+    this.update_problem_table(input.value);
+
+  }
+
+};
+
+
+J.controller.prototype.on_mouse_move = function(origin, id, value) {
+
+  var i = value[0];
+  var j = value[1];
+  var k = value[2];
+
+  // special case for 3d (we always show then)
+  if (DOJO.threeD)
+    this.on_mouse_move_3d(origin, id, i, j, k);
+
+  if (k != this._viewer._camera._z) return;
+
+  var x_y = this._viewer.ij2xy(i, j);
+
+  var cursor = this._cursors[id];
+
+  if (!cursor) {
+
+    // clone the cursor
+    cursor = document.getElementById('cursor').cloneNode();
+
+    var color = this._viewer.get_color(id+100);
+
+    cursor.style.backgroundColor = 'rgb('+color[0]+','+color[1]+','+color[2]+')';
+
+    cursor.id = '';
+
+    document.body.appendChild(cursor);
+
+    this._cursors[id] = cursor;
+
+  } 
+
+  cursor.style.left = x_y[0];
+  cursor.style.top = x_y[1];
+
+  cursor.style.display = 'block';
+
+};
+
+J.controller.prototype.on_mouse_move_3d = function(origin, id, i, j, k) {
+
+  var cursor = this._cursors_3d[id];
+
+  var height = DOJO.threeD.volume.dimensions[2]*DOJO.threeD.volume.spacing[2] + 50;
+
+  var x_y_z = this._viewer.ijk2xyz(i, j, k);
+
+  if (!cursor) {
+
+    var color = this._viewer.get_color(id+100);    
+
+    cursor = new X.cube();
+    cursor.dojo_type = '3dcursor';
+    cursor.lengthX = cursor.lengthY = cursor.lengthZ = 10;
+    cursor.center = [0,0,-height];
+    cursor.color = [color[0]/255, color[1]/255, color[2]/255];
+    var line = new X.object();
+    line.points = new X.triplets(6);
+    line.normals = new X.triplets(6);
+    line.type = 'LINES';
+    line.points.add(0,0,0);
+    line.points.add(0,0,-height);
+    line.normals.add(0,0,0);
+    line.normals.add(0,0,0);
+    line.color = cursor.color;
+    cursor.children.push(line);
+
+    DOJO.threeD.renderer.add(cursor);
+
+    this._cursors_3d[id] = cursor;
+
+  }
+
+  cursor.transform.matrix[12] = x_y_z[0];
+  cursor.transform.matrix[13] = x_y_z[1];
+  cursor.transform.matrix[14] = x_y_z[2];
+
+  cursor.children[0].transform.matrix[12] = x_y_z[0];
+  cursor.children[0].transform.matrix[13] = x_y_z[1];
+  cursor.children[0].transform.matrix[14] = x_y_z[2];
+
+
+};
+
+J.controller.prototype.reset_cursors = function() {
+
+  for (c in this._cursors) {
+    document.body.removeChild(this._cursors[c]);
+  }
+
+  this._cursors = {};
+
+};
+
+J.controller.prototype.pick3d = function(o) {
+
+  var x = o.transform.matrix[12];
+  var y = o.transform.matrix[13];
+  var z = o.transform.matrix[14];
+
+  var i_j_k = this._viewer.xyz2ijk(x, y, z);
+
+
+  if (o.dojo_type == '3dcursor') {
+    
+    this._viewer._camera.jump(i_j_k[0], i_j_k[1], i_j_k[2]);
+
+  } else if (o.dojo_type == '3dproblem') {
+
+    this._viewer._camera.jump(i_j_k[0], i_j_k[1], i_j_k[2]);
+
+    this.redraw_exclamationmarks();
 
   }
 
@@ -121,6 +260,180 @@ J.controller.prototype.update_threeD = function() {
 
 };
 
+
+J.controller.prototype.update_problem_table = function(data) {
+  
+  this._problem_table = data;
+
+  if (DOJO.link_active)
+    this.redraw_exclamationmarks();
+
+};
+
+J.controller.prototype.redraw_exclamationmarks = function() {
+
+  this.clear_exclamationmarks();
+  this.clear_exclamationmarks3d();
+
+  for (var e in this._problem_table) {
+    var i_j_k = this._problem_table[e];
+    var i = i_j_k[0];
+    var j = i_j_k[1];
+    var k = i_j_k[2];
+
+    // 3d
+    if (DOJO.threeD)
+      this.create_exclamationmark_3d(i, j, k, e);
+
+    // 2d
+    if (k == this._viewer._camera._z)
+      this.create_exclamationmark_2d(i, j, e);
+
+  }
+
+};
+
+J.controller.prototype.add_exclamationmark = function(x, y) {
+
+  var i_j = DOJO.viewer.xy2ij(x, y);
+
+  if (i_j[0] == -1) return;
+
+  this._problem_table.push([i_j[0], i_j[1], DOJO.viewer._camera._z]);
+
+  this.redraw_exclamationmarks();
+
+  this.send_problem_table();
+
+  var log = 'User $USER marked a <font color="red">problem</font> in slice <strong>'+(DOJO.viewer._camera._z+1)+'</strong>.';
+  this.send_log(log);  
+
+};
+
+J.controller.prototype.clear_exclamationmarks3d = function() {
+
+  for (var e in this._exclamationmarks_3d) {
+    DOJO.threeD.renderer.remove(this._exclamationmarks_3d[e]);
+  }
+
+  this._exclamationmarks_3d = {};
+
+};
+
+J.controller.prototype.clear_exclamationmarks = function() {
+
+  for (var e in this._exclamationmarks_2d) {
+    document.body.removeChild(this._exclamationmarks_2d[e]);
+  }
+
+  this._exclamationmarks_2d = {};
+
+};
+
+J.controller.prototype.remove_exclamationmark_2d = function(id) {
+
+    var e = document.getElementById('em'+id);
+    document.body.removeChild(e);
+
+    delete this._exclamationmarks_2d[id];
+    this._problem_table.splice(id,1);
+
+    this.send_problem_table();
+
+    var log = 'User $USER resolved a <font color="green">problem</font> in slice <strong>'+(DOJO.viewer._camera._z+1)+'</strong>.';
+    this.send_log(log);      
+
+};
+
+J.controller.prototype.remove_exclamationmark_3d = function(id) {
+  
+  if (DOJO.threeD)
+    DOJO.threeD.renderer.remove(this._exclamationmarks_3d[id]);
+
+};
+
+J.controller.prototype.create_exclamationmark_2d = function(i, j, id) {
+
+  var x_y = this._viewer.ij2xy(i, j);
+
+  // clone the exclamationmark
+  var e = document.getElementById('exclamationmark').cloneNode(true);
+
+  e.id = 'em'+id;
+
+  document.body.appendChild(e);
+
+  e.style.display = 'block';
+
+  e.style.left = x_y[0]-3;
+  e.style.top = x_y[1]-15;
+
+  e.onclick = function(id) {
+    
+    this.remove_exclamationmark_3d(id);    
+    this.remove_exclamationmark_2d(id);
+
+  }.bind(this, id);
+
+
+  this._exclamationmarks_2d[id] = e;
+
+};
+
+J.controller.prototype.create_exclamationmark_3d = function(i, j, k, id) {
+
+  var height = DOJO.threeD.volume.dimensions[2]*DOJO.threeD.volume.spacing[2] + 50;  
+
+  var x_y_z = this._viewer.ijk2xyz(i, j, k);
+
+  var e = new X.cube();
+  e.dojo_type = '3dproblem';
+  e.center = [0,0,-height];
+  e.lengthX = e.lengthY = e.lengthZ = 10;
+  var e_top = new X.cube();
+  e_top.dojo_type = '3dproblem';
+  e_top.center = [0,0,-height - 40];
+  e_top.lengthX = e_top.lengthY = 10;
+  e_top.lengthZ = 50;
+  e_top.modified();
+  e.children.push(e_top);
+
+  var line = new X.object();
+  line.points = new X.triplets(6);
+  line.normals = new X.triplets(6);
+  line.type = 'LINES';
+  line.points.add(0,0,0);
+  line.points.add(0,0,-height);
+  line.normals.add(0,0,0);
+  line.normals.add(0,0,0);
+  e.children.push(line);
+
+  e.transform.matrix[12] = x_y_z[0];
+  e.transform.matrix[13] = x_y_z[1];
+  e.transform.matrix[14] = x_y_z[2];
+
+  e.children[0].transform.matrix[12] = x_y_z[0];
+  e.children[0].transform.matrix[13] = x_y_z[1];
+  e.children[0].transform.matrix[14] = x_y_z[2];
+
+  e.children[1].transform.matrix[12] = x_y_z[0];
+  e.children[1].transform.matrix[13] = x_y_z[1];
+  e.children[1].transform.matrix[14] = x_y_z[2];  
+
+  this._exclamationmarks_3d[id] = e;
+
+  DOJO.threeD.renderer.add(e);
+
+  // DOJO.threeD.renderer.resetBoundingBox();
+
+};
+
+J.controller.prototype.send_problem_table = function() {
+
+  this.send('PROBLEMTABLE', this._problem_table);
+
+};
+
 J.controller.prototype.update_merge_table = function(data) {
 
   // console.log('Received new merge table', data);
@@ -142,6 +455,12 @@ J.controller.prototype.send_lock_table = function() {
   this.send('LOCKTABLE', this._lock_table);
 
 };
+
+J.controller.prototype.send_mouse_move = function(i_j_k) {
+
+  this.send('MOUSEMOVE', i_j_k);
+
+}
 
 J.controller.prototype.update_lock_table = function(data) {
 
@@ -189,7 +508,7 @@ J.controller.prototype.lock = function(x, y) {
 
     var color1 = DOJO.viewer.get_color(id);
     var color1_hex = rgbToHex(color1[0], color1[1], color1[2]);
-    var log = 'User '+this._origin+' '+verb+' label <font color="'+color1_hex+'">'+id+'</font>.';
+    var log = 'User $USER '+verb+' label <font color="'+color1_hex+'">'+id+'</font>.';
 
     this.send_log(log);
 
@@ -237,7 +556,7 @@ J.controller.prototype.merge = function(id) {
   var colored_id1 = id;
   var colored_id2 = this._last_id;
 
-  var log = 'User '+this._origin+' merged labels <font color="'+color1_hex+'">'+colored_id1+'</font> and <font color="'+color2_hex+'">' +colored_id2 + '</font>.';
+  var log = 'User $USER merged labels <font color="'+color1_hex+'">'+colored_id1+'</font> and <font color="'+color2_hex+'">' +colored_id2 + '</font>.';
 
   this.send_log(log);
   // shouldn't be required

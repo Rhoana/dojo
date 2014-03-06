@@ -8,6 +8,8 @@ DOJO.modes = {
   merge:1
 };
 DOJO.threeD_active = false;
+DOJO.link_active = false;
+DOJO.mousemove_timeout = null;
 
 DOJO.init = function() {
 
@@ -25,12 +27,16 @@ DOJO.init = function() {
 DOJO.setup_buttons = function() {
 
   var merge = document.getElementById('merge');
+  var merge_selected = document.getElementById('merge_selected');
 
-  merge.onclick = function() {
+  merge.onclick = merge_selected.onclick = function() {
 
     if (DOJO.mode != DOJO.modes.merge) {
 
-      merge.style.border = '1px solid white';
+      // merge.style.border = '1px solid white';
+
+      merge.style.display = 'none';
+      merge_selected.style.display = 'block';      
 
       DOJO.mode = DOJO.modes.merge;
 
@@ -40,7 +46,9 @@ DOJO.setup_buttons = function() {
 
     } else {
 
-      merge.style.border = '';
+
+      merge.style.display = 'block';
+      merge_selected.style.display = 'none';    
 
       DOJO.mode = DOJO.modes.pan_zoom;
 
@@ -55,14 +63,16 @@ DOJO.setup_buttons = function() {
   };
 
   var threed = document.getElementById('3d');
+  var threed_selected = document.getElementById('3d_selected');
 
-  threed.onclick = function() {
-
-    merge.style.border = '';
+  threed.onclick = threed_selected.onclick = function() {
 
     if (!DOJO.threeD_active) {
 
-      threed.style.border = '1px solid white';
+      // threed.style.border = '1px solid white';
+
+      threed.style.display = 'none';
+      threed_selected.style.display = 'block';
 
       document.getElementById('threeD').style.display = 'block';
 
@@ -75,13 +85,44 @@ DOJO.setup_buttons = function() {
 
     } else {
 
-      threed.style.border = '';
+      // threed.style.border = '';
+      threed.style.display = 'block';
+      threed_selected.style.display = 'none';      
 
       document.getElementById('threeD').style.display = 'none';
 
       DOJO.threeD_active = false;
 
     }
+
+  };
+
+  var link = document.getElementById('link');
+  var link_selected = document.getElementById('link_selected');
+
+  link.onclick = link_selected.onclick = function() {
+
+    if (!DOJO.link_active) {
+
+      // link.style.border = '1px solid white';
+      link.style.display = 'none';
+      link_selected.style.display = 'block';
+
+      DOJO.link_active = true;
+
+    } else {
+
+      // link.style.border = '';
+      link.style.display = 'block';
+      link_selected.style.display = 'none';
+
+
+      DOJO.viewer._controller.reset_cursors();
+
+      DOJO.link_active = false;
+
+    }
+
 
   };
 
@@ -101,12 +142,6 @@ DOJO.onleftclick = function(x, y) {
   DOJO.viewer.get_segmentation_id(i_j[0], i_j[1], function(id) {
     
     // now we have the segmentation id
-
-    // if (DOJO.mode == DOJO.modes.threeD) {
-    //   threeD_window = window.open("3d/?id=" + id,"","location=no,width=800,height=600");
-
-    //   DOJO.viewer._controller.activate(id);
-    // } else
     if (DOJO.mode == DOJO.modes.merge) {
 
       if (!DOJO.viewer.is_locked(id))
@@ -135,10 +170,35 @@ DOJO.onleftclick = function(x, y) {
 
 };
 
+DOJO.onmousemove = function(x, y) {
+
+  if (DOJO.link_active) {
+
+    var i_j = DOJO.viewer.xy2ij(x,y);
+
+    if (i_j[0] == -1) return;
+
+    if (DOJO.mousemove_timeout) {
+      clearTimeout(DOJO.mousemove_timeout);
+    }
+
+    DOJO.mousemove_timeout = setTimeout(function() {
+      DOJO.viewer._controller.send_mouse_move([i_j[0], i_j[1], DOJO.viewer._camera._z]);
+    }, 100);
+
+  }
+
+};
+
 DOJO.update_slice_number = function(n) {
 
   var slicenumber = document.getElementById('slicenumber');
   slicenumber.innerHTML = n+'/'+DOJO.viewer._image.max_z_tiles;
+
+  // reset the cursors if we are in collab mode
+  if (DOJO.link_active) {
+    DOJO.viewer._controller.reset_cursors();
+  }
 
 };
 
@@ -170,12 +230,19 @@ DOJO.update_label = function(x, y) {
 
 };
 
-DOJO.update_log = function(message) {
-
+DOJO.update_log = function(input) {
+  console.log(input);
   var log = document.getElementById('log');
 
+  var m = input.value;
+
+  var color1 = DOJO.viewer.get_color(input.id+100);
+  var color1_hex = rgbToHex(color1[0], color1[1], color1[2]);
+
+  m = m.replace('$USER', '<font color="'+color1_hex+'">'+input.origin+'</font>');
+
   // add timestamp
-  message = timestamp() + ' ' + message;
+  var message = timestamp() + ' ' + m;
 
   log.innerHTML = message + '<br>' + log.innerHTML;
 
@@ -241,7 +308,7 @@ DOJO.init_threeD = function() {
   r.init();
 
   var vol = new X.volume();
-  vol.dimensions = [512,512,75];
+  vol.dimensions = [512,512,DOJO.viewer._image.max_z_tiles];
   vol.spacing = [1,1,3];
   vol.file = '/image/volume/00000001/&.RZ';
   //vol.file = 'http://localhost:1337/segmentation/volume/00000001/&.RZ';
@@ -327,29 +394,40 @@ DOJO.init_threeD = function() {
     vol.volumeRendering = true;
     vol.opacity = 0.5;
 
+    // we also need to redraw the problem table
+    DOJO.viewer._controller.redraw_exclamationmarks();
+
   }
 
+  r.interactor.onMouseDown = function() {
 
-  // r.interactor.onMouseDown = function() {
+    this._touch_started = Date.now();
 
-  //   this._touch_started = Date.now();
+  }
 
-  // }
+  r.interactor.onMouseUp = function() {
 
-  // r.interactor.onMouseUp = function() {
+    this._touch_ended = Date.now();
 
-  //   this._touch_ended = Date.now();
+    if (typeof this._touch_started == 'undefined') {
+      this._touch_started = this._touch_ended;
+    }
 
-  //   if (typeof this._touch_started == 'undefined') {
-  //     this._touch_started = this._touch_ended;
-  //   }
+    if (this._touch_ended - this._touch_started < 200) {
+      var m = r.interactor.mousePosition;
+      var id = r.pick(m[0], m[1]);
+      if (id > 0){
+        var o = r.get(id);
 
-  //   if (this._touch_ended - this._touch_started < 200) {
-  //     var m = r.interactor.mousePosition;
-  //     var o = r.pick(m[0], m[1]);
-  //     var o2 = r.pick3d(m[0], m[1], null, null, box);
-  //     console.log(m, o, o2);
-  //   }
+        if (id) {
+          DOJO.viewer._controller.pick3d(o);
+        }
 
-  // }
+      }
+      // var o2 = r.pick3d(m[0], m[1], null, null, box);
+
+    }
+
+  }  
+
 };

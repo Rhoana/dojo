@@ -48,6 +48,8 @@ J.interactor.prototype.onmousemove = function(e) {
 
   //var u_v = this._viewer.xy2uv(x, y);
 
+  DOJO.onmousemove(x, y);
+
   if (this._left_down) {
 
   } else if (this._right_down) {
@@ -123,6 +125,7 @@ J.interactor.prototype.onkeydown = function(e) {
   // 83: S SLICE DOWN
   // 67: C ZOOM IN
   // 88: X ZOOM OUT
+  // 90: Z MARK PROBLEM
   // 76: LOCK/UNLOCK
 
   if (e.keyCode == 87) {
@@ -164,6 +167,13 @@ J.interactor.prototype.onkeydown = function(e) {
 
     this._keypress_callback = setTimeout(function() {
       this._viewer._controller.lock(this._camera._x, this._camera._y);
+      this._keypress_callback = null;
+    }.bind(this),10); 
+
+  } else if (e.keyCode == 90) {
+
+    this._keypress_callback = setTimeout(function() {
+      this._viewer._controller.add_exclamationmark(this._camera._x, this._camera._y);
       this._keypress_callback = null;
     }.bind(this),10); 
 

@@ -333,6 +333,12 @@ J.viewer.prototype.xy2uv = function(x, y) {
 
 };
 
+J.viewer.prototype.uv2xy = function(u, v) {
+
+  return [u + this._camera._view[6], v + this._camera._view[7]];
+
+};
+
 // returns the pixel coordinates looking at the largest image
 J.viewer.prototype.xy2ij = function(x, y) {
 
@@ -351,10 +357,31 @@ J.viewer.prototype.xy2ij = function(x, y) {
 
 J.viewer.prototype.ij2xy = function(i, j) {
 
-  var x = this._camera._view[6] + (i * this._image.zoom_levels[this._camera._w][2]);
-  var y = this._camera._view[7] + (j * this._image.zoom_levels[this._camera._w][3]);
+  var u = ((i * this._camera._view[0])/this._image.zoom_levels[0][2]) * this._image.zoom_levels[this._camera._w][2];
+  var v = ((j * this._camera._view[4])/this._image.zoom_levels[0][3]) * this._image.zoom_levels[this._camera._w][3];
+   
 
-  return [x, y];
+  return this.uv2xy(u, v);
+
+};
+
+J.viewer.prototype.ijk2xyz = function(i, j, k) {
+
+  return [Math.floor((i*512)/this._image.height) - 256, Math.floor((j*512)/this._image.width) - 256, Math.floor(k - (this._image.max_z_tiles-1)/2)*DOJO.threeD.volume.spacing[2]];
+
+};
+
+J.viewer.prototype.xyz2ijk = function(x, y, z) {
+
+  var i = Math.floor((x + 256)*this._image.height/512);
+  var j = Math.floor((y + 256)*this._image.width/512);
+  // var adjusted_z_range = Math.floor(this._image.max_z_tiles*DOJO.threeD.volume.spacing[2]);
+  // var k = Math.floor((z/adjusted_z_range)*adjusted_z_range;
+
+  // var k = z + Math.floor(this._image.max_z_tiles/2) * DOJO.threeD.volume.spacing[2];
+  var k = z/DOJO.threeD.volume.spacing[2] + Math.floor(this._image.max_z_tiles/2);
+
+  return [i, j, k];
 
 };
 
