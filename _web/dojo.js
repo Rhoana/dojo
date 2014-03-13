@@ -5,7 +5,8 @@ var DOJO = DOJO || {};
 DOJO.mode = null;
 DOJO.modes = {
   pan_zoom:0, 
-  merge:1
+  merge:1,
+  split:2
 };
 DOJO.threeD_active = false;
 DOJO.link_active = false;
@@ -61,6 +62,43 @@ DOJO.setup_buttons = function() {
     }
 
   };
+
+  var split = document.getElementById('split');
+  var split_selected = document.getElementById('split_selected');
+
+  split.onclick = split_selected.onclick = function() {
+
+    if (DOJO.mode != DOJO.modes.split) {
+
+      // merge.style.border = '1px solid white';
+
+      split.style.display = 'none';
+      split_selected.style.display = 'block';      
+
+      DOJO.mode = DOJO.modes.split;
+
+      // reset 3d view
+      DOJO.viewer._controller.reset_fixed_3d_labels();
+      DOJO.viewer._controller.reset_3d_labels();
+
+    } else {
+
+
+      split.style.display = 'block';
+      split_selected.style.display = 'none';    
+
+      DOJO.mode = DOJO.modes.pan_zoom;
+
+      // DOJO.viewer._controller.end_merge();
+
+      // reset 3d view
+      DOJO.viewer._controller.reset_fixed_3d_labels();
+      DOJO.viewer._controller.reset_3d_labels();      
+
+    }
+
+  };
+
 
   var threed = document.getElementById('3d');
   var threed_selected = document.getElementById('3d_selected');
