@@ -522,6 +522,10 @@ J.controller.prototype.lock = function(x, y) {
 
 };
 
+J.controller.prototype.split = function(id) {
+  console.log('splitting', id);
+};
+
 J.controller.prototype.merge = function(id) {
 
   if (!this._merge_table) {

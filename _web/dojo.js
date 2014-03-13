@@ -185,6 +185,11 @@ DOJO.onleftclick = function(x, y) {
       if (!DOJO.viewer.is_locked(id))
         DOJO.viewer._controller.merge(id);
       
+    } else if (DOJO.mode == DOJO.modes.split) {
+
+      if (!DOJO.viewer.is_locked(id))
+        DOJO.viewer._controller.split(id);
+
     } else {
 
       if (DOJO.threeD_active) {
@@ -224,7 +229,26 @@ DOJO.onmousemove = function(x, y) {
       DOJO.viewer._controller.send_mouse_move([i_j[0], i_j[1], DOJO.viewer._camera._z]);
     }, 100);
 
+  } else if (DOJO.mode == DOJO.modes.split && DOJO.viewer._interactor._left_down) {
+
+    var i_j = DOJO.viewer.xy2ij(x,y);
+
+    if (i_j[0] == -1) return;
+
+    console.log('split', i_j[0], i_j[1]);
+
   }
+
+};
+
+DOJO.onmouseup = function(x, y) {
+
+  var i_j = DOJO.viewer.xy2ij(x,y);
+
+  if (i_j[0] == -1) return;
+
+
+  console.log('endsplit', i_j[0]), i_j[1];
 
 };
 

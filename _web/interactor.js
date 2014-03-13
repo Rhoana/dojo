@@ -88,13 +88,18 @@ J.interactor.prototype.onmousedown = function(e) {
 
 J.interactor.prototype.onmouseup = function(e) {
 
-if (e.button == 0) {
-  // left
-  this._left_down = false;
-} else if (e.button == 2) {
-  // right
-  this._right_down = false;
-}
+  var x = e.clientX;
+  var y = e.clientY;
+
+  DOJO.onmouseup(x, y);
+
+  if (e.button == 0) {
+    // left
+    this._left_down = false;
+  } else if (e.button == 2) {
+    // right
+    this._right_down = false;
+  }
 
 };
 
