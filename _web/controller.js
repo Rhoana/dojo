@@ -36,6 +36,8 @@ J.controller = function(viewer) {
   this._exclamationmarks_2d = {};
   this._exclamationmarks_3d = {};
 
+  this._split_mode = -1;
+
   this.create_gl_3d_labels();
 
 };
@@ -524,6 +526,8 @@ J.controller.prototype.lock = function(x, y) {
 
 J.controller.prototype.split = function(id) {
   console.log('splitting', id);
+  this._split_mode = 1;
+  this.activate(id);
 };
 
 J.controller.prototype.merge = function(id) {

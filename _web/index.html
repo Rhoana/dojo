@@ -39,6 +39,7 @@
     uniform float uOpacity;
     uniform float uHighlightedId;
     uniform float uActivatedId;
+    uniform int uSplitMode;
     uniform float uMaxColors;
     uniform int uBorders;
     uniform int uMergeTableLength;
@@ -199,6 +200,11 @@
         }
 
       } else {
+
+        if ((uSplitMode == 1) && equals(uActivatedId, id)) {
+          // in split mode, the activated id is completely transparent
+          return vec4(1.,1.,1.,0.1);
+        }
 
         // highlight active labels
         if (equals(uHighlightedId, id) || equals(uActivatedId, id)) {
