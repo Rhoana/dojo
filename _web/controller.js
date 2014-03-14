@@ -533,11 +533,21 @@ J.controller.prototype.start_split = function(id, x, y) {
     this.activate(id);    
   } else if (this._split_mode == 1) {
     // start drawing
-    var u_v = this._viewer.xy2uv(x,y);
+    //ar u_v = this._viewer.xy2uv(x*this._viewer._camera._view[0],y*this._viewer._camera._view[4]);
+    var i_j = this._viewer.xy2ij(x, y);
+    var u_v = this._viewer.ij2uv_no_zoom(i_j[0],i_j[1]);
+    // var u_v = this._viewer.ij2uv(i_j[0], i_j[1]);
+    // var u_v = [x*this._viewer._camera._view[0],y*this._viewer._camera._view[4]];
+
     var context = this._viewer._image_buffer_context;
+
+    // context.save();
+    // var view = this._viewer._camera._view;
+    //context.setTransform(view[0], view[1], view[3], view[4], 0,0);
+
     context.beginPath();
     context.moveTo(u_v[0], u_v[1]);
-
+    // context.restore();
   }
 
 
@@ -549,13 +559,24 @@ J.controller.prototype.draw_split = function(x, y) {
   if (this._split_mode == 1) {
    
     // this._split_mode = 2;
-    var u_v = this._viewer.xy2uv(x,y);
-    console.log('draw split', u_v);
+    // var u_v = this._viewer.xy2uv(x*this._viewer._camera._view[0],y*this._viewer._camera._view[4]);
+    var i_j = this._viewer.xy2ij(x, y);
+    var u_v = this._viewer.ij2uv_no_zoom(i_j[0],i_j[1]);
+    // console.log(i_j);
+    // var u_v = this._viewer.ij2uv(i_j[0], i_j[1]);  
+    // console.log(u_v);  
+    //var u_v = [x*this._viewer._camera._view[0],y*this._viewer._camera._view[4]];
+    console.log('draw split');
 
     var context = this._viewer._image_buffer_context;
+
+    // context.save();
+    // var view = this._viewer._camera._view;
+    //context.setTransform(view[0], view[1], view[3], view[4], 0,0);
+
     context.lineTo(u_v[0], u_v[1]);
     context.stroke();
-
+    // context.restore();
   }
 
 };

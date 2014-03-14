@@ -363,6 +363,24 @@ J.viewer.prototype.ij2xy = function(i, j) {
 
 };
 
+J.viewer.prototype.ij2uv = function(i, j) {
+
+  var u = ((i * this._camera._view[0])/this._image.zoom_levels[0][2]) * this._image.zoom_levels[this._camera._w][2];
+  var v = ((j * this._camera._view[4])/this._image.zoom_levels[0][3]) * this._image.zoom_levels[this._camera._w][3];
+
+  return [u,v];   
+
+};
+
+J.viewer.prototype.ij2uv_no_zoom = function(i, j) {
+
+  var u = ((i)/this._image.zoom_levels[0][2]) * this._image.zoom_levels[this._camera._w][2];
+  var v = ((j)/this._image.zoom_levels[0][3]) * this._image.zoom_levels[this._camera._w][3];
+
+  return [u,v];   
+
+};
+
 J.viewer.prototype.ijk2xyz = function(i, j, k) {
 
   return [Math.floor((i*512)/this._image.height) - 256, Math.floor((j*512)/this._image.width) - 256, Math.floor(k - (this._image.max_z_tiles-1)/2)*DOJO.threeD.volume.spacing[2]];
