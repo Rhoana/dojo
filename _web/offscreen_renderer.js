@@ -51,6 +51,7 @@ J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
   gl.useProgram(h);
 
   // textures
+  this.h_uImageSampler = gl.getUniformLocation(h, 'uImageSampler');
   this.h_uTextureSampler = gl.getUniformLocation(h, 'uTextureSampler');
   this.h_uColorMapSampler = gl.getUniformLocation(h, 'uColorMapSampler');
   this.h_uMergeTableKeySampler = gl.getUniformLocation(h, 'uMergeTableKeySampler');
@@ -87,7 +88,7 @@ J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
 
 };
 
-J.offscreen_renderer.prototype.draw = function(s, c, x, y) {
+J.offscreen_renderer.prototype.draw = function(i, s, c, x, y) {
 
   var gl = this._gl;
 
@@ -120,6 +121,20 @@ J.offscreen_renderer.prototype.draw = function(s, c, x, y) {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 
   gl.bindTexture(gl.TEXTURE_2D, null);
+
+  // create image texture buffer
+  var image_texture = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, image_texture);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, i);
+
+  // clamp to edge
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+
+  gl.bindTexture(gl.TEXTURE_2D, null);  
 
   //
   // MERGE TABLE
@@ -219,6 +234,10 @@ J.offscreen_renderer.prototype.draw = function(s, c, x, y) {
   gl.activeTexture(gl.TEXTURE4);
   gl.bindTexture(gl.TEXTURE_2D, lock_table);
   gl.uniform1i(this.h_uLockTableSampler, 4);
+
+  gl.activeTexture(gl.TEXTURE5);
+  gl.bindTexture(gl.TEXTURE_2D, image_texture);
+  gl.uniform1i(this.h_uImageSampler, 5);  
 
   gl.enableVertexAttribArray(this.h_aTexturePosition);
   gl.bindBuffer(gl.ARRAY_BUFFER, this._uv_buffer);

@@ -27,7 +27,7 @@ J.viewer = function(container) {
   this._pixel_data_buffer = this._segmentation_buffer_context.createImageData(512, 512);
 
   this._offscreen_buffer = document.createElement('canvas');
-  // _container.appendChild(this._offscreen_buffer);
+  _container.appendChild(this._offscreen_buffer);
   this._offscreen_buffer.width = 512;
   this._offscreen_buffer.height = 512;
 
@@ -168,10 +168,8 @@ J.viewer.prototype.draw_image = function(x,y,z,w,i,s) {
 
 J.viewer.prototype.draw_webgl = function(x,y,z,w,i,s) {
 
-  this._image_buffer_context.drawImage(i,0,0,512,512,x*512,y*512,512,512);
-
-  // draw segmentation
-  this._offscreen_renderer.draw(s, this._image_buffer_context, x, y);  
+  // draw image and segmentation
+  this._offscreen_renderer.draw(i, s, this._image_buffer_context, x, y);  
 
 };
 

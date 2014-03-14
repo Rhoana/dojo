@@ -30,6 +30,7 @@
     precision mediump float;
     precision mediump int;
 
+    uniform sampler2D uImageSampler;
     uniform sampler2D uTextureSampler;
     uniform sampler2D uColorMapSampler;
     uniform sampler2D uMergeTableKeySampler;
@@ -203,7 +204,7 @@
 
         if ((uSplitMode == 1) && equals(uActivatedId, id)) {
           // in split mode, the activated id is completely transparent
-          return vec4(1.,1.,1.,0.1);
+          return vec4(1.,1.,1.,0.0);
         }
 
         // highlight active labels
@@ -250,6 +251,9 @@
     //
     void main() {
 
+      // grab image data
+      vec4 image = texture2D(uImageSampler, vTexturePosition);
+
       // grab 32 bit segmentation id
       vec4 rgba_ids = texture2D(uTextureSampler, vTexturePosition);
       float id = lookup_id(unpack(rgba_ids)*255.);
@@ -264,6 +268,8 @@
         return;
 
       }
+
+      color = mix(image, color, color.a);
 
       gl_FragColor = color;
 
