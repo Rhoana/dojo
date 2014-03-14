@@ -89,7 +89,7 @@ DOJO.setup_buttons = function() {
 
       DOJO.mode = DOJO.modes.pan_zoom;
 
-      // DOJO.viewer._controller.end_merge();
+      DOJO.viewer._controller.end_split();
 
       // reset 3d view
       DOJO.viewer._controller.reset_fixed_3d_labels();
@@ -188,7 +188,7 @@ DOJO.onleftclick = function(x, y) {
     } else if (DOJO.mode == DOJO.modes.split) {
 
       if (!DOJO.viewer.is_locked(id))
-        DOJO.viewer._controller.split(id);
+        DOJO.viewer._controller.start_split(id, x, y);
 
     } else {
 
@@ -235,7 +235,7 @@ DOJO.onmousemove = function(x, y) {
 
     if (i_j[0] == -1) return;
 
-    console.log('split', i_j[0], i_j[1]);
+    DOJO.viewer._controller.draw_split(x, y);
 
   }
 
@@ -245,10 +245,11 @@ DOJO.onmouseup = function(x, y) {
 
   var i_j = DOJO.viewer.xy2ij(x,y);
 
-  if (i_j[0] == -1) return;
+  if (DOJO.mode == DOJO.modes.split) {
 
+    DOJO.viewer._controller.end_draw_split(x, y);
 
-  console.log('endsplit', i_j[0]), i_j[1];
+  }
 
 };
 

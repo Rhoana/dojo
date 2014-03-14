@@ -524,10 +524,62 @@ J.controller.prototype.lock = function(x, y) {
 
 };
 
-J.controller.prototype.split = function(id) {
-  console.log('splitting', id);
-  this._split_mode = 1;
-  this.activate(id);
+J.controller.prototype.start_split = function(id, x, y) {
+
+  if (this._split_mode == -1) {
+    // select label
+    console.log('splitting', id);
+    this._split_mode = 1;
+    this.activate(id);    
+  } else if (this._split_mode == 1) {
+    // start drawing
+    var u_v = this._viewer.xy2uv(x,y);
+    var context = this._viewer._image_buffer_context;
+    context.beginPath();
+    context.moveTo(u_v[0], u_v[1]);
+
+  }
+
+
+
+};
+
+J.controller.prototype.draw_split = function(x, y) {
+
+  if (this._split_mode == 1) {
+   
+    // this._split_mode = 2;
+    var u_v = this._viewer.xy2uv(x,y);
+    console.log('draw split', u_v);
+
+    var context = this._viewer._image_buffer_context;
+    context.lineTo(u_v[0], u_v[1]);
+    context.stroke();
+
+  }
+
+};
+
+J.controller.prototype.end_draw_split = function(x, y) {
+
+  if (this._split_mode == 2) {
+    console.log('end draw', x, y);
+
+    // one more stroke..
+    this.draw_split(x, y);
+
+    this._split_mode = -1;
+  }
+
+
+
+};
+
+J.controller.prototype.end_split = function() {
+
+  this._split_mode = -1;
+  this.activate(null);
+
 };
 
 J.controller.prototype.merge = function(id) {
