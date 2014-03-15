@@ -66,6 +66,7 @@ J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
   this.h_uBorders = gl.getUniformLocation(h, 'uBorders');
   this.h_uMergeTableLength = gl.getUniformLocation(h, 'uMergeTableLength');
   this.h_uLockTableLength = gl.getUniformLocation(h, 'uLockTableLength');
+  this.h_uShowOverlay = gl.getUniformLocation(h, 'uShowOverlay');
   // this.h_uTextureSampler2 = gl.getUniformLocation(h, 'uTextureSampler2');  
 
   this.h_aPosition = gl.getAttribLocation(h, 'aPosition');
@@ -250,6 +251,7 @@ J.offscreen_renderer.prototype.draw = function(i, s, c, x, y) {
 
   gl.uniform1i(this.h_uMergeTableLength, merge_table_length);
   gl.uniform1i(this.h_uLockTableLength, lock_table_length);
+  gl.uniform1i(this.h_uShowOverlay, this._viewer._overlay_show);
 
 
   gl.activeTexture(gl.TEXTURE0);

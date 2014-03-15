@@ -124,8 +124,10 @@ J.interactor.prototype.onkeydown = function(e) {
 
   if (this._keypress_callback) return;
   
-  // 81: Q
+  // 81: Q HIDE/SHOW SEGMENTATION
   // 65: A TOGGLE BORDERS
+  // 69: E INCREASE OPACITY
+  // 68: D DECREASE OPACITY
   // 87: W SLICE UP
   // 83: S SLICE DOWN
   // 67: C ZOOM IN
@@ -179,6 +181,27 @@ J.interactor.prototype.onkeydown = function(e) {
 
     this._keypress_callback = setTimeout(function() {
       this._viewer._controller.add_exclamationmark(this._camera._x, this._camera._y);
+      this._keypress_callback = null;
+    }.bind(this),10); 
+
+  } else if (e.keyCode == 81) {
+
+    this._keypress_callback = setTimeout(function() {
+      this._viewer.toggle_segmentation();
+      this._keypress_callback = null;
+    }.bind(this),10); 
+
+  } else if (e.keyCode == 69) {
+    
+    this._keypress_callback = setTimeout(function() {
+      this._viewer.increase_opacity();
+      this._keypress_callback = null;
+    }.bind(this),10); 
+
+  } else if (e.keyCode == 68) {
+
+    this._keypress_callback = setTimeout(function() {
+      this._viewer.decrease_opacity();
       this._keypress_callback = null;
     }.bind(this),10); 
 

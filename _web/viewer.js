@@ -38,7 +38,8 @@ J.viewer = function(container) {
   this._gl_colormap = null;
   this._max_colors = 0;
 
-  this._overlay_opacity = 130;  
+  this._overlay_show = true;
+  this._overlay_opacity = 170;  
   this._overlay_borders = true;
 
   this._loader = new J.loader(this);
@@ -177,6 +178,11 @@ J.viewer.prototype.draw_canvas = function(x,y,z,w,i,s) {
 
   this._image_buffer_context.drawImage(i,0,0,512,512,x*512,y*512,512,512);
 
+  if (!this._overlay_show) {
+    // nothing more here
+    return;
+  }
+
   // draw segmentation
   var pixel_data = this._pixel_data_buffer;
   var pixel_data_data = pixel_data.data;
@@ -290,6 +296,25 @@ J.viewer.prototype.clear = function() {
 J.viewer.prototype.toggle_borders = function() {
   this._overlay_borders = !this._overlay_borders;
   this.redraw();
+};
+
+J.viewer.prototype.toggle_segmentation = function() {
+  this._overlay_show = !this._overlay_show;
+  this.redraw();
+};
+
+J.viewer.prototype.increase_opacity = function() {
+
+  this._overlay_opacity = Math.min(255, this._overlay_opacity+=20);
+  this.redraw();
+
+};
+
+J.viewer.prototype.decrease_opacity = function() {
+
+  this._overlay_opacity = Math.max(0, this._overlay_opacity-=20);
+  this.redraw();
+
 };
 
 J.viewer.prototype.loading = function(value) {

@@ -45,6 +45,7 @@
     uniform int uBorders;
     uniform int uMergeTableLength;
     uniform int uLockTableLength;
+    uniform bool uShowOverlay;
 
     const int MAX = 10000;
 
@@ -193,11 +194,13 @@
         
         if (mod(vTexturePosition.x, 0.05) < 0.01) {
           color *= 1.5;
+          color.a = 0.9;
         }
         else if (mod(vTexturePosition.y, 0.05) < 0.01) {
           color *= 1.5;
+          color.a = 0.9;
         } else {
-          color.a = 0.3;
+          color.a = 0.5;
         }
 
       } else {
@@ -269,7 +272,15 @@
 
       }
 
-      color = mix(image, color, color.a);
+      if (uShowOverlay) {
+
+        color = mix(image, color, color.a);
+
+      } else {
+
+        color = image;
+
+      }
 
       gl_FragColor = color;
 

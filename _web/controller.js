@@ -579,7 +579,7 @@ J.controller.prototype.draw_split = function(x, y) {
     //context.setTransform(view[0], view[1], view[3], view[4], 0,0);
 
     context.lineTo(u_v[0], u_v[1]);
-    context.strokeStyle = 'rgba(100,100,100,0.1)';
+    context.strokeStyle = 'rgba(30,30,30,0.1)';
     context.lineWidth = this._split_width;
     context.stroke();
     // context.restore();
