@@ -618,14 +618,6 @@ J.controller.prototype.end_draw_split = function(x, y) {
 
 };
 
-J.controller.prototype.end_split = function() {
-
-  this._split_mode = -1;
-  this._viewer._canvas.style.cursor = '';
-  this.activate(null);
-
-};
-
 J.controller.prototype.merge = function(id) {
 
   if (!this._merge_table) {
@@ -878,9 +870,11 @@ J.controller.prototype.toggle_3d_labels = function() {
 
 };
 
-J.controller.prototype.end_merge = function() {
+J.controller.prototype.end = function() {
 
   this.activate(null);
+  this._split_mode = -1;
+  this._viewer._canvas.style.cursor = '';
   this._last_id = null;
 
 };

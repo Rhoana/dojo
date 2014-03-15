@@ -133,10 +133,16 @@ J.interactor.prototype.onkeydown = function(e) {
   // 67: C ZOOM IN
   // 88: X ZOOM OUT
   // 90: Z MARK PROBLEM
-  // 76: LOCK/UNLOCK
-  // 27: (ESC)
-  // 189: (-)
-  // 187: (=)
+  // 76: L LOCK/UNLOCK
+  // 27: ESC
+  // 189: - DECREASE OPACITY
+  // 187: = INCREASE OPACITY
+  // 49: 1 DE-/ACTIVATE MERGETOOL
+  // 50: 2 DE-/ACTIVATE SPLITTOOL
+  // 51: 3 DE-/ACTIVATE ADJUST
+  // 52: 4 DE-/ACTIVATE 3D RENDERING
+  // 53: 5 DE-/ACTIVATE COLLABORATION MODE
+
 
   if (e.keyCode == 87) {
   
@@ -221,6 +227,41 @@ J.interactor.prototype.onkeydown = function(e) {
 
     this._keypress_callback = setTimeout(function() {
       this._viewer._controller.larger_brush();
+      this._keypress_callback = null;
+    }.bind(this),10); 
+
+  } else if (e.keyCode == 49) {
+
+    this._keypress_callback = setTimeout(function() {
+      document.getElementById('merge').click();
+      this._keypress_callback = null;
+    }.bind(this),10); 
+
+  } else if (e.keyCode == 50) {
+
+    this._keypress_callback = setTimeout(function() {
+      document.getElementById('split').click();
+      this._keypress_callback = null;
+    }.bind(this),10); 
+
+  } else if (e.keyCode == 51) {
+
+    this._keypress_callback = setTimeout(function() {
+      document.getElementById('adjust').click();
+      this._keypress_callback = null;
+    }.bind(this),10); 
+
+  } else if (e.keyCode == 52) {
+
+    this._keypress_callback = setTimeout(function() {
+      document.getElementById('3d').click();
+      this._keypress_callback = null;
+    }.bind(this),10); 
+
+  } else if (e.keyCode == 53) {
+
+    this._keypress_callback = setTimeout(function() {
+      document.getElementById('link').click();
       this._keypress_callback = null;
     }.bind(this),10); 
 
