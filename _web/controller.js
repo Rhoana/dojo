@@ -37,7 +37,7 @@ J.controller = function(viewer) {
   this._exclamationmarks_3d = {};
 
   this._split_mode = -1;
-  this._split_width = 10;
+  this._brush_size = 10;
 
   this.create_gl_3d_labels();
 
@@ -525,6 +525,18 @@ J.controller.prototype.lock = function(x, y) {
 
 };
 
+J.controller.prototype.larger_brush = function() {
+
+  this._brush_size = Math.min(30, this._brush_size+=5);
+
+};
+
+J.controller.prototype.smaller_brush = function() {
+
+  this._brush_size = Math.max(5, this._brush_size-=5);  
+
+};
+
 J.controller.prototype.start_split = function(id, x, y) {
 
   if (this._split_mode == -1) {
@@ -565,6 +577,7 @@ J.controller.prototype.draw_split = function(x, y) {
     // this._split_mode = 2;
     // var u_v = this._viewer.xy2uv(x*this._viewer._camera._view[0],y*this._viewer._camera._view[4]);
     var i_j = this._viewer.xy2ij(x, y);
+    if (i_j[0] == -1) return;
     var u_v = this._viewer.ij2uv_no_zoom(i_j[0],i_j[1]);
     // console.log(i_j);
     // var u_v = this._viewer.ij2uv(i_j[0], i_j[1]);  
@@ -580,7 +593,7 @@ J.controller.prototype.draw_split = function(x, y) {
 
     context.lineTo(u_v[0], u_v[1]);
     context.strokeStyle = 'rgba(30,30,30,0.1)';
-    context.lineWidth = this._split_width;
+    context.lineWidth = this._brush_size;
     context.stroke();
     // context.restore();
   }
@@ -594,6 +607,9 @@ J.controller.prototype.end_draw_split = function(x, y) {
 
     // one more stroke..
     this.draw_split(x, y);
+
+    var context = this._viewer._image_buffer_context;    
+    context.closePath();
 
     this._split_mode = -1;
   }

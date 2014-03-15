@@ -134,6 +134,9 @@ J.interactor.prototype.onkeydown = function(e) {
   // 88: X ZOOM OUT
   // 90: Z MARK PROBLEM
   // 76: LOCK/UNLOCK
+  // 27: (ESC)
+  // 189: (-)
+  // 187: (=)
 
   if (e.keyCode == 87) {
   
@@ -202,6 +205,22 @@ J.interactor.prototype.onkeydown = function(e) {
 
     this._keypress_callback = setTimeout(function() {
       this._viewer.decrease_opacity();
+      this._keypress_callback = null;
+    }.bind(this),10); 
+
+  } else if (e.keyCode == 27) {
+    console.log('ESC');
+  } else if (e.keyCode == 189) {
+
+    this._keypress_callback = setTimeout(function() {
+      this._viewer._controller.smaller_brush();
+      this._keypress_callback = null;
+    }.bind(this),10); 
+
+  } else if (e.keyCode == 187) {
+
+    this._keypress_callback = setTimeout(function() {
+      this._viewer._controller.larger_brush();
       this._keypress_callback = null;
     }.bind(this),10); 
 
