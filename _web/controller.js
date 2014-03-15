@@ -37,6 +37,7 @@ J.controller = function(viewer) {
   this._exclamationmarks_3d = {};
 
   this._split_mode = -1;
+  this._split_width = 10;
 
   this.create_gl_3d_labels();
 
@@ -531,6 +532,9 @@ J.controller.prototype.start_split = function(id, x, y) {
     console.log('splitting', id);
     this._split_mode = 1;
     this.activate(id);    
+
+    this._viewer._canvas.style.cursor = 'crosshair';
+
   } else if (this._split_mode == 1) {
     // start drawing
     //ar u_v = this._viewer.xy2uv(x*this._viewer._camera._view[0],y*this._viewer._camera._view[4]);
@@ -575,6 +579,8 @@ J.controller.prototype.draw_split = function(x, y) {
     //context.setTransform(view[0], view[1], view[3], view[4], 0,0);
 
     context.lineTo(u_v[0], u_v[1]);
+    context.strokeStyle = 'rgba(100,100,100,0.1)';
+    context.lineWidth = this._split_width;
     context.stroke();
     // context.restore();
   }
@@ -599,6 +605,7 @@ J.controller.prototype.end_draw_split = function(x, y) {
 J.controller.prototype.end_split = function() {
 
   this._split_mode = -1;
+  this._viewer._canvas.style.cursor = '';
   this.activate(null);
 
 };

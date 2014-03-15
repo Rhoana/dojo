@@ -229,11 +229,9 @@ DOJO.onmousemove = function(x, y) {
       DOJO.viewer._controller.send_mouse_move([i_j[0], i_j[1], DOJO.viewer._camera._z]);
     }, 100);
 
-  } else if (DOJO.mode == DOJO.modes.split && DOJO.viewer._interactor._left_down) {
+  }
 
-    var i_j = DOJO.viewer.xy2ij(x,y);
-
-    if (i_j[0] == -1) return;
+  if (DOJO.mode == DOJO.modes.split && DOJO.viewer._interactor._left_down) {
 
     DOJO.viewer._controller.draw_split(x, y);
 

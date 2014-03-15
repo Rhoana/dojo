@@ -19,7 +19,8 @@ class Viewer(object):
       '.html': 'text/html',
       '.png': 'image/png',
       '.map': 'text/html',
-      '.css': 'text/css'
+      '.css': 'text/css',
+      '.cur': 'image/x-win-bitmap'
     }[extension]
 
   def handle(self, request):
