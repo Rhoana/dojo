@@ -49,118 +49,49 @@ for r in tile.keys():
 
 tile = row
 
-
+#
 # crop according to bounding box
+#
 bbox = input['brush_bbox']
 
 sub_tile = tile[bbox[2]:bbox[3],bbox[0]:bbox[1]]
 
+#
 # create mask
+#
 mask = np.zeros((1024,1024),dtype=np.uint8)
-mask2 = np.zeros((1024,1024),dtype=np.uint8)
-# print tile.shape
+
 bs = input['brush_size']
 
 i_js = input['i_js']
 
-for c in i_js:
-  x = c[0]
-  y = c[1]
-  mask[y,x-math.floor(bs/2)] = 255
-  mask[y,x+math.floor(bs/2)] = 255
-
 for d in i_js:
-  mask2[d[1], d[0]] = 255
+  mask[d[1], d[0]] = 255
 
-mask2 = mh.morph.dilate(mask2)
-mask2 = mh.morph.dilate(mask2)
-mask2 = mh.morph.dilate(mask2)
-mask2 = mh.morph.dilate(mask2)
-mask2 = mh.morph.dilate(mask2)
-mask2 = mh.morph.dilate(mask2)
-mask2 = mh.morph.dilate(mask2)
-mask2 = mh.morph.dilate(mask2)
-mask2 = mh.morph.dilate(mask2)
-mask2 = mh.morph.dilate(mask2)
-# mask2 = mh.morph.erode(mask2)
+for i in range(bs):
+  mask = mh.morph.dilate(mask)
 
+mask = np.invert(mask)
 
-
-
-
-# mask2 = mh.gaussian_filter(mask2,4)
-
-mask2 = np.invert(mask2)
-
-# print bbox
 mask = mask[bbox[2]:bbox[3],bbox[0]:bbox[1]]
-# mask2 = mask2[bbox[2]:bbox[3],bbox[0]:bbox[1]]
 
-
-# new_sub_tile = np.copy(sub_tile)
-# new_sub_tile[mask2 == 0] = 0
-
-# grad_x = np.gradient(new_sub_tile)
-# # grad_y = np.gradient(new_sub_tile,1)
-
-# grad = np.add(np.square(grad_x[0]), np.square(grad_x[1]))
-
-# grad /= np.max(grad)
-# grad *= 255
-# print grad.shape
-
-# mh.imsave('/tmp/grad.tif', grad.astype(np.uint8))
-
-# # mask = mask[100:200,800:900]
-# mh.imsave('/tmp/mask.tif', mask)
-mh.imsave('/tmp/mask2.tif', mask2)
-
-mh.imsave('/tmp/box.tif', sub_tile)
-# mh.imsave('/tmp/box2.tif', new_sub_tile)
-
-
-
-seeds,n = mh.label(mask2)
+mh.imsave('/tmp/mask.tif', mask)
+#
+# run watershed
+#
+seeds,n = mh.label(mask)
 sizes = mh.labeled.labeled_size(seeds)
-print sizes
 too_small = np.where(sizes < 5)
 seeds = mh.labeled.remove_regions(seeds, too_small)
-# sizes = mh.labeled.labeled_size(seeds)
-# im = np.zeros((mask.shape[0],mask.shape[1],3),dtype=np.uint8)
-# im[seeds==0] = (255,0,0)
-# im[seeds==1] = (0,255,0)
-# im[seeds==3] = (0,0,255)
-# mh.imsave('/tmp/seeds.tif', 125*seeds.astype(np.uint8))
-# mh.imsave('/tmp/im.tif', im)
 
-# distances = mh.stretch(mh.distance(seeds > 0))
-# surface = np.int32(distances.max() - distances)
-# w = mh.cwatershed(grad.astype(np.uint8), seeds)
+distances = mh.stretch(mh.distance(mask > 0))
+surface = np.int32(distances.max() - distances)
+w = mh.cwatershed(surface, seeds, return_lines=True)
+print w[1]
+# line[line == True] = 0
+# line[line==False] = 255
+# print line.astype(np.uint8)
+# print line.astype(int)
+# mh.imsave('/tmp/lines.tif', line.astype(np.uint8))
 
-# print np.unique(new_sub_tile)
-
-# seeds,_ = mh.label(new_sub_tile < 50)
-# seeds,_ = mh.label(mask2)
-
-# gradient = ndimage.morphology.morphological_gradient(new_sub_tile, size=(3,3))
-# gradient = gradient.astype(np.uint8)
-
-
-
-mh.imsave('/tmp/seeds.tif', 50*seeds.astype(np.uint8))
-
-w = mh.cwatershed(tile, seeds)
-
-
-# seeds = new_sub_tile[np.where(new_sub_tile < 10)]
-
-# seeds,n = mh.label(seeds)
-# print n
-
-
-# w = mh.cwatershed(new_sub_tile, seeds)
-
-mh.imsave('/tmp/ws.tif', w)
-
-# load tile
-# tile_file = os.path.join(self.__mojo_dir, self.__sub_dir, 'tiles', 'w='+str(zoomlevel).zfill(8), 'z='+slice_number.zfill(8), 'y='+tile_y.zfill(8)+','+'x='+tile_x.zfill(8)+'.hdf5')
+mh.imsave('/tmp/ws.tif', w[0])
