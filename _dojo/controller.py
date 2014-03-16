@@ -208,7 +208,7 @@ class Controller(object):
     #
     # create mask
     #
-    mask = np.zeros((1024,1024),dtype=np.uint8)
+    mask = np.zeros(tile.shape,dtype=np.uint8)
 
     bs = values['brush_size']
 

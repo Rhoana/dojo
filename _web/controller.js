@@ -83,7 +83,7 @@ J.controller.prototype.receive = function(data) {
     // we are the sender or the requester
 
     if (input.name == 'SPLITRESULT') {
-      console.log(input.value);
+      this.show_split_line(input.value);
       return;
     }
 
@@ -565,7 +565,7 @@ J.controller.prototype.start_split = function(id, x, y) {
     // var u_v = this._viewer.ij2uv(i_j[0], i_j[1]);
     // var u_v = [x*this._viewer._camera._view[0],y*this._viewer._camera._view[4]];
 
-    var context = this._viewer._image_buffer_context;
+    var context = this._viewer._overlay_buffer_context;
 
     // context.save();
     // var view = this._viewer._camera._view;
@@ -577,6 +577,30 @@ J.controller.prototype.start_split = function(id, x, y) {
   }
 
 
+
+};
+
+J.controller.prototype.show_split_line = function(i_js) {
+
+  // clear marked line
+  this._viewer.clear_overlay_buffer();
+
+  var id = this._viewer._overlay_buffer_context.createImageData(1,1);
+  var d = id.data;
+  d[0] = 0;
+  d[1] = 255;
+  d[2] = 0;
+  d[3] = 255;
+
+  var i_js_count = i_js.length;
+
+  for(var i=0;i<i_js_count;i++) {
+
+    this._viewer._overlay_buffer_context.putImageData(id, i_js[i][0], i_js[i][1]);
+
+  }
+
+  this._split_mode = -1;  
 
 };
 
@@ -595,7 +619,7 @@ J.controller.prototype.draw_split = function(x, y) {
     //var u_v = [x*this._viewer._camera._view[0],y*this._viewer._camera._view[4]];
     console.log('draw split');
 
-    var context = this._viewer._image_buffer_context;
+    var context = this._viewer._overlay_buffer_context;
 
     // context.save();
     // var view = this._viewer._camera._view;
@@ -644,8 +668,6 @@ J.controller.prototype.end_draw_split = function(x, y) {
 
     var context = this._viewer._image_buffer_context;    
     context.closePath();
-
-    this._split_mode = -1;
 
     // console.log(this._brush_bbox);
     // console.log(this._brush_ijs);

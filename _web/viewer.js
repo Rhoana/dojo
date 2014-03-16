@@ -20,6 +20,9 @@ J.viewer = function(container) {
   this._image_buffer_context = this._image_buffer.getContext('2d');
   this._image_buffer_ready = false;
 
+  this._overlay_buffer = document.createElement('canvas');
+  this._overlay_buffer_context = this._overlay_buffer.getContext('2d');
+
   this._segmentation_buffer = document.createElement('canvas');
   this._segmentation_buffer.width = 512;
   this._segmentation_buffer.height = 512;
@@ -85,8 +88,8 @@ J.viewer.prototype.init = function(callback) {
 
     this._interactor = new J.interactor(this);
 
-    this._image_buffer.width = this._image.width;
-    this._image_buffer.height = this._image.height;
+    this._image_buffer.width = this._overlay_buffer.width = this._image.width;
+    this._image_buffer.height = this._overlay_buffer.height = this._image.height;
 
     this._loader.load_json('/segmentation/contents', function(res) {
 
@@ -281,6 +284,12 @@ J.viewer.prototype.clear_buffer = function(width, height) {
 
 };
 
+J.viewer.prototype.clear_overlay_buffer = function() {
+
+  this._overlay_buffer_context.clearRect(0,0,this._image.width, this._image.height);
+
+};
+
 J.viewer.prototype.clear = function() {
 
   var _width = this._width;
@@ -330,7 +339,9 @@ J.viewer.prototype.render = function() {
     this.clear();
     // put image buffer
     this._context.drawImage(this._image_buffer, 0, 0);
-    // console.log('draw')
+    
+    // draw overlays
+    this._context.drawImage(this._overlay_buffer,0,0);
   }
 
   this._AnimationFrameID = window.requestAnimationFrame(this.render.bind(this));
