@@ -36,8 +36,11 @@ J.controller = function(viewer) {
   this._exclamationmarks_2d = {};
   this._exclamationmarks_3d = {};
 
+  this._split_id = -1;
   this._split_mode = -1;
+  this._brush_bbox = [];
   this._brush_size = 10;
+  this._brush_ijs = [];
 
   this.create_gl_3d_labels();
 
@@ -543,6 +546,7 @@ J.controller.prototype.start_split = function(id, x, y) {
     // select label
     console.log('splitting', id);
     this._split_mode = 1;
+    this._split_id = id;
     this.activate(id);    
 
     this._viewer._canvas.style.cursor = 'crosshair';
@@ -572,9 +576,9 @@ J.controller.prototype.start_split = function(id, x, y) {
 
 J.controller.prototype.draw_split = function(x, y) {
 
-  if (this._split_mode == 1) {
+  if (this._split_mode == 1 || this._split_mode == 2) {
    
-    // this._split_mode = 2;
+    this._split_mode = 2;
     // var u_v = this._viewer.xy2uv(x*this._viewer._camera._view[0],y*this._viewer._camera._view[4]);
     var i_j = this._viewer.xy2ij(x, y);
     if (i_j[0] == -1) return;
@@ -590,6 +594,30 @@ J.controller.prototype.draw_split = function(x, y) {
     // context.save();
     // var view = this._viewer._camera._view;
     //context.setTransform(view[0], view[1], view[3], view[4], 0,0);
+
+    // update bounding box
+    if (this._brush_bbox.length > 0) {
+
+      var brush = Math.ceil(this._brush_size/2);
+
+      // smallest i
+      this._brush_bbox[0] = Math.min(this._brush_bbox[0], i_j[0]-brush);
+      // largest i
+      this._brush_bbox[1] = Math.max(this._brush_bbox[1], i_j[0]+brush);
+      // smallest j
+      this._brush_bbox[2] = Math.min(this._brush_bbox[2], i_j[1]-brush);
+      // largest j
+      this._brush_bbox[3] = Math.max(this._brush_bbox[3], i_j[1]+brush);
+      
+    } else {
+      this._brush_bbox.push(i_j[0]);
+      this._brush_bbox.push(i_j[0]);
+      this._brush_bbox.push(i_j[1]);
+      this._brush_bbox.push(i_j[1]);
+    }
+
+    // and store the i_j's for later use
+    this._brush_ijs.push(i_j);
 
     context.lineTo(u_v[0], u_v[1]);
     context.strokeStyle = 'rgba(30,30,30,0.1)';
@@ -612,6 +640,24 @@ J.controller.prototype.end_draw_split = function(x, y) {
     context.closePath();
 
     this._split_mode = -1;
+
+    console.log(this._brush_bbox);
+    console.log(this._brush_ijs);
+
+    // send via ajax (id, brush_bbox, brush_i_js, z, brushsize)
+    var data = {};
+    data['id'] = this._split_id;
+    data['brush_bbox'] = this._brush_bbox;
+    data['i_js'] = this._brush_ijs;
+    data['z'] = this._viewer._camera._z;
+    data['brush_size'] = this._brush_size;
+    this.send('SPLIT', data);
+
+    // and reset
+    this._brush_bbox = [];
+    this._brush_ijs = [];
+    this._split_id = -1;
+
   }
 
 

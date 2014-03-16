@@ -142,3 +142,13 @@ class Controller(object):
       input['id'] = self.__users.index(input['origin'])
       self.__websocket.send(json.dumps(input))
 
+    elif input['name'] == 'SPLIT':
+      self.split(input)
+
+  def split(self, input):
+    '''
+    TODO: move to separate class
+    '''
+    print input
+    pass
+    
