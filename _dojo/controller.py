@@ -257,10 +257,10 @@ class Controller(object):
       for x in range(ws.shape[1]-1):
         if ws[y,x] != ws[y,x+1]:  
           lines_array[y,x] = 1
-          lines.append([x,y])
+          lines.append([bbox[0]+x,bbox[2]+y])
         if ws[y,x] != ws[y+1,x]:
           lines_array[y,x] = 1
-          lines.append([x,y])
+          lines.append([bbox[0]+x,bbox[2]+y])
                 
     output = {}
     output['name'] = 'SPLITRESULT'

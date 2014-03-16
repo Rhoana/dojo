@@ -77,14 +77,16 @@ J.controller.prototype.receive = function(data) {
   if (input.name == 'LOG') {
     DOJO.update_log(input);
     return;
-  } else if (input.name == 'SPLITRESULT') {
-    console.log(input.value);
-    return;
-  }
-
+  } 
 
   if (input.origin == this._origin) {
-    // we are the sender
+    // we are the sender or the requester
+
+    if (input.name == 'SPLITRESULT') {
+      console.log(input.value);
+      return;
+    }
+
     return;
   }
 
