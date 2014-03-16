@@ -77,7 +77,11 @@ J.controller.prototype.receive = function(data) {
   if (input.name == 'LOG') {
     DOJO.update_log(input);
     return;
+  } else if (input.name == 'SPLITRESULT') {
+    console.log(input.value);
+    return;
   }
+
 
   if (input.origin == this._origin) {
     // we are the sender
@@ -641,8 +645,8 @@ J.controller.prototype.end_draw_split = function(x, y) {
 
     this._split_mode = -1;
 
-    console.log(this._brush_bbox);
-    console.log(this._brush_ijs);
+    // console.log(this._brush_bbox);
+    // console.log(this._brush_ijs);
 
     // send via ajax (id, brush_bbox, brush_i_js, z, brushsize)
     var data = {};

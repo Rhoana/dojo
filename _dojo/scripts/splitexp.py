@@ -75,23 +75,49 @@ mask = np.invert(mask)
 
 mask = mask[bbox[2]:bbox[3],bbox[0]:bbox[1]]
 
-mh.imsave('/tmp/mask.tif', mask)
+# mh.imsave('/tmp/mask.tif', mask)
+
+grad_x = np.gradient(sub_tile)[0]
+grad_y = np.gradient(sub_tile)[1]
+grad = np.add(np.square(grad_x), np.square(grad_y))
+#grad = np.add(np.abs(grad_x), np.abs(grad_y))
+grad -= grad.min()
+grad /= grad.max()
+grad *= 255
+grad = grad.astype(np.uint8)
+
+# compute seeds
+seeds,_ = mh.label(mask)
+
+# remove small regions
+sizes = mh.labeled.labeled_size(seeds)
+min_seed_size = 5
+too_small = np.where(sizes < min_seed_size)
+seeds = mh.labeled.remove_regions(seeds, too_small)
+
+
 #
 # run watershed
 #
-seeds,n = mh.label(mask)
-sizes = mh.labeled.labeled_size(seeds)
-too_small = np.where(sizes < 5)
-seeds = mh.labeled.remove_regions(seeds, too_small)
+ws = mh.cwatershed(grad, seeds)
 
-distances = mh.stretch(mh.distance(mask > 0))
-surface = np.int32(distances.max() - distances)
-w = mh.cwatershed(surface, seeds, return_lines=True)
-print w[1]
+lines_array = np.zeros(ws.shape,dtype=np.uint8)
+lines = []
+
+for y in range(ws.shape[0]-1):
+  for x in range(ws.shape[1]-1):
+    if ws[y,x] != ws[y,x+1]:  
+      lines_array[y,x] = 1
+      lines.append([x,y])
+    if ws[y,x] != ws[y+1,x]:
+      lines_array[y,x] = 1
+      lines.append([x,y])
+            
+
 # line[line == True] = 0
 # line[line==False] = 255
 # print line.astype(np.uint8)
 # print line.astype(int)
 # mh.imsave('/tmp/lines.tif', line.astype(np.uint8))
 
-mh.imsave('/tmp/ws.tif', w[0])
+# mh.imsave('/tmp/ws.tif', 80*ws)
