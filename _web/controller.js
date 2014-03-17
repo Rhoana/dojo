@@ -38,8 +38,9 @@ J.controller = function(viewer) {
 
   this._split_id = -1;
   this._split_mode = -1;
+  this._split_line = [];
   this._brush_bbox = [];
-  this._brush_size = 10;
+  this._brush_size = 5;
   this._brush_ijs = [];
 
   this.create_gl_3d_labels();
@@ -83,6 +84,7 @@ J.controller.prototype.receive = function(data) {
     // we are the sender or the requester
 
     if (input.name == 'SPLITRESULT') {
+      console.log(input)
       this.show_split_line(input.value);
       return;
     }
@@ -574,6 +576,21 @@ J.controller.prototype.start_split = function(id, x, y) {
     context.beginPath();
     context.moveTo(u_v[0], u_v[1]);
     // context.restore();
+
+  } else if (this._split_mode == 4) {
+
+    console.log('choose region');
+
+    // user picked the region
+    var i_j = this._viewer.xy2ij(x, y);
+
+    var data = {};
+    data['id'] = this._split_id;
+    data['line'] = this._split_line;
+    data['z'] = this._viewer._camera._z;
+    data['click'] = i_j;
+    this.send('FINALIZESPLIT', data);
+
   }
 
 
@@ -581,6 +598,8 @@ J.controller.prototype.start_split = function(id, x, y) {
 };
 
 J.controller.prototype.show_split_line = function(i_js) {
+
+  console.log('show')
 
   // clear marked line
   this._viewer.clear_overlay_buffer();
@@ -600,7 +619,25 @@ J.controller.prototype.show_split_line = function(i_js) {
 
   }
 
-  this._split_mode = -1;  
+  this._viewer.rerender();
+
+  this._split_mode = 4;
+  this._split_line = i_js;
+
+};
+
+J.controller.prototype.discard = function() {
+
+  if (this._split_mode == 4) {
+    // line was drawn, user pressed ESC
+    console.log('Discard split');
+
+    // stay in split mode but start over
+    this._split_mode = 1;
+    this._viewer._canvas.style.cursor = 'crosshair';
+
+    this._viewer.clear_overlay_buffer();
+  }
 
 };
 
@@ -631,13 +668,13 @@ J.controller.prototype.draw_split = function(x, y) {
       var brush = Math.ceil(this._brush_size/2);
 
       // smallest i
-      this._brush_bbox[0] = Math.min(this._brush_bbox[0], i_j[0]-2*brush);
+      this._brush_bbox[0] = Math.min(this._brush_bbox[0], i_j[0]-brush);
       // largest i
-      this._brush_bbox[1] = Math.max(this._brush_bbox[1], i_j[0]+2*brush);
+      this._brush_bbox[1] = Math.max(this._brush_bbox[1], i_j[0]+brush);
       // smallest j
-      this._brush_bbox[2] = Math.min(this._brush_bbox[2], i_j[1]-2*brush);
+      this._brush_bbox[2] = Math.min(this._brush_bbox[2], i_j[1]-brush);
       // largest j
-      this._brush_bbox[3] = Math.max(this._brush_bbox[3], i_j[1]+2*brush);
+      this._brush_bbox[3] = Math.max(this._brush_bbox[3], i_j[1]+brush);
       
     } else {
       this._brush_bbox.push(i_j[0]);
@@ -650,7 +687,7 @@ J.controller.prototype.draw_split = function(x, y) {
     this._brush_ijs.push(i_j);
 
     context.lineTo(u_v[0], u_v[1]);
-    context.strokeStyle = 'rgba(30,30,30,0.1)';
+    context.strokeStyle = 'rgba(0,191,255,0.1)';
     context.lineWidth = this._brush_size;
     context.stroke();
     // context.restore();
@@ -684,7 +721,10 @@ J.controller.prototype.end_draw_split = function(x, y) {
     // and reset
     this._brush_bbox = [];
     this._brush_ijs = [];
-    this._split_id = -1;
+
+    this._split_mode = 3;
+
+    this._viewer._canvas.style.cursor = '';
 
   }
 
@@ -948,6 +988,7 @@ J.controller.prototype.end = function() {
 
   this.activate(null);
   this._split_mode = -1;
+  this._split_id = -1;
   this._viewer._canvas.style.cursor = '';
   this._last_id = null;
 

@@ -215,7 +215,12 @@ J.interactor.prototype.onkeydown = function(e) {
     }.bind(this),10); 
 
   } else if (e.keyCode == 27) {
-    console.log('ESC');
+    
+    this._keypress_callback = setTimeout(function() {
+      this._viewer._controller.discard();
+      this._keypress_callback = null;
+    }.bind(this),10); 
+
   } else if (e.keyCode == 189) {
 
     this._keypress_callback = setTimeout(function() {

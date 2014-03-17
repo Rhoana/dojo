@@ -205,7 +205,7 @@
 
       } else {
 
-        if ((uSplitMode == 1) && equals(uActivatedId, id)) {
+        if ((uSplitMode > 0) && equals(uActivatedId, id)) {
           // in split mode, the activated id is completely transparent
           return vec4(0.0);
         }

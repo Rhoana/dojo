@@ -34,6 +34,8 @@ J.viewer = function(container) {
   this._offscreen_buffer.width = 512;
   this._offscreen_buffer.height = 512;
 
+  this._force_rerender = false;
+
   this._image = null;
   this._segmentation = null;
 
@@ -161,6 +163,12 @@ J.viewer.prototype.redraw = function() {
   this.loading(true);
 
   this._loader.load_tiles(this._camera._x, this._camera._y, this._camera._z, this._camera._w, this._camera._w, false);
+
+};
+
+J.viewer.prototype.rerender = function() {
+
+  this._force_rerender = true;
 
 };
 
@@ -335,13 +343,18 @@ J.viewer.prototype.render = function() {
 
   this._context.setTransform(this._camera._view[0], this._camera._view[1], this._camera._view[3], this._camera._view[4], this._camera._view[6], this._camera._view[7]);
 
-  if (this._image_buffer_ready) {
+  if (this._image_buffer_ready || this._force_rerender) {
+
+    if (this._force_rerender) console.log('rerender')
+
     this.clear();
     // put image buffer
     this._context.drawImage(this._image_buffer, 0, 0);
     
     // draw overlays
     this._context.drawImage(this._overlay_buffer,0,0);
+
+    this._force_rerender = false;
   }
 
   this._AnimationFrameID = window.requestAnimationFrame(this.render.bind(this));
