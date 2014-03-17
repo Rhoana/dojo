@@ -84,6 +84,7 @@ class Datasource(object):
 
         # segmentinfo database
         elif self.__segmentinfo_file_regex.match(os.path.join(root,f)):
+          print 'Connecting to DB'
           self.__database = Database(os.path.join(root,f))
 
 
@@ -99,6 +100,11 @@ class Datasource(object):
     '''
     '''
     pass
+
+  def get_database(self):
+    '''
+    '''
+    return self.__database
 
   def get_volume(self, zoomlevel):
     '''

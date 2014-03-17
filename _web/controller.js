@@ -589,6 +589,7 @@ J.controller.prototype.start_split = function(id, x, y) {
     data['line'] = this._split_line;
     data['z'] = this._viewer._camera._z;
     data['click'] = i_j;
+    data['bbox'] = this._brush_bbox;
     this.send('FINALIZESPLIT', data);
 
   }
@@ -611,7 +612,7 @@ J.controller.prototype.show_split_line = function(i_js) {
   d[2] = 0;
   d[3] = 255;
 
-  var i_js_count = i_js.length;
+  var i_js_count = i_js.length;  
 
   for(var i=0;i<i_js_count;i++) {
 
@@ -634,6 +635,9 @@ J.controller.prototype.discard = function() {
 
     // stay in split mode but start over
     this._split_mode = 1;
+    // and reset
+    this._brush_bbox = [];
+    this._brush_ijs = [];    
     this._viewer._canvas.style.cursor = 'crosshair';
 
     this._viewer.clear_overlay_buffer();
@@ -667,14 +671,16 @@ J.controller.prototype.draw_split = function(x, y) {
 
       var brush = Math.ceil(this._brush_size/2);
 
+      var factor = 1;
+
       // smallest i
-      this._brush_bbox[0] = Math.min(this._brush_bbox[0], i_j[0]-brush);
+      this._brush_bbox[0] = Math.min(this._brush_bbox[0], i_j[0]-factor*brush);
       // largest i
-      this._brush_bbox[1] = Math.max(this._brush_bbox[1], i_j[0]+brush);
+      this._brush_bbox[1] = Math.max(this._brush_bbox[1], i_j[0]+factor*brush);
       // smallest j
-      this._brush_bbox[2] = Math.min(this._brush_bbox[2], i_j[1]-brush);
+      this._brush_bbox[2] = Math.min(this._brush_bbox[2], i_j[1]-factor*brush);
       // largest j
-      this._brush_bbox[3] = Math.max(this._brush_bbox[3], i_j[1]+brush);
+      this._brush_bbox[3] = Math.max(this._brush_bbox[3], i_j[1]+factor*brush);
       
     } else {
       this._brush_bbox.push(i_j[0]);
@@ -718,9 +724,7 @@ J.controller.prototype.end_draw_split = function(x, y) {
     data['brush_size'] = this._brush_size;
     this.send('SPLIT', data);
 
-    // and reset
-    this._brush_bbox = [];
-    this._brush_ijs = [];
+
 
     this._split_mode = 3;
 

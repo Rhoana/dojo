@@ -10,7 +10,7 @@ from skimage import exposure
 
 class Controller(object):
 
-  def __init__(self, mojo_dir):
+  def __init__(self, mojo_dir, database):
     '''
     '''
     self.__websocket = None
@@ -24,7 +24,8 @@ class Controller(object):
     self.__users = []
 
     self.__mojo_dir = mojo_dir
-    print mojo_dir
+    
+    self.__database = database
 
   def handshake(self, websocket):
     '''
@@ -163,6 +164,7 @@ class Controller(object):
     '''
     '''
     print input
+    print self.__database.get_largest_id()
 
 
   def split(self, input):
@@ -289,6 +291,8 @@ class Controller(object):
     for i in range(brush_size):
         brush_mask = mh.morph.dilate(brush_mask)
 
+    # brush_mask = mh.morph.dilate(brush_mask, np.ones((brush_size, brush_size)))
+
     brush_image = np.copy(sub_tile)
     brush_image[~brush_mask] = 0
 
@@ -298,7 +302,24 @@ class Controller(object):
     for i in range(brush_size / 2):
         outside_brush_mask = mh.morph.dilate(outside_brush_mask)
 
+    # outside_brush_mask = mh.morph.dilate(outside_brush_mask, np.ones((brush_size, brush_size)))
+
+
     brush_boundary_mask = brush_mask & outside_brush_mask
+
+    # crop image and boundary mask
+    # brush_image = mh.croptobbox(brush_image)
+    # brush_boundary_mask = mh.croptobbox(brush_boundary_mask)
+
+    # x0 = brush_size/2
+    # x1 = brush_boundary_mask.shape[0] - x0
+    # y0 = x0
+    # y1 = brush_boundary_mask.shape[1] - y0
+
+    # brush_boundary_mask = brush_boundary_mask[x0:x1,y0:y1]
+    # brush_image = brush_image[x0:x1,y0:y1]
+
+
 
     seeds,n = mh.label(brush_boundary_mask)
 

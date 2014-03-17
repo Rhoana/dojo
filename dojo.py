@@ -64,7 +64,7 @@ class ServerLogic:
     self.__viewer = _dojo.Viewer()
 
     # and the controller
-    self.__controller = _dojo.Controller(mojo_dir)
+    self.__controller = _dojo.Controller(mojo_dir, self.__segmentation.get_database())
 
     port = 1337
     ip = socket.gethostbyname(socket.gethostname())

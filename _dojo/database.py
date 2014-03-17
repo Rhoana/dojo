@@ -22,6 +22,20 @@ class Database(object):
 
     return output
 
+  def get_largest_id(self):
+    '''
+    '''
+    self.__cursor.execute('SELECT * FROM segmentInfo ORDER BY id DESC')
+
+    result = self.__cursor.fetchone()
+
+    # output = [None] * (len(result) + 1)
+
+    # for r in result:
+    #   output[r[0]] = r[1:]
+
+    return result[0] 
+
   def get_id_tile_index(self,tile_id):
     '''
     '''
