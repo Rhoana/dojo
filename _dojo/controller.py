@@ -463,30 +463,96 @@ class Controller(object):
 
     i_js = values['i_js']
 
-    for c in i_js:
-      brush_mask[c[1],c[0]-math.floor(brush_size/2)] = True
-      brush_mask[c[1],c[0]+math.floor(brush_size/2)] = True
+    # for c in i_js:
+    #   brush_mask[c[1],c[0]-math.floor(brush_size/2)] = True
+    #   brush_mask[c[1],c[0]+math.floor(brush_size/2)] = True
         
-    brush_mask = brush_mask[bbox[2]:bbox[3],bbox[0]:bbox[1]]
+    # brush_mask = brush_mask[bbox[2]:bbox[3],bbox[0]:bbox[1]]
         
-    for i in range(brush_size):
-        brush_mask = mh.morph.dilate(brush_mask)
+    # for i in range(brush_size):
+    #     brush_mask = mh.morph.dilate(brush_mask)
 
     # brush_mask = mh.morph.dilate(brush_mask, np.ones((brush_size, brush_size)))
+
+
+    for c in i_js:
+        brush_mask[c[1],c[0]] = True
+        
+    # crop
+    brush_mask = brush_mask[bbox[2]:bbox[3],bbox[0]:bbox[1]]
+    brush_mask = mh.morph.dilate(brush_mask, np.ones((2*brush_size, 2*brush_size)))
 
     brush_image = np.copy(sub_tile)
     brush_image[~brush_mask] = 0
 
 
 
+    # compute frame
+    frame = np.zeros(brush_mask.shape,dtype=bool)
+    frame[0,:] = True
+    frame[:,0] = True
+    frame[-1,:] = True
+    frame[:,-1] = True
+
+    # compute corners 
+    corners = np.zeros(brush_mask.shape,dtype=bool)
+
+    n = brush_size 
+
+    # upper left 
+    corners[0:n,0:n] = True
+
+    # upper right
+    corners[0:n,-n:-1] = True
+    corners[0:n,-1] = True
+
+    # lower left
+    corners[-n:-1,0:n] = True
+    corners[-1,0:n] = True
+
+    # lower right
+    corners[-n:-1,-n:-1] = True
+    corners[-1,-n:-1] = True
+    corners[-n:-1,-1] = True
+    corners[-1,-1] = True
+
+    # dilate non-brush segments
     outside_brush_mask = np.copy(~brush_mask)
-    for i in range(brush_size / 2):
-        outside_brush_mask = mh.morph.dilate(outside_brush_mask)
+    outside_brush_mask = mh.morph.dilate(outside_brush_mask, np.ones((brush_size, brush_size)))
+
+    # compute seeds
+    seed_mask = np.zeros(brush_mask.shape,dtype=bool)
+    seed_mask[outside_brush_mask & brush_mask] = True 
+    seed_mask[frame & brush_mask] = True
+    seed_mask[corners] = False
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # outside_brush_mask = np.copy(~brush_mask)
+    # for i in range(brush_size / 2):
+    #     outside_brush_mask = mh.morph.dilate(outside_brush_mask)
 
     # outside_brush_mask = mh.morph.dilate(outside_brush_mask, np.ones((brush_size, brush_size)))
 
 
-    brush_boundary_mask = brush_mask & outside_brush_mask
+    # brush_boundary_mask = brush_mask & outside_brush_mask
 
     # crop image and boundary mask
     # brush_image = mh.croptobbox(brush_image)
@@ -502,7 +568,11 @@ class Controller(object):
 
 
 
-    seeds,n = mh.label(brush_boundary_mask)
+
+
+
+    # seeds,n = mh.label(brush_boundary_mask)
+    seeds,n = mh.label(seed_mask)
 
     print n
 
@@ -517,6 +587,8 @@ class Controller(object):
     # run watershed
     #
     ws = mh.cwatershed(brush_image.max() - brush_image, seeds)
+
+    mh.imsave('/tmp/ws.tif', 50*ws.astype(np.uint8))
 
     lines_array = np.zeros(ws.shape,dtype=np.uint8)
     lines = []
