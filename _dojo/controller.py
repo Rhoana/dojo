@@ -251,7 +251,7 @@ class Controller(object):
 
     # update the segmentation data
 
-    new_id = this.__largest_id++
+    new_id = self.__largest_id++211
 
 
     label_image[label_image == 1] = 0 # should be zero then
@@ -291,6 +291,21 @@ class Controller(object):
 
     h5f = h5py.File(output_folder+'y=00000001,x=00000001.hdf5', 'w')
     h5f.create_dataset('dataset_1', data=x1y1)
+    h5f.close()
+
+    output_folder = self.__mojo_tmp_dir + '/ids/tiles/w=00000001/z='+str(values["z"]).zfill(8)+'/'
+
+    try:
+      os.makedirs(output_folder)
+    except OSError as exc: # Python >2.5
+      if exc.errno == errno.EEXIST and os.path.isdir(output_folder):
+        pass
+      else: raise
+
+    # zoomed_tile = tile.reshape(512,512)
+    zoomed_tile = ndimage.interpolation.zoom(tile, .5, order=0, mode='nearest')
+    h5f = h5py.File(output_folder+'y=00000000,x=00000000.hdf5', 'w')
+    h5f.create_dataset('dataset_1', data=zoomed_tile)
     h5f.close()
 
     output = {}

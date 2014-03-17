@@ -162,7 +162,7 @@ J.loader.prototype.cache_segmentation = function(x, y, z, w) {
 
 J.loader.prototype.clear_cache_segmentation = function(x,y,z,w) {
 
-  this._segmentation_cache[z][w] = [];
+  this._segmentation_cache[z] = [];
   console.log('cache cleared.');
 
 };
