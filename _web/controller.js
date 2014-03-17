@@ -631,13 +631,13 @@ J.controller.prototype.draw_split = function(x, y) {
       var brush = Math.ceil(this._brush_size/2);
 
       // smallest i
-      this._brush_bbox[0] = Math.min(this._brush_bbox[0], i_j[0]-brush);
+      this._brush_bbox[0] = Math.min(this._brush_bbox[0], i_j[0]-2*brush);
       // largest i
-      this._brush_bbox[1] = Math.max(this._brush_bbox[1], i_j[0]+brush);
+      this._brush_bbox[1] = Math.max(this._brush_bbox[1], i_j[0]+2*brush);
       // smallest j
-      this._brush_bbox[2] = Math.min(this._brush_bbox[2], i_j[1]-brush);
+      this._brush_bbox[2] = Math.min(this._brush_bbox[2], i_j[1]-2*brush);
       // largest j
-      this._brush_bbox[3] = Math.max(this._brush_bbox[3], i_j[1]+brush);
+      this._brush_bbox[3] = Math.max(this._brush_bbox[3], i_j[1]+2*brush);
       
     } else {
       this._brush_bbox.push(i_j[0]);
