@@ -1,5 +1,5 @@
 import h5py
-import os
+import os, errno
 import json
 import tifffile as tif
 import numpy as np
@@ -24,8 +24,12 @@ class Controller(object):
     self.__users = []
 
     self.__mojo_dir = mojo_dir
+
+    self.__mojo_tmp_dir = '/tmp/dojo'
     
     self.__database = database
+
+    self.__largest_id = self.__database.get_largest_id()
 
   def handshake(self, websocket):
     '''
@@ -163,8 +167,165 @@ class Controller(object):
   def finalize_split(self, input):
     '''
     '''
-    print input
-    print self.__database.get_largest_id()
+    values = input['value']
+
+    data_path = self.__mojo_dir + '/ids/tiles/w=00000000/z='+str(values["z"]).zfill(8)
+
+    images = os.listdir(data_path)
+    tile = {}
+    for i in images:
+
+      location = os.path.splitext(i)[0].split(',')
+      for l in location:
+        l = l.split('=')
+        exec(l[0]+'=int("'+l[1]+'")')
+
+      if not x in tile:
+        tile[x] = {}
+
+      hdf5_file = h5py.File(os.path.join(data_path,i))
+      list_of_names = []
+      hdf5_file.visit(list_of_names.append)
+      image_data = hdf5_file[list_of_names[0]].value
+      hdf5_file.close()
+
+      tile[x][y] = image_data
+
+    row = None
+    first_row = True
+
+    # go through rows of each tile
+    for r in tile.keys():
+      column = None
+      first_column = True
+
+      for c in tile[r]:
+        if first_column:
+          column = tile[r][c]
+          first_column = False
+        else:
+          column = np.concatenate((column, tile[r][c]), axis=0)
+
+      if first_row:
+        row = column
+        first_row = False
+      else:
+        row = np.concatenate((row, column), axis=1)
+
+    tile = row
+
+    # 
+    label_id = values['id']
+    i_js = values['line']
+    bbox = values['bbox']
+    click = values['click']
+
+    s_tile = np.zeros(tile.shape)
+
+    s_tile[tile == label_id] = 1
+
+    #mh.imsave('/tmp/seg.tif', s_tile.astype(np.uint8))
+
+
+    for c in i_js:
+      s_tile[c[1], c[0]] = 0
+
+    label_image,n = mh.label(s_tile)
+
+    if (n!=3):
+      print 'ERROR',n
+
+    # check which label was selected
+    selected_label = label_image[click[1], click[0]]
+
+    for c in i_js:
+      label_image[c[1], c[0]] = selected_label # the line belongs to the selected label
+
+
+    mh.imsave('/tmp/seg2.tif', 10*label_image.astype(np.uint8))
+
+
+    # update the segmentation data
+
+    new_id = 6184
+
+
+    label_image[label_image == 1] = 0 # should be zero then
+    label_image[label_image == 2] = new_id - label_id
+
+    tile = np.add(tile, label_image).astype(np.uint32)
+
+
+    #mh.imsave('/tmp/newtile.tif', tile.astype(np.uint32))
+
+    # split tile and save as hdf5
+    x0y0 = tile[0:512,0:512]
+    x1y0 = tile[0:512,512:1024]
+    x0y1 = tile[512:1024,0:512]
+    x1y1 = tile[512:1024,512:1024]
+
+    output_folder = self.__mojo_tmp_dir + '/ids/tiles/w=00000000/z='+str(values["z"]).zfill(8)+'/'
+    try:
+      os.makedirs(output_folder)
+    except OSError as exc: # Python >2.5
+      if exc.errno == errno.EEXIST and os.path.isdir(output_folder):
+        pass
+      else: raise
+
+    h5f = h5py.File(output_folder+'y=00000000,x=00000000.hdf5', 'w')
+    h5f.create_dataset('dataset_1', data=x0y0)
+    h5f.close()
+
+    h5f = h5py.File(output_folder+'y=00000001,x=00000000.hdf5', 'w')
+    h5f.create_dataset('dataset_1', data=x0y1)
+    h5f.close()
+
+    h5f = h5py.File(output_folder+'y=00000000,x=00000001.hdf5', 'w')
+    h5f.create_dataset('dataset_1', data=x1y0)
+    h5f.close()
+
+    h5f = h5py.File(output_folder+'y=00000001,x=00000001.hdf5', 'w')
+    h5f.create_dataset('dataset_1', data=x1y1)
+    h5f.close()
+
+    output = {}
+    output['name'] = 'RELOAD'
+    output['origin'] = input['origin']
+    output['value'] = values["z"]
+    self.__websocket.send(json.dumps(output))
+
+    output = {}
+    output['name'] = 'SPLITDONE'
+    output['origin'] = input['origin']
+    output['value'] = values["z"]
+    self.__websocket.send(json.dumps(output))    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   def split(self, input):

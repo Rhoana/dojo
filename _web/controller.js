@@ -87,6 +87,8 @@ J.controller.prototype.receive = function(data) {
       console.log(input)
       this.show_split_line(input.value);
       return;
+    } else if (input.name == 'SPLITDONE') {
+      this.finish_split(input.value);
     }
 
     return;
@@ -119,6 +121,12 @@ J.controller.prototype.receive = function(data) {
   } else if (input.name == 'PROBLEMTABLE') {
 
     this.update_problem_table(input.value);
+
+  } else if (input.name == 'RELOAD') {
+
+    // force reload
+    console.log('force reload');
+
 
   }
 
@@ -548,6 +556,24 @@ J.controller.prototype.smaller_brush = function() {
 
 };
 
+J.controller.prototype.finish_split = function(slice) {
+
+  // reload all slices, set to split mode -1
+  var x = this._viewer._camera._x;
+  var y = this._viewer._camera._y;
+  var z = this._viewer._camera._z;
+  var w = this._viewer._camera._w;
+  this._viewer._loader.clear_cache_segmentation(x,y,z,w);
+
+  this._viewer._loader.load_tiles(x,y,z,w,w,false);
+
+  this._viewer.clear_overlay_buffer();
+
+  this._split_mode = -1;
+  this.activate(null);
+
+};
+
 J.controller.prototype.start_split = function(id, x, y) {
 
   if (this._split_mode == -1) {
@@ -578,8 +604,6 @@ J.controller.prototype.start_split = function(id, x, y) {
     // context.restore();
 
   } else if (this._split_mode == 4) {
-
-    console.log('choose region');
 
     // user picked the region
     var i_j = this._viewer.xy2ij(x, y);
