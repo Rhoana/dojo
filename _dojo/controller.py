@@ -169,7 +169,11 @@ class Controller(object):
     '''
     values = input['value']
 
-    data_path = self.__mojo_dir + '/ids/tiles/w=00000000/z='+str(values["z"]).zfill(8)
+    # try the temporary data first
+    data_path = self.__mojo_tmp_dir + '/ids/tiles/w=00000000/z='+str(values["z"]).zfill(8)
+
+    if not os.path.isdir(data_path):
+      data_path = self.__mojo_dir + '/ids/tiles/w=00000000/z='+str(values["z"]).zfill(8)
 
     images = os.listdir(data_path)
     tile = {}
@@ -247,7 +251,7 @@ class Controller(object):
 
     # update the segmentation data
 
-    new_id = 6184
+    new_id = this.__largest_id++
 
 
     label_image[label_image == 1] = 0 # should be zero then
@@ -265,6 +269,7 @@ class Controller(object):
     x1y1 = tile[512:1024,512:1024]
 
     output_folder = self.__mojo_tmp_dir + '/ids/tiles/w=00000000/z='+str(values["z"]).zfill(8)+'/'
+
     try:
       os.makedirs(output_folder)
     except OSError as exc: # Python >2.5
