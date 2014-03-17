@@ -93,18 +93,18 @@ new_id = 6184
 label_image[label_image == 1] = 0 # should be zero then
 label_image[label_image == 2] = new_id - label_id
 
-tile = np.add(tile, label_image)
+tile = np.add(tile, label_image).astype(np.uint32)
 
 
 #mh.imsave('/tmp/newtile.tif', tile.astype(np.uint32))
 
 # split tile and save as hdf5
 x0y0 = tile[0:512,0:512]
-x0y1 = tile[0:512,512:1024]
-x1y0 = tile[512:1024,0:512]
+x1y0 = tile[0:512,512:1024]
+x0y1 = tile[512:1024,0:512]
 x1y1 = tile[512:1024,512:1024]
 
-output_folder = '/tmp/dojo/w=00000000/z='+str(input["z"]).zfill(8)+'/'
+output_folder = '/tmp/dojo/ids/tiles/w=00000000/z='+str(input["z"]).zfill(8)+'/'
 try:
   os.makedirs(output_folder)
 except OSError as exc: # Python >2.5
