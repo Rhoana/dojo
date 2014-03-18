@@ -251,7 +251,9 @@ class Controller(object):
 
     # update the segmentation data
 
-    new_id = self.__largest_id++211
+    self.__largest_id += 1
+    new_id = self.__largest_id
+
 
 
     label_image[label_image == 1] = 0 # should be zero then
@@ -455,7 +457,7 @@ class Controller(object):
     mh.imsave('/tmp/dojobox.tif', sub_tile);
 
     sub_tile = mh.gaussian_filter(sub_tile, 1).astype(np.uint8) # gaussian filter
-    # sub_tile = (255 * exposure.equalize_hist(sub_tile)).astype(np.uint8) # enhance contrast
+    sub_tile = (255 * exposure.equalize(sub_tile)).astype(np.uint8) # enhance contrast
 
 
     brush_mask = np.zeros((1024,1024),dtype=bool)
@@ -474,8 +476,45 @@ class Controller(object):
 
     # brush_mask = mh.morph.dilate(brush_mask, np.ones((brush_size, brush_size)))
 
+    # make sparse points in i_js a dense line (with linear interpolation)
+    dense_brush = []
+    for i in range(len(i_js)-1):       
+      # two sparse points
+      p0 = i_js[i]
+      p1 = i_js[i+1]
 
-    for c in i_js:
+
+      # x and y coordinates of sparse points
+      xp = [p0[1], p1[1]] if p0[1] < p1[1] else [p1[1], p0[1]]
+      yp = [p0[0], p1[0]] if p0[1] < p1[1] else [p1[0], p0[0]]
+      
+      # linear interpolation between p0 and p1
+      xs = [x for x in range(xp[0], xp[1]+1)]
+      ys = np.round(np.interp(xs, xp, yp)).astype(np.int32)
+          
+      # add linear interpolation to brush stroke
+      dense_brush += zip(ys,xs)
+      
+      # make x axis dense
+      
+      # x and y coordinates of sparse points
+      xp = [p0[1], p1[1]] if p0[0] < p1[0] else [p1[1], p0[1]]
+      yp = [p0[0], p1[0]] if p0[0] < p1[0] else [p1[0], p0[0]]
+      
+      # linear interpolation between p0 and p1
+      ys = [y for y in range(yp[0], yp[1]+1)]
+      xs = np.round(np.interp(ys, yp, xp)).astype(np.int32)
+          
+      # add linear interpolation to brush stroke
+      dense_brush += zip(ys,xs)
+
+      dense_brush = list(set(dense_brush))
+
+    # add dense brush stroke to mask image
+    brush_mask = np.zeros((1024,1024),dtype=bool)
+
+#    for c in i_js:
+    for c in dense_brush:
         brush_mask[c[1],c[0]] = True
         
     # crop
@@ -588,6 +627,7 @@ class Controller(object):
     #
     ws = mh.cwatershed(brush_image.max() - brush_image, seeds)
 
+    mh.imsave('/tmp/seeds.tif', 50*seeds.astype(np.uint8))
     mh.imsave('/tmp/ws.tif', 50*ws.astype(np.uint8))
 
     lines_array = np.zeros(ws.shape,dtype=np.uint8)
