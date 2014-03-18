@@ -242,6 +242,8 @@ class Controller(object):
     # check which label was selected
     selected_label = label_image[click[1], click[0]]
 
+    print 'selected', selected_label
+
     for c in i_js:
       label_image[c[1], c[0]] = selected_label # the line belongs to the selected label
 
@@ -254,10 +256,16 @@ class Controller(object):
     self.__largest_id += 1
     new_id = self.__largest_id
 
+    # unselected_label = selected_label==1 ? unselected_label=2 : unselected_label:1
+
+    if selected_label == 1:
+      unselected_label = 2
+    else:
+      unselected_label = 1
 
 
-    label_image[label_image == 1] = 0 # should be zero then
-    label_image[label_image == 2] = new_id - label_id
+    label_image[label_image == selected_label] = 0 # should be zero then
+    label_image[label_image == unselected_label] = new_id - label_id
 
     tile = np.add(tile, label_image).astype(np.uint32)
 
@@ -395,7 +403,11 @@ class Controller(object):
 
 
 
-    data_path = self.__mojo_dir + '/ids/tiles/w=00000000/z='+str(values["z"]).zfill(8)
+    # try the temporary data first
+    data_path = self.__mojo_tmp_dir + '/ids/tiles/w=00000000/z='+str(values["z"]).zfill(8)
+
+    if not os.path.isdir(data_path):
+      data_path = self.__mojo_dir + '/ids/tiles/w=00000000/z='+str(values["z"]).zfill(8)
 
     images = os.listdir(data_path)
     segtile = {}
@@ -508,7 +520,7 @@ class Controller(object):
       # add linear interpolation to brush stroke
       dense_brush += zip(ys,xs)
 
-      dense_brush = list(set(dense_brush))
+      # dense_brush = list(set(dense_brush))
 
     # add dense brush stroke to mask image
     brush_mask = np.zeros((1024,1024),dtype=bool)
@@ -536,7 +548,7 @@ class Controller(object):
     # compute corners 
     corners = np.zeros(brush_mask.shape,dtype=bool)
 
-    n = brush_size 
+    n = 2*brush_size 
 
     # upper left 
     corners[0:n,0:n] = True
@@ -558,6 +570,34 @@ class Controller(object):
     # dilate non-brush segments
     outside_brush_mask = np.copy(~brush_mask)
     outside_brush_mask = mh.morph.dilate(outside_brush_mask, np.ones((brush_size, brush_size)))
+
+    # # compute brush boundary
+
+    # for y in range(outside_brush_mask.shape[0]-1):
+    #   for x in range(outside_brush_mask.shape[1]-1):
+
+    #     if brush_mask[y,x] != brush_mask[y,x+1]: #and seg_sub_tile[y,x] == label_id:  
+    #       outside_brush_mask[y,x] = 1
+    #       outside_brush_mask[y,x+1] = 1
+
+    #     if brush_mask[y,x] != brush_mask[y+1,x]: #and seg_sub_tile[y,x] == label_id:
+    #       outside_brush_mask[y,x] = 1
+    #       outside_brush_mask[y+1,x] = 1
+
+    # for y in range(1,outside_brush_mask.shape[0]):
+    #   for x in range(1,outside_brush_mask.shape[1]):
+
+    #     if brush_mask[y,x] != brush_mask[y,x-1]: #and seg_sub_tile[y,x] == label_id:  
+    #       outside_brush_mask[y,x] = 1
+    #       outside_brush_mask[y,x-1] = 1
+        
+    #     if brush_mask[y,x] != brush_mask[y-1,x]:# and seg_sub_tile[y,x] == label_id:
+    #       outside_brush_mask[y,x] = 1
+    #       outside_brush_mask[y-1,x] = 1
+
+
+
+
 
     # compute seeds
     seed_mask = np.zeros(brush_mask.shape,dtype=bool)
@@ -627,14 +667,19 @@ class Controller(object):
     #
     ws = mh.cwatershed(brush_image.max() - brush_image, seeds)
 
+    mh.imsave('/tmp/corners.tif', 50*corners.astype(np.uint8))
+    mh.imsave('/tmp/seeds_mask.tif', 50*seed_mask.astype(np.uint8))
     mh.imsave('/tmp/seeds.tif', 50*seeds.astype(np.uint8))
     mh.imsave('/tmp/ws.tif', 50*ws.astype(np.uint8))
 
     lines_array = np.zeros(ws.shape,dtype=np.uint8)
     lines = []
 
+    print label_id
+
     for y in range(ws.shape[0]-1):
       for x in range(ws.shape[1]-1):
+
         if ws[y,x] != ws[y,x+1] and seg_sub_tile[y,x] == label_id:  
           lines_array[y,x] = 1
           lines.append([bbox[0]+x,bbox[2]+y])
@@ -652,9 +697,12 @@ class Controller(object):
           #lines_array[y-1,x] = 1
           lines.append([bbox[0]+x,bbox[2]+y])          
                 
+    mh.imsave('/tmp/lines.tif', 50*lines_array.astype(np.uint8))
+
     output = {}
     output['name'] = 'SPLITRESULT'
     output['origin'] = input['origin']
     output['value'] = lines
+    print output
     self.__websocket.send(json.dumps(output))
 

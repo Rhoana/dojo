@@ -599,6 +599,7 @@ J.controller.prototype.start_split = function(id, x, y) {
     // var view = this._viewer._camera._view;
     //context.setTransform(view[0], view[1], view[3], view[4], 0,0);
     this._brush_ijs = [];
+    this._brush_bbox = [];
     context.beginPath();
     context.moveTo(u_v[0], u_v[1]);
     // context.restore();
@@ -706,7 +707,7 @@ J.controller.prototype.draw_split = function(x, y) {
     // update bounding box
     if (this._brush_bbox.length > 0) {
 
-      var brush = Math.ceil(this._brush_size/2);
+      var brush = Math.ceil(this._brush_size);
 
       var factor = 1;
 
