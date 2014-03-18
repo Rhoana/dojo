@@ -127,7 +127,6 @@ J.loader.prototype.get_segmentation = function(x, y, z, w, callback, no_cache) {
     // uncompress
     var compressed = new Zlib.Inflate(new Uint8Array(s.response));
     var raw_s = compressed.decompress();
-    console.log(x,y,z,w,raw_s[0])
 
     // cache this image
     this._segmentation_cache[z] = this._segmentation_cache[z] ? this._segmentation_cache[z] : [];

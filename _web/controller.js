@@ -578,7 +578,7 @@ J.controller.prototype.start_split = function(id, x, y) {
 
   if (this._split_mode == -1) {
     // select label
-    console.log('splitting', id);
+    // console.log('splitting', id);
     this._split_mode = 1;
     this._split_id = id;
     this.activate(id);    
@@ -598,7 +598,7 @@ J.controller.prototype.start_split = function(id, x, y) {
     // context.save();
     // var view = this._viewer._camera._view;
     //context.setTransform(view[0], view[1], view[3], view[4], 0,0);
-
+    this._brush_ijs = [];
     context.beginPath();
     context.moveTo(u_v[0], u_v[1]);
     // context.restore();
@@ -624,10 +624,14 @@ J.controller.prototype.start_split = function(id, x, y) {
 
 J.controller.prototype.show_split_line = function(i_js) {
 
-  console.log('show')
-
   // clear marked line
   this._viewer.clear_overlay_buffer();
+
+  if (i_js.length == 0) {
+    console.log('Invalid split line.');
+    this._split_mode = 1;
+    return;
+  }
 
   var id = this._viewer._overlay_buffer_context.createImageData(1,1);
   var d = id.data;
@@ -640,7 +644,9 @@ J.controller.prototype.show_split_line = function(i_js) {
 
   for(var i=0;i<i_js_count;i++) {
 
-    this._viewer._overlay_buffer_context.putImageData(id, i_js[i][0], i_js[i][1]);
+    var u_v = this._viewer.ij2uv_no_zoom(i_js[i][0], i_js[i][1]);
+
+    this._viewer._overlay_buffer_context.putImageData(id, u_v[0], u_v[1]);
 
   }
 
@@ -665,6 +671,12 @@ J.controller.prototype.discard = function() {
     this._viewer._canvas.style.cursor = 'crosshair';
 
     this._viewer.clear_overlay_buffer();
+  } else {
+    this._split_mode = -1;
+    this._brush_bbox = [];
+    this._brush_ijs = [];    
+    this.activate(null);
+    this._viewer._canvas.style.cursor = '';
   }
 
 };
@@ -678,11 +690,12 @@ J.controller.prototype.draw_split = function(x, y) {
     var i_j = this._viewer.xy2ij(x, y);
     if (i_j[0] == -1) return;
     var u_v = this._viewer.ij2uv_no_zoom(i_j[0],i_j[1]);
+    // console.log(i_j, u_v)
     // console.log(i_j);
     // var u_v = this._viewer.ij2uv(i_j[0], i_j[1]);  
     // console.log(u_v);  
     //var u_v = [x*this._viewer._camera._view[0],y*this._viewer._camera._view[4]];
-    console.log('draw split');
+    // console.log('draw split');
 
     var context = this._viewer._overlay_buffer_context;
 
