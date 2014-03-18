@@ -224,9 +224,18 @@ class Controller(object):
     bbox = values['bbox']
     click = values['click']
 
+    # run through tile
+    # lookup each label
+    # for i in range(tile.shape[0]):
+    #   for j in range(tile.shape[1]):
+    #     tile[i,j] = self.lookup_label(tile[i,j])
+
     s_tile = np.zeros(tile.shape)
 
-    s_tile[tile == label_id] = 1
+    for l in self.lookup_merge_label(label_id):
+
+      s_tile[tile == int(l)] = 1
+      tile[tile == int(l)] = label_id
 
     #mh.imsave('/tmp/seg.tif', s_tile.astype(np.uint8))
 
@@ -265,7 +274,7 @@ class Controller(object):
 
 
     label_image[label_image == selected_label] = 0 # should be zero then
-    label_image[label_image == unselected_label] = new_id - label_id
+    label_image[label_image == unselected_label] = new_id - self.lookup_label(label_id)
 
     tile = np.add(tile, label_image).astype(np.uint32)
 
@@ -601,8 +610,9 @@ class Controller(object):
 
     # compute seeds
     seed_mask = np.zeros(brush_mask.shape,dtype=bool)
-    seed_mask[outside_brush_mask & brush_mask] = True 
-    seed_mask[frame & brush_mask] = True
+    # seed_mask[outside_brush_mask & brush_mask] = True 
+    seed_mask[outside_brush_mask] = True 
+    seed_mask[frame] = True
     seed_mask[corners] = False
 
 
@@ -677,22 +687,28 @@ class Controller(object):
 
     print label_id
 
+    # valid_labels = [label_id]
+
+    # while label_id in self.__merge_table.values():
+    #   label_id = self.__merge_table.values()[]
+    #   valid_labels.append(label_id)
+
     for y in range(ws.shape[0]-1):
       for x in range(ws.shape[1]-1):
 
-        if ws[y,x] != ws[y,x+1] and seg_sub_tile[y,x] == label_id:  
+        if ws[y,x] != ws[y,x+1] and self.lookup_label(seg_sub_tile[y,x]) == label_id:  
           lines_array[y,x] = 1
           lines.append([bbox[0]+x,bbox[2]+y])
-        if ws[y,x] != ws[y+1,x] and seg_sub_tile[y,x] == label_id:
+        if ws[y,x] != ws[y+1,x] and self.lookup_label(seg_sub_tile[y,x]) == label_id:
           lines_array[y,x] = 1
           lines.append([bbox[0]+x,bbox[2]+y])
 
     for y in range(1,ws.shape[0]):
       for x in range(1,ws.shape[1]):
-        if ws[y,x] != ws[y,x-1] and seg_sub_tile[y,x] == label_id:  
+        if ws[y,x] != ws[y,x-1] and self.lookup_label(seg_sub_tile[y,x]) == label_id:  
           lines_array[y,x] = 1
           lines.append([bbox[0]+x,bbox[2]+y])
-        if ws[y,x] != ws[y-1,x] and seg_sub_tile[y,x] == label_id:
+        if ws[y,x] != ws[y-1,x] and self.lookup_label(seg_sub_tile[y,x]) == label_id:
           lines_array[y,x] = 1
           #lines_array[y-1,x] = 1
           lines.append([bbox[0]+x,bbox[2]+y])          
@@ -705,4 +721,32 @@ class Controller(object):
     output['value'] = lines
     print output
     self.__websocket.send(json.dumps(output))
+
+  def lookup_label(self, label_id):
+    '''
+    '''
+    # print self.__merge_table, label_id
+    # print self.__merge_table.keys()
+    while str(label_id) in self.__merge_table.keys():
+      # print 'label id', label_id
+      # print 'merge[label id]', self.__merge_table[str(label_id)]
+      label_id = self.__merge_table[str(label_id)]
+
+    # print 'new label', label_id
+
+    return label_id
+
+  def lookup_merge_label(self,label_id):
+    '''
+    '''
+
+    labels = [str(label_id)]
+
+    for (k,v) in self.__merge_table.items():
+
+      if v == int(label_id):
+        labels = labels + self.lookup_merge_label(k)
+
+    return labels
+
 
