@@ -598,7 +598,7 @@ J.controller.prototype.update_3D_textures = function(z, full_bbox, texture) {
   if (!DOJO.threeD) return;
 
   // console.log(full_bbox, texture);
-  console.log('upd 3d', full_bbox);
+  // console.log('upd 3d', full_bbox);
 
   var x1 = Math.floor(full_bbox[0] / this._viewer._image.zoom_levels[0][2]);
   var y1 = Math.floor(full_bbox[1] / this._viewer._image.zoom_levels[0][2]);
