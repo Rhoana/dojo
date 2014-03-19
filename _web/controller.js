@@ -611,13 +611,83 @@ J.controller.prototype.update_3D_textures = function(z, full_bbox, texture) {
   // console.log('a',byte_start, byte_end, texture.length)
 
   var vol = DOJO.threeD.volume;
+  var dim_x = vol.dimensions[0];
+  var dim_y = vol.dimensions[1];
+  var dim_z = vol.dimensions[2];
 
-  // extract pixel data in z
-  // var pixels_in_z = texture.subarray(byte_start, byte_end);
-  // var texture_id = DOJO.threeD.volume.children[2].children[z].labelmap.texture.id;
+  // update pixel data in z
   vol.children[2].children[z].labelmap.texture.updateTexture(texture);
   vol.children[2].children[z].labelmap.modified();
 
+  var bytes_start_t = (x1+y1*512)*4;
+  var bytes_end_t = (x1+y2*512)*4;
+
+  var bytes_per_value = 4;
+
+  var nb_pix_per_z = 512*512;
+
+  var px = 0;
+  for (var p=bytes_start_t; p<bytes_end_t; p+=bytes_per_value) {
+
+    //var z = Math.floor(px / nb_pix_per_z);
+    var y = Math.floor((px % nb_pix_per_z) / dim_x);
+    var x = Math.floor((px % nb_pix_per_z) % dim_x);
+
+    // var z_index = (x + y*dim_y)*bytes_per_value;
+    var y_index = (x + z*dim_x)*bytes_per_value;
+    var x_index = (y + z*dim_y)*bytes_per_value;
+
+    var old_data_x = vol.children[0].children[x].labelmap.texture.rawData;
+    var old_data_y = vol.children[1].children[y].labelmap.texture.rawData;
+
+    for (var i=0;i<bytes_per_value;i++) {
+
+      old_data_x[x_index+i] = texture[p+i];
+      old_data_y[y_index+i] = texture[p+i];
+      // slices_z[z][z_index+i] = data[p+i];
+
+    }
+
+    px++;
+
+  }
+
+  for (var x=0; x<dim_x; ++x) {
+
+    var old_data_x = vol.children[0].children[x].labelmap.texture.rawData;
+    vol.children[0].children[x].labelmap.texture.updateTexture(old_data_x);
+    vol.children[0].children[x].labelmap.modified();
+
+  }
+
+  for (var y=0; y<dim_y; ++y) {
+
+    var old_data_y = vol.children[1].children[y].labelmap.texture.rawData;
+    vol.children[1].children[y].labelmap.texture.updateTexture(old_data_y);
+    vol.children[1].children[y].labelmap.modified();
+
+  }
+
+  // // update pixel data in x
+  // for (var x=x1;x<x2;x++) {
+
+  //   var labelmap_x = vol.children[0].children[x].labelmap;
+
+  //   var offset_x = x;
+  //   var old_data = vol.children[0].children[x].labelmap.texture.rawData;
+  //   // replace pixels
+  //   var bytes_start_t = (x1+offset_x+y1*512)*4;
+  //   var bytes_end_t = (x1+offset_x+y2*512)*4+4;
+  //   // var cur_x = (dim[2] - z)*4;
+  //   // var cur_y = (y1)*4;
+  //   // var bytes_start_x = cur_x + cur_y*dim[2];
+  //   var bytes_start_x = (y1+z*dim[1])*4;
+  //   console.log(bytes_start_t, bytes_end_t, bytes_start_x);
+  //   old_data.set(texture.subarray(bytes_start_t, bytes_end_t), bytes_start_x);
+
+  //   labelmap_x.texture.updateTexture(old_data);
+  //   labelmap_x.modified();
+  // }
 
 
 
