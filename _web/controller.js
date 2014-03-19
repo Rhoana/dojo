@@ -36,6 +36,13 @@ J.controller = function(viewer) {
   this._exclamationmarks_2d = {};
   this._exclamationmarks_3d = {};
 
+  this._split_id = -1;
+  this._split_mode = -1;
+  this._split_line = [];
+  this._brush_bbox = [];
+  this._brush_size = 3;
+  this._brush_ijs = [];
+
   this.create_gl_3d_labels();
 
 };
@@ -71,10 +78,19 @@ J.controller.prototype.receive = function(data) {
   if (input.name == 'LOG') {
     DOJO.update_log(input);
     return;
-  }
+  } 
 
   if (input.origin == this._origin) {
-    // we are the sender
+    // we are the sender or the requester
+
+    if (input.name == 'SPLITRESULT') {
+      console.log(input)
+      this.show_split_line(input.value);
+      return;
+    } else if (input.name == 'SPLITDONE') {
+      this.finish_split(input.value);
+    }
+
     return;
   }
 
@@ -105,6 +121,13 @@ J.controller.prototype.receive = function(data) {
   } else if (input.name == 'PROBLEMTABLE') {
 
     this.update_problem_table(input.value);
+
+  } else if (input.name == 'RELOAD') {
+
+    // force reload
+    console.log('force reload');
+    this.reload_tiles(input.value);
+
 
   }
 
@@ -522,6 +545,372 @@ J.controller.prototype.lock = function(x, y) {
 
 };
 
+J.controller.prototype.larger_brush = function() {
+
+  this._brush_size = Math.min(10, this._brush_size+=1);
+
+};
+
+J.controller.prototype.smaller_brush = function() {
+
+  this._brush_size = Math.max(1, this._brush_size-=1);  
+
+};
+
+J.controller.prototype.reload_tiles = function(values) {
+
+  var z = values['z'];
+  var full_bbox = JSON.parse(values['full_bbox']);
+
+
+  var x = this._viewer._camera._x;
+  var y = this._viewer._camera._y;
+  var z2 = this._viewer._camera._z; // the actual displayed z
+  var w = this._viewer._camera._w;
+  this._viewer._loader.clear_cache_segmentation(x,y,z,w);
+
+  for (var l=0;l<this._viewer._image.zoomlevel_count;l++) {  
+
+    // only draw if current z == z2 and l == w (meaning only if zoomlevel and z are displayed right now)
+    var draw = (z == z2 && w == l);
+    // console.log('reload tile', l, draw, full_bbox);
+    this._viewer._loader.load_tiles(x,y,z,l,l,!draw); // negate draw since it is a no_draw flag woot woot
+
+  }
+  
+  // update 3d with lowest zoomlevel (== always one tile)
+  // setTimeout(function() {
+
+    var lowest_w = this._viewer._image.zoomlevel_count-1;
+    this._viewer._loader.get_segmentation(0, 0, z, lowest_w, function(x, y, z, lowest_w, s) {
+      
+      this.update_3D_textures(z, full_bbox, s);
+
+    }.bind(this, 0, 0, z, lowest_w));
+
+  // }.bind(this),2000); // TODO this should not be fixed
+  
+
+};
+
+J.controller.prototype.update_3D_textures = function(z, full_bbox, texture) {
+
+  if (!DOJO.threeD) return;
+
+  // console.log(full_bbox, texture);
+  // console.log('upd 3d', full_bbox);
+
+  var x1 = Math.floor(full_bbox[0] / this._viewer._image.zoom_levels[0][2]);
+  var y1 = Math.floor(full_bbox[1] / this._viewer._image.zoom_levels[0][2]);
+  var x2 = Math.floor(full_bbox[2] / this._viewer._image.zoom_levels[0][2]);
+  var y2 = Math.floor(full_bbox[3] / this._viewer._image.zoom_levels[0][2]);
+
+  // var byte_start = (x1+y1*512)*4;
+  // var byte_end = (x2+y2*512)*4+4;
+
+  // console.log('a',byte_start, byte_end, texture.length)
+
+  var vol = DOJO.threeD.volume;
+  var dim_x = vol.dimensions[0];
+  var dim_y = vol.dimensions[1];
+  var dim_z = vol.dimensions[2];
+
+  // update pixel data in z
+  vol.children[2].children[z].labelmap.texture.updateTexture(texture);
+  vol.children[2].children[z].labelmap.modified();
+
+  var bytes_start_t = (x1+y1*512)*4;
+  var bytes_end_t = (x1+y2*512)*4;
+
+  var bytes_per_value = 4;
+
+  var nb_pix_per_z = 512*512;
+
+  var px = 0;
+  for (var p=bytes_start_t; p<bytes_end_t; p+=bytes_per_value) {
+
+    //var z = Math.floor(px / nb_pix_per_z);
+    var y = Math.floor((px % nb_pix_per_z) / dim_x);
+    var x = Math.floor((px % nb_pix_per_z) % dim_x);
+
+    // var z_index = (x + y*dim_y)*bytes_per_value;
+    var y_index = (x + z*dim_x)*bytes_per_value;
+    var x_index = (y + z*dim_y)*bytes_per_value;
+
+    var old_data_x = vol.children[0].children[x].labelmap.texture.rawData;
+    var old_data_y = vol.children[1].children[y].labelmap.texture.rawData;
+
+    for (var i=0;i<bytes_per_value;i++) {
+
+      old_data_x[x_index+i] = texture[p+i];
+      old_data_y[y_index+i] = texture[p+i];
+      // slices_z[z][z_index+i] = data[p+i];
+
+    }
+
+    px++;
+
+  }
+
+  for (var x=0; x<dim_x; ++x) {
+
+    var old_data_x = vol.children[0].children[x].labelmap.texture.rawData;
+    vol.children[0].children[x].labelmap.texture.updateTexture(old_data_x);
+    vol.children[0].children[x].labelmap.modified();
+
+  }
+
+  for (var y=0; y<dim_y; ++y) {
+
+    var old_data_y = vol.children[1].children[y].labelmap.texture.rawData;
+    vol.children[1].children[y].labelmap.texture.updateTexture(old_data_y);
+    vol.children[1].children[y].labelmap.modified();
+
+  }
+
+  // // update pixel data in x
+  // for (var x=x1;x<x2;x++) {
+
+  //   var labelmap_x = vol.children[0].children[x].labelmap;
+
+  //   var offset_x = x;
+  //   var old_data = vol.children[0].children[x].labelmap.texture.rawData;
+  //   // replace pixels
+  //   var bytes_start_t = (x1+offset_x+y1*512)*4;
+  //   var bytes_end_t = (x1+offset_x+y2*512)*4+4;
+  //   // var cur_x = (dim[2] - z)*4;
+  //   // var cur_y = (y1)*4;
+  //   // var bytes_start_x = cur_x + cur_y*dim[2];
+  //   var bytes_start_x = (y1+z*dim[1])*4;
+  //   console.log(bytes_start_t, bytes_end_t, bytes_start_x);
+  //   old_data.set(texture.subarray(bytes_start_t, bytes_end_t), bytes_start_x);
+
+  //   labelmap_x.texture.updateTexture(old_data);
+  //   labelmap_x.modified();
+  // }
+
+
+
+};
+
+J.controller.prototype.finish_split = function(values) {
+
+  // reload all slices, set to split mode -1
+  this.reload_tiles(values);
+
+  this._viewer.clear_overlay_buffer();
+
+  this._split_mode = -1;
+  this.activate(null);
+
+
+  var color1 = DOJO.viewer.get_color(this._split_id);
+  var color1_hex = rgbToHex(color1[0], color1[1], color1[2]);
+  var log = 'User $USER splitted label <font color="'+color1_hex+'">'+this._split_id+'</font>.';
+  this.send_log(log);
+
+};
+
+J.controller.prototype.start_split = function(id, x, y) {
+
+  if (this._split_mode == -1) {
+    // select label
+    // console.log('splitting', id);
+    this._split_mode = 1;
+    this._split_id = id;
+    this.activate(id);    
+
+    this._viewer._canvas.style.cursor = 'crosshair';
+
+  } else if (this._split_mode == 1) {
+    // start drawing
+    //ar u_v = this._viewer.xy2uv(x*this._viewer._camera._view[0],y*this._viewer._camera._view[4]);
+    var i_j = this._viewer.xy2ij(x, y);
+    var u_v = this._viewer.ij2uv_no_zoom(i_j[0],i_j[1]);
+    // var u_v = this._viewer.ij2uv(i_j[0], i_j[1]);
+    // var u_v = [x*this._viewer._camera._view[0],y*this._viewer._camera._view[4]];
+
+    var context = this._viewer._overlay_buffer_context;
+
+    // context.save();
+    // var view = this._viewer._camera._view;
+    //context.setTransform(view[0], view[1], view[3], view[4], 0,0);
+    this._brush_ijs = [];
+    this._brush_bbox = [];
+    context.beginPath();
+    context.moveTo(u_v[0], u_v[1]);
+    // context.restore();
+
+  } else if (this._split_mode == 4) {
+
+    // user picked the region
+    var i_j = this._viewer.xy2ij(x, y);
+
+    var data = {};
+    data['id'] = this._split_id;
+    data['line'] = this._split_line;
+    data['z'] = this._viewer._camera._z;
+    data['click'] = i_j;
+    data['bbox'] = this._brush_bbox;
+    this.send('FINALIZESPLIT', data);
+
+  }
+
+
+
+};
+
+J.controller.prototype.show_split_line = function(i_js) {
+
+  // clear marked line
+  this._viewer.clear_overlay_buffer();
+
+  if (i_js.length == 0) {
+    console.log('Invalid split line.');
+    this._split_mode = 1;
+    return;
+  }
+
+  var id = this._viewer._overlay_buffer_context.createImageData(1,1);
+  var d = id.data;
+  d[0] = 0;
+  d[1] = 255;
+  d[2] = 0;
+  d[3] = 255;
+
+  var i_js_count = i_js.length;  
+
+  for(var i=0;i<i_js_count;i++) {
+
+    var u_v = this._viewer.ij2uv_no_zoom(i_js[i][0], i_js[i][1]);
+
+    this._viewer._overlay_buffer_context.putImageData(id, u_v[0], u_v[1]);
+
+  }
+
+  this._viewer.rerender();
+
+  this._split_mode = 4;
+  this._split_line = i_js;
+
+};
+
+J.controller.prototype.discard = function() {
+
+  if (this._split_mode == 4) {
+    // line was drawn, user pressed ESC
+    console.log('Discard split');
+
+    // stay in split mode but start over
+    this._split_mode = 1;
+    // and reset
+    this._brush_bbox = [];
+    this._brush_ijs = [];    
+    this._viewer._canvas.style.cursor = 'crosshair';
+
+    this._viewer.clear_overlay_buffer();
+  } else {
+    this._split_mode = -1;
+    this._brush_bbox = [];
+    this._brush_ijs = [];    
+    this.activate(null);
+    this._viewer._canvas.style.cursor = '';
+  }
+
+};
+
+J.controller.prototype.draw_split = function(x, y) {
+
+  if (this._split_mode == 1 || this._split_mode == 2) {
+   
+    this._split_mode = 2;
+    // var u_v = this._viewer.xy2uv(x*this._viewer._camera._view[0],y*this._viewer._camera._view[4]);
+    var i_j = this._viewer.xy2ij(x, y);
+    if (i_j[0] == -1) return;
+    var u_v = this._viewer.ij2uv_no_zoom(i_j[0],i_j[1]);
+    // console.log(i_j, u_v)
+    // console.log(i_j);
+    // var u_v = this._viewer.ij2uv(i_j[0], i_j[1]);  
+    // console.log(u_v);  
+    //var u_v = [x*this._viewer._camera._view[0],y*this._viewer._camera._view[4]];
+    // console.log('draw split');
+
+    var context = this._viewer._overlay_buffer_context;
+
+    // context.save();
+    // var view = this._viewer._camera._view;
+    //context.setTransform(view[0], view[1], view[3], view[4], 0,0);
+
+    // update bounding box
+    if (this._brush_bbox.length > 0) {
+
+      var brush = Math.ceil(this._brush_size);
+
+      var factor = 1;
+
+      // smallest i
+      this._brush_bbox[0] = Math.min(this._brush_bbox[0], i_j[0]-factor*brush);
+      // largest i
+      this._brush_bbox[1] = Math.max(this._brush_bbox[1], i_j[0]+factor*brush);
+      // smallest j
+      this._brush_bbox[2] = Math.min(this._brush_bbox[2], i_j[1]-factor*brush);
+      // largest j
+      this._brush_bbox[3] = Math.max(this._brush_bbox[3], i_j[1]+factor*brush);
+      
+    } else {
+      this._brush_bbox.push(i_j[0]);
+      this._brush_bbox.push(i_j[0]);
+      this._brush_bbox.push(i_j[1]);
+      this._brush_bbox.push(i_j[1]);
+    }
+
+    // and store the i_j's for later use
+    this._brush_ijs.push(i_j);
+
+    context.lineTo(u_v[0], u_v[1]);
+    context.strokeStyle = 'rgba(0,191,255,0.1)';
+    context.lineWidth = this._brush_size;
+    context.stroke();
+    // context.restore();
+  }
+
+};
+
+J.controller.prototype.end_draw_split = function(x, y) {
+
+  if (this._split_mode == 2) {
+    console.log('end draw', x, y);
+
+    // one more stroke..
+    this.draw_split(x, y);
+
+    var context = this._viewer._image_buffer_context;    
+    context.closePath();
+
+    // console.log(this._brush_bbox);
+    // console.log(this._brush_ijs);
+
+    // send via ajax (id, brush_bbox, brush_i_js, z, brushsize)
+    var data = {};
+    data['id'] = this._split_id;
+    data['brush_bbox'] = this._brush_bbox;
+    data['i_js'] = this._brush_ijs;
+    data['z'] = this._viewer._camera._z;
+    data['brush_size'] = this._brush_size;
+    this.send('SPLIT', data);
+
+
+
+    this._split_mode = 3;
+
+    this._viewer._canvas.style.cursor = '';
+
+  }
+
+
+
+};
+
 J.controller.prototype.merge = function(id) {
 
   if (!this._merge_table) {
@@ -774,9 +1163,12 @@ J.controller.prototype.toggle_3d_labels = function() {
 
 };
 
-J.controller.prototype.end_merge = function() {
+J.controller.prototype.end = function() {
 
   this.activate(null);
+  this._split_mode = -1;
+  this._split_id = -1;
+  this._viewer._canvas.style.cursor = '';
   this._last_id = null;
 
 };

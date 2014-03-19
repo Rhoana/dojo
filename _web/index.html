@@ -30,6 +30,7 @@
     precision mediump float;
     precision mediump int;
 
+    uniform sampler2D uImageSampler;
     uniform sampler2D uTextureSampler;
     uniform sampler2D uColorMapSampler;
     uniform sampler2D uMergeTableKeySampler;
@@ -39,10 +40,12 @@
     uniform float uOpacity;
     uniform float uHighlightedId;
     uniform float uActivatedId;
+    uniform int uSplitMode;
     uniform float uMaxColors;
     uniform int uBorders;
     uniform int uMergeTableLength;
     uniform int uLockTableLength;
+    uniform bool uShowOverlay;
 
     const int MAX = 10000;
 
@@ -191,14 +194,21 @@
         
         if (mod(vTexturePosition.x, 0.05) < 0.01) {
           color *= 1.5;
+          color.a = 0.9;
         }
         else if (mod(vTexturePosition.y, 0.05) < 0.01) {
           color *= 1.5;
+          color.a = 0.9;
         } else {
-          color.a = 0.3;
+          color.a = 0.5;
         }
 
       } else {
+
+        if ((uSplitMode > 0) && equals(uActivatedId, id)) {
+          // in split mode, the activated id is completely transparent
+          return vec4(0.0);
+        }
 
         // highlight active labels
         if (equals(uHighlightedId, id) || equals(uActivatedId, id)) {
@@ -244,6 +254,9 @@
     //
     void main() {
 
+      // grab image data
+      vec4 image = texture2D(uImageSampler, vTexturePosition);
+
       // grab 32 bit segmentation id
       vec4 rgba_ids = texture2D(uTextureSampler, vTexturePosition);
       float id = lookup_id(unpack(rgba_ids)*255.);
@@ -256,6 +269,16 @@
         // show borders in black
         gl_FragColor = vec4(0., 0., 0., 1.);
         return;
+
+      }
+
+      if (uShowOverlay) {
+
+        color = mix(image, color, color.a);
+
+      } else {
+
+        color = image;
 
       }
 
@@ -316,12 +339,14 @@
 
   <div id='info' class='infopanel'>
     <div><div id='slicenumber'>1/75</div><div id='label'>Label n/a</div></div>
-    <div><strong>W</strong>: next slice</div>
-    <div><strong>S</strong>: previous slice</div>
-    <div><strong>C</strong>: zoom in</div>
-    <div><strong>X</strong>: zoom out</div>    
+    <div><strong>W/S</strong>: next/previous slice</div>
+    <div><strong>C/X</strong>: zoom in/out</div>
     <div><strong>Z</strong>: mark problem</div>
-    <div><strong>L</strong>: lock/unlock segment</div>    
+    <div><strong>L</strong>: lock/unlock segment</div>  
+    <div><strong>Q</strong>: toggle segmentation</div>    
+    <div><strong>A</strong>: toggle borders</div>   
+    <div><strong>E/D</strong>: increase/decrease opacity</div> 
+    <div><strong>1-5</strong>: toggle tool</div>     
   </div>
 
   <div id='log' class='logpanel'>

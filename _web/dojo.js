@@ -5,7 +5,8 @@ var DOJO = DOJO || {};
 DOJO.mode = null;
 DOJO.modes = {
   pan_zoom:0, 
-  merge:1
+  merge:1,
+  split:2
 };
 DOJO.threeD_active = false;
 DOJO.link_active = false;
@@ -33,34 +34,43 @@ DOJO.setup_buttons = function() {
 
     if (DOJO.mode != DOJO.modes.merge) {
 
-      // merge.style.border = '1px solid white';
+      DOJO.reset_tools();
 
       merge.style.display = 'none';
       merge_selected.style.display = 'block';      
 
       DOJO.mode = DOJO.modes.merge;
 
-      // reset 3d view
-      DOJO.viewer._controller.reset_fixed_3d_labels();
-      DOJO.viewer._controller.reset_3d_labels();
-
     } else {
 
-
-      merge.style.display = 'block';
-      merge_selected.style.display = 'none';    
-
-      DOJO.mode = DOJO.modes.pan_zoom;
-
-      DOJO.viewer._controller.end_merge();
-
-      // reset 3d view
-      DOJO.viewer._controller.reset_fixed_3d_labels();
-      DOJO.viewer._controller.reset_3d_labels();      
+      DOJO.reset_tools();      
 
     }
 
   };
+
+  var split = document.getElementById('split');
+  var split_selected = document.getElementById('split_selected');
+
+  split.onclick = split_selected.onclick = function() {
+
+    if (DOJO.mode != DOJO.modes.split) {
+
+      DOJO.reset_tools();
+
+      split.style.display = 'none';
+      split_selected.style.display = 'block';      
+
+      DOJO.mode = DOJO.modes.split;
+
+    } else {
+
+      DOJO.reset_tools();
+
+    }
+
+  };
+
 
   var threed = document.getElementById('3d');
   var threed_selected = document.getElementById('3d_selected');
@@ -128,6 +138,27 @@ DOJO.setup_buttons = function() {
 
 };
 
+DOJO.reset_tools = function() {
+
+  DOJO.mode = DOJO.modes.pan_zoom;    
+
+  merge.style.display = 'block';
+  merge_selected.style.display = 'none';    
+
+  split.style.display = 'block';
+  split_selected.style.display = 'none';    
+
+  adjust.style.display = 'block';
+  adjust_selected.style.display = 'none';    
+
+  DOJO.viewer._controller.end();
+
+  // reset 3d view
+  DOJO.viewer._controller.reset_fixed_3d_labels();
+  DOJO.viewer._controller.reset_3d_labels();
+
+};
+
 DOJO.onleftclick = function(x, y) {
 
   // get pixel coordinates
@@ -147,6 +178,11 @@ DOJO.onleftclick = function(x, y) {
       if (!DOJO.viewer.is_locked(id))
         DOJO.viewer._controller.merge(id);
       
+    } else if (DOJO.mode == DOJO.modes.split) {
+
+      if (!DOJO.viewer.is_locked(id))
+        DOJO.viewer._controller.start_split(id, x, y);
+
     } else {
 
       if (DOJO.threeD_active) {
@@ -185,6 +221,24 @@ DOJO.onmousemove = function(x, y) {
     DOJO.mousemove_timeout = setTimeout(function() {
       DOJO.viewer._controller.send_mouse_move([i_j[0], i_j[1], DOJO.viewer._camera._z]);
     }, 100);
+
+  }
+
+  if (DOJO.mode == DOJO.modes.split && DOJO.viewer._interactor._left_down) {
+
+    DOJO.viewer._controller.draw_split(x, y);
+
+  }
+
+};
+
+DOJO.onmouseup = function(x, y) {
+
+  var i_j = DOJO.viewer.xy2ij(x,y);
+
+  if (DOJO.mode == DOJO.modes.split) {
+
+    DOJO.viewer._controller.end_draw_split(x, y);
 
   }
 

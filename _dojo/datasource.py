@@ -15,6 +15,7 @@ class Datasource(object):
     '''
 
     self.__mojo_dir = mojo_dir
+    self.__mojo_tmp_dir = '/tmp/dojo'
 
     self.__query = query
     self.__input_format = input_format
@@ -84,6 +85,7 @@ class Datasource(object):
 
         # segmentinfo database
         elif self.__segmentinfo_file_regex.match(os.path.join(root,f)):
+          print 'Connecting to DB'
           self.__database = Database(os.path.join(root,f))
 
 
@@ -100,12 +102,18 @@ class Datasource(object):
     '''
     pass
 
+  def get_database(self):
+    '''
+    '''
+    return self.__database
+
   def get_volume(self, zoomlevel):
     '''
     '''
 
     w_path = os.path.join(self.__mojo_dir, self.__sub_dir, 'tiles', 'w='+str(zoomlevel).zfill(8))
-    
+    w_path_tmp = os.path.join(self.__mojo_tmp_dir, self.__sub_dir, 'tiles', 'w='+str(zoomlevel).zfill(8))
+
     dirs = sorted(os.listdir(w_path))
 
     tile_files = []
@@ -114,7 +122,11 @@ class Datasource(object):
       files = os.listdir(os.path.join(w_path,d))
 
       for f in files:
-        tile_files.append(os.path.join(w_path, d, f))
+        # check if we have an updated version for this tile
+        if os.path.exists(os.path.join(w_path_tmp, d, f)):
+          tile_files.append(os.path.join(w_path_tmp, d, f))
+        else:
+          tile_files.append(os.path.join(w_path, d, f))
 
     return tile_files
 
@@ -177,6 +189,13 @@ class Datasource(object):
       #zoomlevel = min(self.__max_mojozoom_level, self.__max_deepzoom_level - zoomlevel)
 
       slice_number = request_splitted[-3]
+
+      updated_tile_file = os.path.join(self.__mojo_tmp_dir, self.__sub_dir, 'tiles', 'w='+str(zoomlevel).zfill(8), 'z='+slice_number.zfill(8), 'y='+tile_y.zfill(8)+','+'x='+tile_x.zfill(8)+'.'+self.__input_format)
+      # print updated_tile_file
+      if os.path.exists(updated_tile_file):
+
+        content, content_type = self.get_tile(updated_tile_file)
+        return content, content_type
 
       tile_file = os.path.join(self.__mojo_dir, self.__sub_dir, 'tiles', 'w='+str(zoomlevel).zfill(8), 'z='+slice_number.zfill(8), 'y='+tile_y.zfill(8)+','+'x='+tile_x.zfill(8)+'.'+self.__input_format)
       #print 'Requested', tile_file

@@ -20,6 +20,9 @@ J.viewer = function(container) {
   this._image_buffer_context = this._image_buffer.getContext('2d');
   this._image_buffer_ready = false;
 
+  this._overlay_buffer = document.createElement('canvas');
+  this._overlay_buffer_context = this._overlay_buffer.getContext('2d');
+
   this._segmentation_buffer = document.createElement('canvas');
   this._segmentation_buffer.width = 512;
   this._segmentation_buffer.height = 512;
@@ -27,9 +30,11 @@ J.viewer = function(container) {
   this._pixel_data_buffer = this._segmentation_buffer_context.createImageData(512, 512);
 
   this._offscreen_buffer = document.createElement('canvas');
-  // _container.appendChild(this._offscreen_buffer);
+  _container.appendChild(this._offscreen_buffer);
   this._offscreen_buffer.width = 512;
   this._offscreen_buffer.height = 512;
+
+  this._force_rerender = false;
 
   this._image = null;
   this._segmentation = null;
@@ -38,7 +43,8 @@ J.viewer = function(container) {
   this._gl_colormap = null;
   this._max_colors = 0;
 
-  this._overlay_opacity = 130;  
+  this._overlay_show = true;
+  this._overlay_opacity = 170;  
   this._overlay_borders = true;
 
   this._loader = new J.loader(this);
@@ -84,8 +90,8 @@ J.viewer.prototype.init = function(callback) {
 
     this._interactor = new J.interactor(this);
 
-    this._image_buffer.width = this._image.width;
-    this._image_buffer.height = this._image.height;
+    this._image_buffer.width = this._overlay_buffer.width = this._image.width;
+    this._image_buffer.height = this._overlay_buffer.height = this._image.height;
 
     this._loader.load_json('/segmentation/contents', function(res) {
 
@@ -160,6 +166,12 @@ J.viewer.prototype.redraw = function() {
 
 };
 
+J.viewer.prototype.rerender = function() {
+
+  this._force_rerender = true;
+
+};
+
 J.viewer.prototype.draw_image = function(x,y,z,w,i,s) {
 
   this._drawer(x,y,z,w,i,s);
@@ -168,16 +180,19 @@ J.viewer.prototype.draw_image = function(x,y,z,w,i,s) {
 
 J.viewer.prototype.draw_webgl = function(x,y,z,w,i,s) {
 
-  this._image_buffer_context.drawImage(i,0,0,512,512,x*512,y*512,512,512);
-
-  // draw segmentation
-  this._offscreen_renderer.draw(s, this._image_buffer_context, x, y);  
+  // draw image and segmentation
+  this._offscreen_renderer.draw(i, s, this._image_buffer_context, x, y);  
 
 };
 
 J.viewer.prototype.draw_canvas = function(x,y,z,w,i,s) {
 
   this._image_buffer_context.drawImage(i,0,0,512,512,x*512,y*512,512,512);
+
+  if (!this._overlay_show) {
+    // nothing more here
+    return;
+  }
 
   // draw segmentation
   var pixel_data = this._pixel_data_buffer;
@@ -277,6 +292,12 @@ J.viewer.prototype.clear_buffer = function(width, height) {
 
 };
 
+J.viewer.prototype.clear_overlay_buffer = function() {
+
+  this._overlay_buffer_context.clearRect(0,0,this._image.width, this._image.height);
+
+};
+
 J.viewer.prototype.clear = function() {
 
   var _width = this._width;
@@ -294,6 +315,25 @@ J.viewer.prototype.toggle_borders = function() {
   this.redraw();
 };
 
+J.viewer.prototype.toggle_segmentation = function() {
+  this._overlay_show = !this._overlay_show;
+  this.redraw();
+};
+
+J.viewer.prototype.increase_opacity = function() {
+
+  this._overlay_opacity = Math.min(255, this._overlay_opacity+=20);
+  this.redraw();
+
+};
+
+J.viewer.prototype.decrease_opacity = function() {
+
+  this._overlay_opacity = Math.max(0, this._overlay_opacity-=20);
+  this.redraw();
+
+};
+
 J.viewer.prototype.loading = function(value) {
   // console.log('loading', value)
   this._image_buffer_ready = !value;
@@ -303,11 +343,18 @@ J.viewer.prototype.render = function() {
 
   this._context.setTransform(this._camera._view[0], this._camera._view[1], this._camera._view[3], this._camera._view[4], this._camera._view[6], this._camera._view[7]);
 
-  if (this._image_buffer_ready) {
+  if (this._image_buffer_ready || this._force_rerender) {
+
+    if (this._force_rerender) console.log('rerender')
+
     this.clear();
     // put image buffer
     this._context.drawImage(this._image_buffer, 0, 0);
-    // console.log('draw')
+    
+    // draw overlays
+    this._context.drawImage(this._overlay_buffer,0,0);
+
+    this._force_rerender = false;
   }
 
   this._AnimationFrameID = window.requestAnimationFrame(this.render.bind(this));
@@ -362,6 +409,24 @@ J.viewer.prototype.ij2xy = function(i, j) {
    
 
   return this.uv2xy(u, v);
+
+};
+
+J.viewer.prototype.ij2uv = function(i, j) {
+
+  var u = ((i * this._camera._view[0])/this._image.zoom_levels[0][2]) * this._image.zoom_levels[this._camera._w][2];
+  var v = ((j * this._camera._view[4])/this._image.zoom_levels[0][3]) * this._image.zoom_levels[this._camera._w][3];
+
+  return [u,v];   
+
+};
+
+J.viewer.prototype.ij2uv_no_zoom = function(i, j) {
+
+  var u = ((i)/this._image.zoom_levels[0][2]) * this._image.zoom_levels[this._camera._w][2];
+  var v = ((j)/this._image.zoom_levels[0][3]) * this._image.zoom_levels[this._camera._w][3];
+
+  return [u,v];   
 
 };
 

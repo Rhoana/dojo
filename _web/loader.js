@@ -159,6 +159,13 @@ J.loader.prototype.cache_segmentation = function(x, y, z, w) {
 
 };
 
+J.loader.prototype.clear_cache_segmentation = function(x,y,z,w) {
+
+  this._segmentation_cache[z] = [];
+  console.log('cache cleared.');
+
+};
+
 J.loader.prototype.load_tiles = function(x, y, z, w, w_new, no_draw) {
 
   var mojo_w_new = w_new;
