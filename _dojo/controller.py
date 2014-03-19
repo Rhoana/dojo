@@ -272,6 +272,8 @@ class Controller(object):
     else:
       unselected_label = 1
 
+    full_coords = np.where(label_image > 0)
+    full_bbox = [min(full_coords[0]), min(full_coords[1]), max(full_coords[0]), max(full_coords[1])]
 
     label_image[label_image == selected_label] = 0 # should be zero then
     label_image[label_image == unselected_label] = new_id - self.lookup_label(label_id)
@@ -330,13 +332,14 @@ class Controller(object):
     output = {}
     output['name'] = 'RELOAD'
     output['origin'] = input['origin']
-    output['value'] = values["z"]
+    output['value'] = {'z':values["z"], 'full_bbox':str(full_bbox)}
+    print output
     self.__websocket.send(json.dumps(output))
 
     output = {}
     output['name'] = 'SPLITDONE'
     output['origin'] = input['origin']
-    output['value'] = values["z"]
+    output['value'] = {'z':values["z"], 'full_bbox':str(full_bbox)}
     self.__websocket.send(json.dumps(output))    
 
 
@@ -554,27 +557,27 @@ class Controller(object):
     frame[-1,:] = True
     frame[:,-1] = True
 
-    # compute corners 
-    corners = np.zeros(brush_mask.shape,dtype=bool)
+    # # compute corners 
+    # corners = np.zeros(brush_mask.shape,dtype=bool)
 
-    n = 2*brush_size 
+    # n = 2*brush_size 
 
-    # upper left 
-    corners[0:n,0:n] = True
+    # # upper left 
+    # corners[0:n,0:n] = True
 
-    # upper right
-    corners[0:n,-n:-1] = True
-    corners[0:n,-1] = True
+    # # upper right
+    # corners[0:n,-n:-1] = True
+    # corners[0:n,-1] = True
 
-    # lower left
-    corners[-n:-1,0:n] = True
-    corners[-1,0:n] = True
+    # # lower left
+    # corners[-n:-1,0:n] = True
+    # corners[-1,0:n] = True
 
-    # lower right
-    corners[-n:-1,-n:-1] = True
-    corners[-1,-n:-1] = True
-    corners[-n:-1,-1] = True
-    corners[-1,-1] = True
+    # # lower right
+    # corners[-n:-1,-n:-1] = True
+    # corners[-1,-n:-1] = True
+    # corners[-n:-1,-1] = True
+    # corners[-1,-1] = True
 
     # dilate non-brush segments
     outside_brush_mask = np.copy(~brush_mask)
@@ -605,7 +608,29 @@ class Controller(object):
     #       outside_brush_mask[y-1,x] = 1
 
 
+    # compute end points of line
+    end_points = np.zeros(brush_mask.shape,dtype=bool)
 
+    first_point = i_js[0]
+    last_point = i_js[-1]
+
+    first_point_x = min(first_point[0] - bbox[0],brush_mask.shape[1]-1)
+    first_point_y = min(first_point[1] - bbox[2], brush_mask.shape[0]-1)
+    last_point_x = min(last_point[0] - bbox[0], brush_mask.shape[1]-1)
+    last_point_y = min(last_point[1] - bbox[2], brush_mask.shape[0]-1)
+
+    # print first_point_x, first_point_y
+    # print last_point_x, last_point_y
+
+    # p0 = (i_js[0][0] - bbox[0], i_js[0][1] - bbox[2])
+    # p1 = (i_js[-1][0] - bbox[0], i_js[-1][1] - bbox[2])
+    # p0 = 
+    # print i_js[0], i_js[-1], bbox, p0, p1, brush_mask.shape
+    # end_points[p0[1], p0[0]] = True
+    # end_points[p1[1], p1[0]] = True
+    end_points[first_point_y, first_point_x] = True
+    end_points[last_point_y, last_point_x] = True
+    end_points = mh.morph.dilate(end_points, np.ones((2*brush_size, 2*brush_size)))
 
 
     # compute seeds
@@ -613,7 +638,8 @@ class Controller(object):
     # seed_mask[outside_brush_mask & brush_mask] = True 
     seed_mask[outside_brush_mask] = True 
     seed_mask[frame] = True
-    seed_mask[corners] = False
+    # seed_mask[corners] = False
+    seed_mask[end_points] = False
 
 
 
@@ -677,7 +703,7 @@ class Controller(object):
     #
     ws = mh.cwatershed(brush_image.max() - brush_image, seeds)
 
-    mh.imsave('/tmp/corners.tif', 50*corners.astype(np.uint8))
+    mh.imsave('/tmp/end_points.tif', 50*end_points.astype(np.uint8))
     mh.imsave('/tmp/seeds_mask.tif', 50*seed_mask.astype(np.uint8))
     mh.imsave('/tmp/seeds.tif', 50*seeds.astype(np.uint8))
     mh.imsave('/tmp/ws.tif', 50*ws.astype(np.uint8))

@@ -40,7 +40,7 @@ J.controller = function(viewer) {
   this._split_mode = -1;
   this._split_line = [];
   this._brush_bbox = [];
-  this._brush_size = 5;
+  this._brush_size = 3;
   this._brush_ijs = [];
 
   this.create_gl_3d_labels();
@@ -126,6 +126,7 @@ J.controller.prototype.receive = function(data) {
 
     // force reload
     console.log('force reload');
+    this.reload_tiles(input.value);
 
 
   }
@@ -546,31 +547,55 @@ J.controller.prototype.lock = function(x, y) {
 
 J.controller.prototype.larger_brush = function() {
 
-  this._brush_size = Math.min(30, this._brush_size+=5);
+  this._brush_size = Math.min(10, this._brush_size+=1);
 
 };
 
 J.controller.prototype.smaller_brush = function() {
 
-  this._brush_size = Math.max(5, this._brush_size-=5);  
+  this._brush_size = Math.max(1, this._brush_size-=1);  
 
 };
 
-J.controller.prototype.finish_split = function(slice) {
+J.controller.prototype.reload_tiles = function(values) {
 
-  // reload all slices, set to split mode -1
+  var z = values['z'];
+  var full_bbox = values['full_bbox'];
+
+
   var x = this._viewer._camera._x;
   var y = this._viewer._camera._y;
-  var z = this._viewer._camera._z;
+  var z2 = this._viewer._camera._z; // the actual displayed z
   var w = this._viewer._camera._w;
   this._viewer._loader.clear_cache_segmentation(x,y,z,w);
 
-  this._viewer._loader.load_tiles(x,y,z,w,w,false);
+  for (var l=0;l<this._viewer._image.zoomlevel_count;l++) {  
+
+    // only draw if current z == z2 and l == w (meaning only if zoomlevel and z are displayed right now)
+    var draw = (z == z2 && w == l);
+    console.log('reload tile', l, draw, full_bbox);
+    this._viewer._loader.load_tiles(x,y,z,l,l,!draw); // negate draw since it is a no_draw flag woot woot
+
+  }
+  
+
+};
+
+J.controller.prototype.finish_split = function(values) {
+
+  // reload all slices, set to split mode -1
+  this.reload_tiles(values);
 
   this._viewer.clear_overlay_buffer();
 
   this._split_mode = -1;
   this.activate(null);
+
+
+  var color1 = DOJO.viewer.get_color(this._split_id);
+  var color1_hex = rgbToHex(color1[0], color1[1], color1[2]);
+  var log = 'User $USER splitted label <font color="'+color1_hex+'">'+this._split_id+'</font>.';
+  this.send_log(log);
 
 };
 
