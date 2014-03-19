@@ -273,13 +273,14 @@ class Controller(object):
       unselected_label = 1
 
     full_coords = np.where(label_image > 0)
-    full_bbox = [min(full_coords[0]), min(full_coords[1]), max(full_coords[0]), max(full_coords[1])]
+    full_bbox = [min(full_coords[1]), min(full_coords[0]), max(full_coords[1]), max(full_coords[0])]
 
     label_image[label_image == selected_label] = 0 # should be zero then
     label_image[label_image == unselected_label] = new_id - self.lookup_label(label_id)
 
     tile = np.add(tile, label_image).astype(np.uint32)
 
+    # mh.imsave('/tmp/fullbbox.tif', 50*label_image[full_bbox[1]:full_bbox[3],full_bbox[0]:full_bbox[2]].astype(np.uint8))
 
     #mh.imsave('/tmp/newtile.tif', tile.astype(np.uint32))
 
