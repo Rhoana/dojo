@@ -334,7 +334,7 @@ class Controller(object):
     output['name'] = 'RELOAD'
     output['origin'] = input['origin']
     output['value'] = {'z':values["z"], 'full_bbox':str(full_bbox)}
-    print output
+    # print output
     self.__websocket.send(json.dumps(output))
 
     output = {}
@@ -746,7 +746,7 @@ class Controller(object):
     output['name'] = 'SPLITRESULT'
     output['origin'] = input['origin']
     output['value'] = lines
-    print output
+    # print output
     self.__websocket.send(json.dumps(output))
 
   def lookup_label(self, label_id):

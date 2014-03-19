@@ -112,7 +112,8 @@ class Datasource(object):
     '''
 
     w_path = os.path.join(self.__mojo_dir, self.__sub_dir, 'tiles', 'w='+str(zoomlevel).zfill(8))
-    
+    w_path_tmp = os.path.join(self.__mojo_tmp_dir, self.__sub_dir, 'tiles', 'w='+str(zoomlevel).zfill(8))
+
     dirs = sorted(os.listdir(w_path))
 
     tile_files = []
@@ -121,7 +122,11 @@ class Datasource(object):
       files = os.listdir(os.path.join(w_path,d))
 
       for f in files:
-        tile_files.append(os.path.join(w_path, d, f))
+        # check if we have an updated version for this tile
+        if os.path.exists(os.path.join(w_path_tmp, d, f)):
+          tile_files.append(os.path.join(w_path_tmp, d, f))
+        else:
+          tile_files.append(os.path.join(w_path, d, f))
 
     return tile_files
 

@@ -584,7 +584,7 @@ J.controller.prototype.reload_tiles = function(values) {
     var lowest_w = this._viewer._image.zoomlevel_count-1;
     this._viewer._loader.get_segmentation(0, 0, z, lowest_w, function(x, y, z, lowest_w, s) {
       
-      this.update_3D_textures(full_bbox, s);
+      this.update_3D_textures(z, full_bbox, s);
 
     }.bind(this, 0, 0, z, lowest_w));
 
@@ -593,7 +593,9 @@ J.controller.prototype.reload_tiles = function(values) {
 
 };
 
-J.controller.prototype.update_3D_textures = function(full_bbox, texture) {
+J.controller.prototype.update_3D_textures = function(z, full_bbox, texture) {
+
+  if (!DOJO.threeD) return;
 
   // console.log(full_bbox, texture);
   console.log('upd 3d', full_bbox);
@@ -603,14 +605,20 @@ J.controller.prototype.update_3D_textures = function(full_bbox, texture) {
   var x2 = Math.floor(full_bbox[2] / this._viewer._image.zoom_levels[0][2]);
   var y2 = Math.floor(full_bbox[3] / this._viewer._image.zoom_levels[0][2]);
 
-  var byte_start = (x1+y1*512)*4;
-  var byte_end = (x2+y2*512)*4+4;
+  // var byte_start = (x1+y1*512)*4;
+  // var byte_end = (x2+y2*512)*4+4;
 
-  console.log('a',byte_start, byte_end, texture.length)
+  // console.log('a',byte_start, byte_end, texture.length)
+
+  var vol = DOJO.threeD.volume;
 
   // extract pixel data in z
-  var pixels_in_z = texture.subarray(byte_start, byte_end);
-  console.log(pixels_in_z);
+  // var pixels_in_z = texture.subarray(byte_start, byte_end);
+  // var texture_id = DOJO.threeD.volume.children[2].children[z].labelmap.texture.id;
+  vol.children[2].children[z].labelmap.texture.updateTexture(texture);
+  vol.children[2].children[z].labelmap.modified();
+
+
 
 
 };
