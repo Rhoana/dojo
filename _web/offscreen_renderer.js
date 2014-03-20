@@ -62,6 +62,7 @@ J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
   this.h_uHighlightedId = gl.getUniformLocation(h, 'uHighlightedId');
   this.h_uActivatedId = gl.getUniformLocation(h, 'uActivatedId');
   this.h_uSplitMode = gl.getUniformLocation(h, 'uSplitMode');  
+  this.h_uAdjustMode = gl.getUniformLocation(h, 'uAdjustMode');  
   this.h_uMaxColors = gl.getUniformLocation(h, 'uMaxColors');
   this.h_uBorders = gl.getUniformLocation(h, 'uBorders');
   this.h_uMergeTableLength = gl.getUniformLocation(h, 'uMergeTableLength');
@@ -248,6 +249,7 @@ J.offscreen_renderer.prototype.draw = function(i, s, c, x, y) {
   gl.uniform1i(this.h_uBorders, this._viewer._overlay_borders);
 
   gl.uniform1i(this.h_uSplitMode, this._viewer._controller._split_mode);
+  gl.uniform1i(this.h_uAdjustMode, this._viewer._controller._adjust_mode);
 
   gl.uniform1i(this.h_uMergeTableLength, merge_table_length);
   gl.uniform1i(this.h_uLockTableLength, lock_table_length);

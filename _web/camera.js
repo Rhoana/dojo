@@ -181,6 +181,9 @@ J.camera.prototype.slice_up = function() {
 
   if (this._z == this._viewer._image.max_z_tiles-1) return;
 
+  if (this._viewer._controller._split_mode != -1) return;
+  if (this._viewer._controller._adjust_mode != -1) return;
+
   this._viewer._controller.clear_exclamationmarks();
   this._viewer._controller.reset_cursors();
 
@@ -197,6 +200,9 @@ J.camera.prototype.slice_up = function() {
 J.camera.prototype.slice_down = function() {
 
   if (this._z == 0) return;
+
+  if (this._viewer._controller._split_mode != -1) return;
+  if (this._viewer._controller._adjust_mode != -1) return;
 
   this._viewer._controller.clear_exclamationmarks();
   this._viewer._controller.reset_cursors();

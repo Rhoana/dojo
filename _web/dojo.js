@@ -6,7 +6,8 @@ DOJO.mode = null;
 DOJO.modes = {
   pan_zoom:0, 
   merge:1,
-  split:2
+  split:2,
+  adjust:3
 };
 DOJO.threeD_active = false;
 DOJO.link_active = false;
@@ -70,6 +71,28 @@ DOJO.setup_buttons = function() {
     }
 
   };
+
+  var adjust = document.getElementById('adjust');
+  var adjust_selected = document.getElementById('adjust_selected');
+
+  adjust.onclick = adjust_selected.onclick = function() {
+
+    if (DOJO.mode != DOJO.modes.adjust) {
+
+      DOJO.reset_tools();
+
+      adjust.style.display = 'none';
+      adjust_selected.style.display = 'block';      
+
+      DOJO.mode = DOJO.modes.adjust;
+
+    } else {
+
+      DOJO.reset_tools();
+
+    }
+
+  };  
 
 
   var threed = document.getElementById('3d');
@@ -183,6 +206,11 @@ DOJO.onleftclick = function(x, y) {
       if (!DOJO.viewer.is_locked(id))
         DOJO.viewer._controller.start_split(id, x, y);
 
+    } else if (DOJO.mode == DOJO.modes.adjust) {
+
+      if (!DOJO.viewer.is_locked(id))
+        DOJO.viewer._controller.start_adjust(id, x, y);
+
     } else {
 
       if (DOJO.threeD_active) {
@@ -227,6 +255,10 @@ DOJO.onmousemove = function(x, y) {
   if (DOJO.mode == DOJO.modes.split && DOJO.viewer._interactor._left_down) {
 
     DOJO.viewer._controller.draw_split(x, y);
+
+  } else if (DOJO.mode == DOJO.modes.adjust && DOJO.viewer._interactor._left_down) {
+
+    DOJO.viewer._controller.draw_adjust(x, y);
 
   }
 

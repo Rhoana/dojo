@@ -41,6 +41,7 @@
     uniform float uHighlightedId;
     uniform float uActivatedId;
     uniform int uSplitMode;
+    uniform int uAdjustMode;
     uniform float uMaxColors;
     uniform int uBorders;
     uniform int uMergeTableLength;
@@ -207,6 +208,13 @@
 
         if ((uSplitMode > 0) && equals(uActivatedId, id)) {
           // in split mode, the activated id is completely transparent
+          return vec4(0.0);
+        }
+
+        if ((uAdjustMode > 0) && equals(uActivatedId, id)) {
+          // in adjust mode, only show the active label
+          return color;
+        } else if (uAdjustMode > 0) {
           return vec4(0.0);
         }
 
