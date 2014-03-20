@@ -721,9 +721,9 @@ J.controller.prototype.draw_adjust = function(x, y) {
 
   var i_js = this._viewer.xy2ij(x, y);
 
-  this._viewer.get_segmentation_id(i_js[0], i_js[1], function(id) {
+  // this._viewer.get_segmentation_id(i_js[0], i_js[1], function(id) {
 
-    if (this._adjust_id == id) return;
+    // if (this._adjust_id == id) return;
 
     var color = this._viewer.get_color(this._adjust_id);
 
@@ -743,7 +743,7 @@ J.controller.prototype.draw_adjust = function(x, y) {
 
     this._viewer._overlay_buffer_context.putImageData(id, u_v[0], u_v[1]);
 
-  }.bind(this));
+  // }.bind(this));
 
 };
 
