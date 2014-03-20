@@ -41,6 +41,7 @@
     uniform float uHighlightedId;
     uniform float uActivatedId;
     uniform int uSplitMode;
+    uniform int uAdjustMode;
     uniform float uMaxColors;
     uniform int uBorders;
     uniform int uMergeTableLength;
@@ -210,6 +211,13 @@
           return vec4(0.0);
         }
 
+        if ((uAdjustMode > 0) && equals(uActivatedId, id)) {
+          // in adjust mode, only show the active label
+          return color;
+        } else if (uAdjustMode > 0) {
+          return vec4(0.0);
+        }
+
         // highlight active labels
         if (equals(uHighlightedId, id) || equals(uActivatedId, id)) {
            color.a = 0.8;
@@ -345,7 +353,9 @@
     <div><strong>L</strong>: lock/unlock segment</div>  
     <div><strong>Q</strong>: toggle segmentation</div>    
     <div><strong>A</strong>: toggle borders</div>   
-    <div><strong>E/D</strong>: increase/decrease opacity</div> 
+    <div><strong>E/D</strong>: increase/decrease opacity</div>
+    <div><strong>ESC</strong>: discard split/adjust or reset tool</div> 
+    <div><strong>TAB</strong>: confirm adjust</div>       
     <div><strong>1-5</strong>: toggle tool</div>     
   </div>
 

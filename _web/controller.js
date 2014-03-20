@@ -39,6 +39,8 @@ J.controller = function(viewer) {
   this._split_id = -1;
   this._split_mode = -1;
   this._split_line = [];
+  this._adjust_mode = -1;
+  this._adjust_id = -1;
   this._brush_bbox = [];
   this._brush_size = 3;
   this._brush_ijs = [];
@@ -89,6 +91,8 @@ J.controller.prototype.receive = function(data) {
       return;
     } else if (input.name == 'SPLITDONE') {
       this.finish_split(input.value);
+    } else if (input.name == 'ADJUSTDONE') {
+      this.finish_adjust(input.value);
     }
 
     return;
@@ -693,6 +697,91 @@ J.controller.prototype.update_3D_textures = function(z, full_bbox, texture) {
 
 };
 
+J.controller.prototype.start_adjust = function(id, x, y) {
+
+  if (this._adjust_mode != -1) return;
+
+  console.log('start adjust');
+
+  this._adjust_mode = 1;
+  this._adjust_id = id;
+  this._brush_ijs = [];
+
+  this._viewer._canvas.style.cursor = 'crosshair';
+
+  this.activate(id);
+
+};
+
+J.controller.prototype.draw_adjust = function(x, y) {
+
+  if (this._adjust_mode != 1 && this._adjust_mode != 2) return;
+
+  this._adjust_mode = 2;
+
+  var i_js = this._viewer.xy2ij(x, y);
+
+  this._viewer.get_segmentation_id(i_js[0], i_js[1], function(id) {
+
+    if (this._adjust_id == id) return;
+
+    var color = this._viewer.get_color(this._adjust_id);
+
+    var id = this._viewer._overlay_buffer_context.createImageData(this._brush_size, this._brush_size);
+    var d = id.data;
+    for(var j=0;j<this._brush_size*this._brush_size;j++) {
+      d[j*4+0] = color[0];
+      d[j*4+1] = color[1];
+      d[j*4+2] = color[2];
+      d[j*4+3] = this._viewer._overlay_opacity;
+    }
+
+    var brush_ij = [(i_js[0]-this._brush_size/2), (i_js[1]-this._brush_size/2)];
+    var u_v = this._viewer.ij2uv_no_zoom(brush_ij[0], brush_ij[1]);
+
+    this._brush_ijs.push(brush_ij);
+
+    this._viewer._overlay_buffer_context.putImageData(id, u_v[0], u_v[1]);
+
+  }.bind(this));
+
+};
+
+J.controller.prototype.end_adjust = function() {
+
+  if (this._adjust_mode != 2) return;
+
+  // send via ajax (id, brush_bbox, brush_i_js, z, brushsize)
+  var data = {};
+  data['id'] = this._adjust_id;
+  data['i_js'] = this._brush_ijs;
+  data['z'] = this._viewer._camera._z;
+  data['brush_size'] = this._brush_size;
+  this.send('ADJUST', data);
+
+  this._adjust_mode = 3;
+
+  this._viewer._canvas.style.cursor = '';
+
+};
+
+J.controller.prototype.finish_adjust = function(values) {
+
+  // reload all slices, set to split mode -1
+  this.reload_tiles(values);
+
+  this._viewer.clear_overlay_buffer();
+
+  this._adjust_mode = -1;
+  this.activate(null);
+
+  var color1 = DOJO.viewer.get_color(this._adjust_id);
+  var color1_hex = rgbToHex(color1[0], color1[1], color1[2]);
+  var log = 'User $USER adjusted label <font color="'+color1_hex+'">'+this._adjust_id+'</font>.';
+  this.send_log(log);  
+
+};
+
 J.controller.prototype.finish_split = function(values) {
 
   // reload all slices, set to split mode -1
@@ -810,11 +899,16 @@ J.controller.prototype.discard = function() {
 
     this._viewer.clear_overlay_buffer();
   } else {
+
+    this._adjust_mode = -1;
+    this._adjust_id = -1;
+
     this._split_mode = -1;
     this._brush_bbox = [];
     this._brush_ijs = [];    
     this.activate(null);
     this._viewer._canvas.style.cursor = '';
+    this._viewer.clear_overlay_buffer();
   }
 
 };
@@ -1165,10 +1259,16 @@ J.controller.prototype.toggle_3d_labels = function() {
 
 J.controller.prototype.end = function() {
 
-  this.activate(null);
+  
+  this._viewer.clear_overlay_buffer();
+
   this._split_mode = -1;
+  this._adjust_mode = -1;
+  this._adjust_id = -1;
   this._split_id = -1;
   this._viewer._canvas.style.cursor = '';
   this._last_id = null;
+
+  this.activate(null);
 
 };

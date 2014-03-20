@@ -79,6 +79,10 @@ J.camera.prototype.jump = function(i, j, k) {
 ///
 J.camera.prototype.zoom = function(x, y, delta) {
 
+  // don't zoom when using adjust or split
+  if (this._viewer._controller._split_mode != -1) return;
+  if (this._viewer._controller._adjust_mode != -1) return;
+
   // perform linear zooming until a new image zoom level is reached
   // then reset scale to 1 and show the image
 
@@ -181,6 +185,10 @@ J.camera.prototype.slice_up = function() {
 
   if (this._z == this._viewer._image.max_z_tiles-1) return;
 
+  // dont slice when using tools
+  if (this._viewer._controller._split_mode != -1) return;
+  if (this._viewer._controller._adjust_mode != -1) return;
+
   this._viewer._controller.clear_exclamationmarks();
   this._viewer._controller.reset_cursors();
 
@@ -197,6 +205,10 @@ J.camera.prototype.slice_up = function() {
 J.camera.prototype.slice_down = function() {
 
   if (this._z == 0) return;
+
+  // dont slice when using tile tools
+  if (this._viewer._controller._split_mode != -1) return;
+  if (this._viewer._controller._adjust_mode != -1) return;
 
   this._viewer._controller.clear_exclamationmarks();
   this._viewer._controller.reset_cursors();
