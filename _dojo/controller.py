@@ -231,8 +231,8 @@ class Controller(object):
 
     for c in i_js:
 
-      x = int(c[0] - brush_size/2+1)
-      y = int(c[1] - brush_size/2+1)
+      x = int(c[0])# - brush_size/2)
+      y = int(c[1])# - brush_size/2)
 
       for i in range(brush_size):
         for j in range(brush_size):
