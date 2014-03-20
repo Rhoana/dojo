@@ -1,15 +1,12 @@
-dojo
-====
+RhoANA: Dojo
+============
 
-Distributed Mojo
+Distributed Proofreading of Automatic Segmentations
 
-Current status:
- * viewing of a mojo filesystem works (any size)
-
-Usage:
- 
- ./dojo.py /PATH/TO/MOJO/FOLDER/WITH/IDS/AND/IMAGES/SUBFOLDERS
+Instructions: http://rhoana.org/dojo/
 
 
+USAGE:
 
- 
+./dojo.py /PATH/TO/MOJO/FOLDER/WITH/IDS/AND/IMAGES/SUBFOLDERS
+
