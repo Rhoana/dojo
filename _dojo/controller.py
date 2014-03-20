@@ -164,6 +164,149 @@ class Controller(object):
     elif input['name'] == 'FINALIZESPLIT':
       self.finalize_split(input)
 
+    elif input['name'] == 'ADJUST':
+      self.adjust(input)
+
+
+  def adjust(self, input):
+    '''
+    '''
+    values = input['value']
+
+    print 'adjust'
+
+    # try the temporary data first
+    data_path = self.__mojo_tmp_dir + '/ids/tiles/w=00000000/z='+str(values["z"]).zfill(8)
+
+    if not os.path.isdir(data_path):
+      data_path = self.__mojo_dir + '/ids/tiles/w=00000000/z='+str(values["z"]).zfill(8)
+
+    images = os.listdir(data_path)
+    tile = {}
+    for i in images:
+
+      location = os.path.splitext(i)[0].split(',')
+      for l in location:
+        l = l.split('=')
+        exec(l[0]+'=int("'+l[1]+'")')
+
+      if not x in tile:
+        tile[x] = {}
+
+      hdf5_file = h5py.File(os.path.join(data_path,i))
+      list_of_names = []
+      hdf5_file.visit(list_of_names.append)
+      image_data = hdf5_file[list_of_names[0]].value
+      hdf5_file.close()
+
+      tile[x][y] = image_data
+
+    row = None
+    first_row = True
+
+    # go through rows of each tile
+    for r in tile.keys():
+      column = None
+      first_column = True
+
+      for c in tile[r]:
+        if first_column:
+          column = tile[r][c]
+          first_column = False
+        else:
+          column = np.concatenate((column, tile[r][c]), axis=0)
+
+      if first_row:
+        row = column
+        first_row = False
+      else:
+        row = np.concatenate((row, column), axis=1)
+
+    tile = row
+
+    # 
+    label_id = values['id']
+    i_js = values['i_js']
+    brush_size = values['brush_size']
+
+    for c in i_js:
+
+      x = int(c[0] - brush_size/2+1)
+      y = int(c[1] - brush_size/2+1)
+
+      for i in range(brush_size):
+        for j in range(brush_size):
+
+          tile[y+j,x+i] = label_id
+
+
+    full_coords = np.where(tile == label_id)
+    full_bbox = [min(full_coords[1]), min(full_coords[0]), max(full_coords[1]), max(full_coords[0])]
+
+
+
+    # split tile and save as hdf5
+    x0y0 = tile[0:512,0:512]
+    x1y0 = tile[0:512,512:1024]
+    x0y1 = tile[512:1024,0:512]
+    x1y1 = tile[512:1024,512:1024]
+
+    output_folder = self.__mojo_tmp_dir + '/ids/tiles/w=00000000/z='+str(values["z"]).zfill(8)+'/'
+
+    try:
+      os.makedirs(output_folder)
+    except OSError as exc: # Python >2.5
+      if exc.errno == errno.EEXIST and os.path.isdir(output_folder):
+        pass
+      else: raise
+
+    h5f = h5py.File(output_folder+'y=00000000,x=00000000.hdf5', 'w')
+    h5f.create_dataset('dataset_1', data=x0y0)
+    h5f.close()
+
+    h5f = h5py.File(output_folder+'y=00000001,x=00000000.hdf5', 'w')
+    h5f.create_dataset('dataset_1', data=x0y1)
+    h5f.close()
+
+    h5f = h5py.File(output_folder+'y=00000000,x=00000001.hdf5', 'w')
+    h5f.create_dataset('dataset_1', data=x1y0)
+    h5f.close()
+
+    h5f = h5py.File(output_folder+'y=00000001,x=00000001.hdf5', 'w')
+    h5f.create_dataset('dataset_1', data=x1y1)
+    h5f.close()
+
+    output_folder = self.__mojo_tmp_dir + '/ids/tiles/w=00000001/z='+str(values["z"]).zfill(8)+'/'
+
+    try:
+      os.makedirs(output_folder)
+    except OSError as exc: # Python >2.5
+      if exc.errno == errno.EEXIST and os.path.isdir(output_folder):
+        pass
+      else: raise
+
+    # zoomed_tile = tile.reshape(512,512)
+    zoomed_tile = ndimage.interpolation.zoom(tile, .5, order=0, mode='nearest')
+    h5f = h5py.File(output_folder+'y=00000000,x=00000000.hdf5', 'w')
+    h5f.create_dataset('dataset_1', data=zoomed_tile)
+    h5f.close()
+
+    output = {}
+    output['name'] = 'RELOAD'
+    output['origin'] = input['origin']
+    output['value'] = {'z':values["z"], 'full_bbox':str(full_bbox)}
+    # print output
+    self.__websocket.send(json.dumps(output))
+
+    output = {}
+    output['name'] = 'ADJUSTDONE'
+    output['origin'] = input['origin']
+    output['value'] = {'z':values["z"], 'full_bbox':str(full_bbox)}
+    self.__websocket.send(json.dumps(output))    
+
+
+
+
   def finalize_split(self, input):
     '''
     '''

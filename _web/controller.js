@@ -91,6 +91,8 @@ J.controller.prototype.receive = function(data) {
       return;
     } else if (input.name == 'SPLITDONE') {
       this.finish_split(input.value);
+    } else if (input.name == 'ADJUSTDONE') {
+      this.finish_adjust(input.value);
     }
 
     return;
@@ -703,6 +705,7 @@ J.controller.prototype.start_adjust = function(id, x, y) {
 
   this._adjust_mode = 1;
   this._adjust_id = id;
+  this._brush_ijs = [];
 
   this._viewer._canvas.style.cursor = 'crosshair';
 
@@ -733,7 +736,7 @@ J.controller.prototype.draw_adjust = function(x, y) {
       d[j*4+3] = this._viewer._overlay_opacity;
     }
 
-    var brush_ij = [Math.floor(i_js[0]-this._brush_size/2), Math.floor(i_js[1]-this._brush_size/2)];
+    var brush_ij = [(i_js[0]-this._brush_size/2), (i_js[1]-this._brush_size/2)];
     var u_v = this._viewer.ij2uv_no_zoom(brush_ij[0], brush_ij[1]);
 
     this._brush_ijs.push(brush_ij);
