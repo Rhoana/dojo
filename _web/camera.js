@@ -79,6 +79,10 @@ J.camera.prototype.jump = function(i, j, k) {
 ///
 J.camera.prototype.zoom = function(x, y, delta) {
 
+  // don't zoom when using adjust or split
+  if (this._viewer._controller._split_mode != -1) return;
+  if (this._viewer._controller._adjust_mode != -1) return;
+
   // perform linear zooming until a new image zoom level is reached
   // then reset scale to 1 and show the image
 
