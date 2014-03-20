@@ -905,7 +905,8 @@ J.controller.prototype.discard = function() {
 
     this._split_mode = -1;
     this._brush_bbox = [];
-    this._brush_ijs = [];    
+    this._brush_ijs = []; 
+    this._last_id = null;   
     this.activate(null);
     this._viewer._canvas.style.cursor = '';
     this._viewer.clear_overlay_buffer();
