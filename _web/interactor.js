@@ -142,7 +142,9 @@ J.interactor.prototype.onkeydown = function(e) {
   // 51: 3 DE-/ACTIVATE ADJUST
   // 52: 4 DE-/ACTIVATE 3D RENDERING
   // 53: 5 DE-/ACTIVATE COLLABORATION MODE
+  // 9: TAB FINISH ADJUST
 
+  e.preventDefault();
 
   if (e.keyCode == 87) {
   
@@ -232,6 +234,13 @@ J.interactor.prototype.onkeydown = function(e) {
 
     this._keypress_callback = setTimeout(function() {
       this._viewer._controller.larger_brush();
+      this._keypress_callback = null;
+    }.bind(this),10); 
+
+  } else if (e.keyCode == 9) {
+
+    this._keypress_callback = setTimeout(function() {
+      this._viewer._controller.end_adjust();
       this._keypress_callback = null;
     }.bind(this),10); 
 
