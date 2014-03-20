@@ -738,7 +738,7 @@ J.controller.prototype.draw_adjust = function(x, y) {
 
     var brush_ij = [Math.floor(i_js[0]-this._brush_size/2), Math.floor(i_js[1]-this._brush_size/2)];
     var u_v = this._viewer.ij2uv_no_zoom(brush_ij[0], brush_ij[1]);
-    console.log(u_v, brush_ij)
+
     this._brush_ijs.push(brush_ij);
 
     this._viewer._overlay_buffer_context.putImageData(id, u_v[0], u_v[1]);
