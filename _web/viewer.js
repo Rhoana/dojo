@@ -123,6 +123,8 @@ J.viewer.prototype.init = function(callback) {
         // now create websocket connection
         this._websocket = new J.websocket(this);
 
+        callback();
+
       }.bind(this)); // /segmentation/colormap
 
     }.bind(this)); // load /segmentation/contents
