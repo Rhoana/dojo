@@ -50,7 +50,7 @@ class ServerLogic:
     '''
     pass
 
-  def run( self, mojo_dir ):
+  def run( self, mojo_dir, out_dir, port ):
     '''
     '''
 
@@ -64,9 +64,8 @@ class ServerLogic:
     self.__viewer = _dojo.Viewer()
 
     # and the controller
-    self.__controller = _dojo.Controller(mojo_dir, self.__segmentation.get_database())
+    self.__controller = _dojo.Controller(mojo_dir, out_dir, self.__segmentation.get_database())
 
-    port = 1337
     ip = socket.gethostbyname(socket.gethostname())
 
 
@@ -131,7 +130,7 @@ def print_help( scriptName ):
   description = ''
   print description
   print
-  print 'Usage: ' + scriptName + ' MOJO_DIRECTORY'
+  print 'Usage: ' + scriptName + ' MOJO_DIRECTORY OUTPUT_DIRECTORY PORT'
   print
 
 #
@@ -140,9 +139,9 @@ def print_help( scriptName ):
 if __name__ == "__main__":
 
   # always show the help if no arguments were specified
-  if len( sys.argv ) < 2:
+  if len( sys.argv ) < 4:
     print_help( sys.argv[0] )
     sys.exit( 1 )
 
   logic = ServerLogic()
-  logic.run( sys.argv[1] )
+  logic.run( sys.argv[1], sys.argv[2], sys.argv[3] )

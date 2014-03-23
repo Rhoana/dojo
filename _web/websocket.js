@@ -14,7 +14,7 @@ J.websocket.prototype.connect = function() {
 
   try {
 
-    var host = "ws://"+window.location.hostname+":1337/ws";  
+    var host = "ws://"+window.location.hostname+":"+window.location.port+"/ws";  
     this._socket = new WebSocket(host);
 
     this._socket.onopen = this.on_open.bind(this);

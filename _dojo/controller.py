@@ -5,12 +5,13 @@ import tifffile as tif
 import numpy as np
 import mahotas as mh
 import math
+import shutil
 from scipy import ndimage
 from skimage import exposure
 
 class Controller(object):
 
-  def __init__(self, mojo_dir, database):
+  def __init__(self, mojo_dir, out_dir, database):
     '''
     '''
     self.__websocket = None
@@ -26,6 +27,8 @@ class Controller(object):
     self.__mojo_dir = mojo_dir
 
     self.__mojo_tmp_dir = '/tmp/dojo'
+
+    self.__mojo_out_dir = out_dir
     
     self.__database = database
 
@@ -167,6 +170,9 @@ class Controller(object):
     elif input['name'] == 'ADJUST':
       self.adjust(input)
 
+    elif input['name'] == 'SAVE':
+      self.save(input)
+
 
   def adjust(self, input):
     '''
@@ -304,7 +310,127 @@ class Controller(object):
     output['value'] = {'z':values["z"], 'full_bbox':str(full_bbox)}
     self.__websocket.send(json.dumps(output))    
 
+  def save(self, input):
+    '''
+    '''
 
+    # parse the mojo directory for w=0 (largest images)
+    mojo_dir = (os.path.join(self.__mojo_dir, 'ids','tiles','w='+str(0).zfill(8)))
+    mojo_tmp_dir = (os.path.join(self.__mojo_tmp_dir, 'ids','tiles','w='+str(0).zfill(8)))
+
+    # first, copy the mojo dir to the output dir
+    shutil.rmtree(self.__mojo_out_dir, True)
+    shutil.copytree(self.__mojo_dir, self.__mojo_out_dir)
+
+    for root, dirs, files in os.walk(mojo_dir):  
+
+      for f in files:
+
+        # grab z
+        z_dir = os.path.dirname(os.path.join(root,f)).split('/')[-1]
+        print z_dir
+        # check if there is a temporary file (==newer data)
+        if os.path.exists(os.path.join(mojo_tmp_dir,z_dir,f)):
+          print 'Found TEMP'
+          segfile = os.path.join(mojo_tmp_dir, z_dir, f)
+        else:
+          segfile = os.path.join(root,f)
+
+        # now open the segfile and apply the merge table
+        hdf5_file = h5py.File(segfile)
+        list_of_names = []
+        hdf5_file.visit(list_of_names.append)
+        image_data = hdf5_file[list_of_names[0]].value
+        hdf5_file.close()
+
+        # for y in range(image_data.shape[0]):
+        #   for x in range(image_data.shape[1]):
+
+        #     image_data[y,x] = self.lookup_label(image_data[y,x])
+
+        for m in self.__merge_table.keys():
+          m_id = self.lookup_label(m)
+          image_data[np.where(image_data == int(m))] = m_id
+
+
+        print 'merge-table applied'
+
+        # now store the image data
+        out_seg_file = os.path.join(self.__mojo_out_dir, 'ids', 'tiles', 'w='+str(0).zfill(8), z_dir, f)
+        h5f = h5py.File(out_seg_file, 'w')
+        h5f.create_dataset('dataset_1', data=image_data)
+        h5f.close()
+
+        print 'stored', out_seg_file
+
+
+    # now we need to create the zoomlevel 1
+    # TODO support multiple zoomlevels
+
+    w0_new_dir = os.path.join(self.__mojo_out_dir, 'ids', 'tiles', 'w='+str(0).zfill(8))
+    for z in os.listdir(w0_new_dir):
+
+      data_path = os.path.join(w0_new_dir, z)
+
+      images = os.listdir(data_path)
+      tile = {}
+      for i in images:
+
+        location = os.path.splitext(i)[0].split(',')
+        for l in location:
+          l = l.split('=')
+          exec(l[0]+'=int("'+l[1]+'")')
+
+        if not x in tile:
+          tile[x] = {}
+
+        hdf5_file = h5py.File(os.path.join(data_path,i))
+        list_of_names = []
+        hdf5_file.visit(list_of_names.append)
+        image_data = hdf5_file[list_of_names[0]].value
+        hdf5_file.close()
+
+        tile[x][y] = image_data
+
+      row = None
+      first_row = True
+
+      # go through rows of each tile
+      for r in tile.keys():
+        column = None
+        first_column = True
+
+        for c in tile[r]:
+          if first_column:
+            column = tile[r][c]
+            first_column = False
+          else:
+            column = np.concatenate((column, tile[r][c]), axis=0)
+
+        if first_row:
+          row = column
+          first_row = False
+        else:
+          row = np.concatenate((row, column), axis=1)
+
+      tile = row
+
+      # now downsample and save as w=00000001
+      zoomed_tile = ndimage.interpolation.zoom(tile, .5, order=0, mode='nearest')
+
+      out_seg_file = os.path.join(self.__mojo_out_dir, 'ids', 'tiles', 'w='+str(1).zfill(8), z, 'y=00000000,x=00000000.hdf5')
+      h5f = h5py.File(out_seg_file, 'w')
+      h5f.create_dataset('dataset_1', data=zoomed_tile)
+      h5f.close()
+
+    print 'All saved! Yahoo!'
+
+    # ping back
+    output = {}
+    output['name'] = 'SAVED'
+    output['origin'] = input['origin']
+    output['value'] = {}
+    self.__websocket.send(json.dumps(output))  
 
 
   def finalize_split(self, input):

@@ -397,7 +397,7 @@ DOJO.init_threeD = function() {
   vol.dimensions = [512,512,DOJO.viewer._image.max_z_tiles];
   vol.spacing = [1,1,3];
   vol.file = '/image/volume/00000001/&.RZ';
-  //vol.file = 'http://localhost:1337/segmentation/volume/00000001/&.RZ';
+
   vol.labelmap.use32bit = true;
   vol.labelmap.file = '/segmentation/volume/00000001/&.RZ';
   vol.labelmap.dimensions = vol.dimensions;
@@ -515,5 +515,11 @@ DOJO.init_threeD = function() {
     }
 
   }  
+
+};
+
+DOJO.save = function() {
+
+  DOJO.viewer._controller.save();
 
 };

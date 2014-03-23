@@ -93,6 +93,8 @@ J.controller.prototype.receive = function(data) {
       this.finish_split(input.value);
     } else if (input.name == 'ADJUSTDONE') {
       this.finish_adjust(input.value);
+    } else if (input.name == 'SAVED') {
+      console.log('All saved. Yahoo!');
     }
 
     return;
@@ -134,6 +136,12 @@ J.controller.prototype.receive = function(data) {
 
 
   }
+
+};
+
+J.controller.prototype.save = function() {
+
+  this.send('SAVE', null);
 
 };
 
