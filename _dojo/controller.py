@@ -11,14 +11,14 @@ from skimage import exposure
 
 class Controller(object):
 
-  def __init__(self, mojo_dir, out_dir, database):
+  def __init__(self, mojo_dir, out_dir, tmp_dir, database):
     '''
     '''
     self.__websocket = None
 
     self.__merge_table = {}
 
-    self.__lock_table = {}
+    self.__lock_table = {'0':True}
 
     self.__problem_table = []
 
@@ -26,7 +26,7 @@ class Controller(object):
 
     self.__mojo_dir = mojo_dir
 
-    self.__mojo_tmp_dir = '/tmp/dojo'
+    self.__mojo_tmp_dir = tmp_dir
 
     self.__mojo_out_dir = out_dir
     

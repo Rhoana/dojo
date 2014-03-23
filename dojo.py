@@ -10,6 +10,7 @@ import socket
 import sys
 import tornado
 import tornado.websocket
+import tempfile
 
 import _dojo
 
@@ -56,15 +57,18 @@ class ServerLogic:
 
     #monkey.patch_thread()
 
+    # create temp folder
+    tmpdir = tempfile.mkdtemp()
+
     # register two data sources
-    self.__segmentation = _dojo.Segmentation(mojo_dir)
-    self.__image = _dojo.Image(mojo_dir)
+    self.__segmentation = _dojo.Segmentation(mojo_dir, tmpdir)
+    self.__image = _dojo.Image(mojo_dir, tmpdir)
 
     # and the viewer
     self.__viewer = _dojo.Viewer()
 
     # and the controller
-    self.__controller = _dojo.Controller(mojo_dir, out_dir, self.__segmentation.get_database())
+    self.__controller = _dojo.Controller(mojo_dir, out_dir, tmpdir, self.__segmentation.get_database())
 
     ip = socket.gethostbyname(socket.gethostname())
 

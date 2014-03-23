@@ -44,7 +44,7 @@ J.viewer = function(container) {
   this._max_colors = 0;
 
   this._overlay_show = true;
-  this._overlay_opacity = 170;  
+  this._overlay_opacity = 100;  
   this._overlay_borders = true;
 
   this._loader = new J.loader(this);

@@ -8,7 +8,7 @@ from datasource import Datasource
 
 class Segmentation(Datasource):
 
-  def __init__(self, mojo_dir):
+  def __init__(self, mojo_dir, tmp_dir):
     '''
     @override
     '''
@@ -17,7 +17,7 @@ class Segmentation(Datasource):
     output_format = 'raw'
     sub_dir = 'ids'
 
-    super(Segmentation, self).__init__(mojo_dir, query, input_format, output_format, sub_dir)
+    super(Segmentation, self).__init__(mojo_dir, tmp_dir, query, input_format, output_format, sub_dir)
 
 
   def get_volume(self, zoomlevel):

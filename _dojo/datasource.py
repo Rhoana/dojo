@@ -10,12 +10,12 @@ from database import Database
 
 class Datasource(object):
 
-  def __init__(self, mojo_dir, query, input_format, output_format, sub_dir):
+  def __init__(self, mojo_dir, tmp_dir, query, input_format, output_format, sub_dir):
     '''
     '''
 
     self.__mojo_dir = mojo_dir
-    self.__mojo_tmp_dir = '/tmp/dojo'
+    self.__mojo_tmp_dir = tmp_dir
 
     self.__query = query
     self.__input_format = input_format

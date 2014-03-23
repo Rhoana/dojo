@@ -11,7 +11,7 @@ import tifffile as tif
 
 class Image(Datasource):
 
-  def __init__(self, mojo_dir):
+  def __init__(self, mojo_dir, tmp_dir):
     '''
     @override
     '''
@@ -20,7 +20,7 @@ class Image(Datasource):
     output_format = 'jpg'
     sub_dir = 'images'
 
-    super(Image, self).__init__(mojo_dir, query, input_format, output_format, sub_dir)
+    super(Image, self).__init__(mojo_dir, tmp_dir, query, input_format, output_format, sub_dir)
 
   def get_volume(self, zoomlevel):
     '''
