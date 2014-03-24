@@ -952,19 +952,19 @@ J.controller.prototype.draw_split = function(x, y) {
       var factor = 1;
 
       // smallest i
-      this._brush_bbox[0] = Math.min(this._brush_bbox[0], i_j[0]-factor*brush);
+      this._brush_bbox[0] = Math.max(0,Math.min(this._brush_bbox[0], i_j[0]-factor*brush));
       // largest i
-      this._brush_bbox[1] = Math.max(this._brush_bbox[1], i_j[0]+factor*brush);
+      this._brush_bbox[1] = Math.max(0,Math.max(this._brush_bbox[1], i_j[0]+factor*brush));
       // smallest j
-      this._brush_bbox[2] = Math.min(this._brush_bbox[2], i_j[1]-factor*brush);
+      this._brush_bbox[2] = Math.max(0,Math.min(this._brush_bbox[2], i_j[1]-factor*brush));
       // largest j
-      this._brush_bbox[3] = Math.max(this._brush_bbox[3], i_j[1]+factor*brush);
+      this._brush_bbox[3] = Math.max(0,Math.max(this._brush_bbox[3], i_j[1]+factor*brush));
       
     } else {
-      this._brush_bbox.push(i_j[0]);
-      this._brush_bbox.push(i_j[0]);
-      this._brush_bbox.push(i_j[1]);
-      this._brush_bbox.push(i_j[1]);
+      this._brush_bbox.push(Math.max(i_j[0]));
+      this._brush_bbox.push(Math.max(0,i_j[0]));
+      this._brush_bbox.push(Math.max(i_j[1]));
+      this._brush_bbox.push(Math.max(i_j[1]));
     }
 
     // and store the i_j's for later use

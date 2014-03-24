@@ -26,9 +26,9 @@ for s in sorted(os.listdir(seg_dir)):
 #
 # ROI
 #
-x = 600
-y = 500
-z = 0
+x = 210
+y = 60
+z = 50
 dim_x = 400
 dim_y = 400
 dim_z = 10
