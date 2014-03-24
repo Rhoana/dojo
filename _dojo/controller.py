@@ -34,6 +34,8 @@ class Controller(object):
 
     self.__largest_id = self.__database.get_largest_id()
 
+    self.__split_count = 0
+
   def handshake(self, websocket):
     '''
     '''
@@ -424,6 +426,8 @@ class Controller(object):
       h5f.close()
 
     print 'All saved! Yahoo!'
+    print 'Splits', self.__split_count
+    print 'Merges', len(self.__merge_table.keys())
 
     # ping back
     output = {}
@@ -611,6 +615,9 @@ class Controller(object):
     output['origin'] = input['origin']
     output['value'] = {'z':values["z"], 'full_bbox':str(full_bbox)}
     self.__websocket.send(json.dumps(output))    
+
+    self.__split_count += 1
+
 
 
 
