@@ -1072,19 +1072,30 @@ J.controller.prototype.undo = function(x, y) {
 
   if (i_j[0] == -1) return;
 
-  var id = this._viewer.get_segmentation_id_before_merge(i_j[0], i_j[1]);
+  this._viewer.get_segmentation_id_before_merge(i_j[0], i_j[1], function(id) {
 
-  console.log('Removing merge for ', id);
+    delete this._merge_table[id];
 
-  delete this._merge_table[id];
 
-  this.create_gl_merge_table();
+    var color1 = DOJO.viewer.get_color(id);
+    var color1_hex = rgbToHex(color1[0], color1[1], color1[2]);
 
-  // this._viewer.redraw();
+    var colored_id1 = id;
 
-  this.send_merge_table();  
+    var log = 'User $USER removed merge for label <font color="'+color1_hex+'">'+colored_id1+'</font>.';
 
-  this.activate(null);
+    this.send_log(log);
+
+    this.create_gl_merge_table();
+
+    // this._viewer.redraw();
+
+    this.send_merge_table();  
+
+    this.activate(null);
+
+
+  }.bind(this));
 
 };
 
