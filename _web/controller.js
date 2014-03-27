@@ -1066,15 +1066,17 @@ J.controller.prototype.merge = function(id) {
 
 };
 
-J.controller.prototype.undo = function() {
+J.controller.prototype.undo = function(x, y) {
 
-  if (!this._activated_id) {
-    return;
-  }
+  var i_j = this._viewer.xy2ij(x, y);
 
-  console.log('Removing merge for ',this._activated_id);
+  if (i_j[0] == -1) return;
 
-  delete this._merge_table[this._activated_id];
+  var id = this._viewer.get_segmentation_id_before_merge(i_j[0], i_j[1]);
+
+  console.log('Removing merge for ', id);
+
+  delete this._merge_table[id];
 
   this.create_gl_merge_table();
 

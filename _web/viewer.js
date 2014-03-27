@@ -471,6 +471,25 @@ J.viewer.prototype.get_segmentation_id = function(i, j, callback) {
 
 };
 
+J.viewer.prototype.get_segmentation_id_before_merge = function(i, j, callback) {
+
+  var x = Math.floor(i / 512);
+  var y = Math.floor(j / 512);
+  var z = this._camera._z;
+  var w = 0;
+  
+  this._loader.get_segmentation(x, y, z, w, function(s) {
+
+    var pixel_data = new Uint32Array(s.buffer);
+
+    var id = pixel_data[(j % 512) * 512 + (i % 512)];
+
+    callback(id);
+
+  }.bind(this));
+
+};
+
 J.viewer.prototype.is_locked = function(id) {
   return this._controller.is_locked(id);
 };
