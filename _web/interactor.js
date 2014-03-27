@@ -189,6 +189,13 @@ J.interactor.prototype.onkeydown = function(e) {
       this._keypress_callback = null;
     }.bind(this),10); 
 
+  } else if (e.keyCode == 90 && e.ctrlKey) {
+
+    this._keypress_callback = setTimeout(function() {
+      this._viewer._controller.undo();
+      this._keypress_callback = null;
+    }.bind(this),10); 
+    
   } else if (e.keyCode == 90) {
 
     this._keypress_callback = setTimeout(function() {
@@ -280,13 +287,6 @@ J.interactor.prototype.onkeydown = function(e) {
       this._keypress_callback = null;
     }.bind(this),10); 
 
-  } else if (e.keyCode == 90 && e.ctrlKey) {
-
-    this._keypress_callback = setTimeout(function() {
-      this._viewer._controller.undo();
-      this._keypress_callback = null;
-    }.bind(this),10); 
-
-  }
+  } 
 
 };
