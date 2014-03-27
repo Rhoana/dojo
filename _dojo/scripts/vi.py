@@ -9,7 +9,7 @@ segs = tif.imread('/home/d/TMP/DOJO/mojo_400_5_orig/cut-train-segs.tif')
 gt = tif.imread('/home/d/TMP/DOJO/mojo_400_5_orig/cut-train-labels.tif')
 
 
-proofreads = '/tmp/S5tif/'
+proofreads = '/tmp/S43tif/'
 
 out_is_there = False
 out = None
