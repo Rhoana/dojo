@@ -1066,6 +1066,26 @@ J.controller.prototype.merge = function(id) {
 
 };
 
+J.controller.prototype.undo = function() {
+
+  if (!this._activated_id) {
+    return;
+  }
+
+  console.log('Removing merge for ',this._activated_id);
+
+  delete this._merge_table[this._activated_id];
+
+  this.create_gl_merge_table();
+
+  // this._viewer.redraw();
+
+  this.send_merge_table();  
+
+  this.activate(null);
+
+};
+
 J.controller.prototype.create_gl_merge_table = function() {
 
   var keys = Object.keys(this._merge_table);

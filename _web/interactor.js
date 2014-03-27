@@ -143,6 +143,7 @@ J.interactor.prototype.onkeydown = function(e) {
   // 52: 4 DE-/ACTIVATE 3D RENDERING
   // 53: 5 DE-/ACTIVATE COLLABORATION MODE
   // 9: TAB FINISH ADJUST
+  // 90 + CTRL: CTRL+Z UNDO
 
   e.preventDefault();
 
@@ -276,6 +277,13 @@ J.interactor.prototype.onkeydown = function(e) {
 
     this._keypress_callback = setTimeout(function() {
       document.getElementById('link').click();
+      this._keypress_callback = null;
+    }.bind(this),10); 
+
+  } else if (e.keyCode == 90 && e.ctrlKey) {
+
+    this._keypress_callback = setTimeout(function() {
+      this._viewer._controller.undo();
       this._keypress_callback = null;
     }.bind(this),10); 
 
