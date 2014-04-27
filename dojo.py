@@ -11,10 +11,9 @@ import sys
 import tornado
 import tornado.websocket
 import tempfile
+import signal
 
 import _dojo
-
-
 
 #
 # default handler
@@ -44,7 +43,11 @@ class ServerLogic:
     '''
     '''
 
+    signal.signal(signal.SIGINT, self.close)
+
     #monkey.patch_thread()
+
+    self.__out_dir = out_dir
 
     # create temp folder
     tmpdir = tempfile.mkdtemp()
@@ -116,6 +119,16 @@ class ServerLogic:
     r.set_header('Content-Type', content_type)
     r.write(content)
     
+
+  def close(self, signal, frame):
+    '''
+    '''
+    print 'Saving..'
+    output = {}
+    output['origin'] = 'SERVER'
+    self.__controller.save(output)
+
+    sys.exit(0)
 
 def print_help( scriptName ):
   '''
