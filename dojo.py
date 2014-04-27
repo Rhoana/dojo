@@ -14,18 +14,7 @@ import tempfile
 
 import _dojo
 
-#
-# websocket handler
-#
-class SocketHandler(tornado.websocket.WebSocketHandler):
 
-  def open(self):
-    if self not in cl:
-      cl.append(self)
-
-  def on_close(self):
-    if self in cl:
-      cl.remove(self)
 
 #
 # default handler
