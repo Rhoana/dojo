@@ -1,71 +1,35 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<html>
 <head>
-	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
-	<meta name="description" content="Rhoana website" />
-	<meta name="keywords" content="Rhoana,Visualization,Mojo,Dojo,Distributed Proofreading,Dense Automatic Neural Annotation" />
-	<link rel="stylesheet" type="text/css" href="css/setup.css" title="Basic Reader CSS template" media="screen,projection" />
-	<title>RhoANA: Dojo</title>
+	<title>RhoANA: Dojo - Setup</title>
+  <link rel="stylesheet" type="text/css" href="css/setup.css">
+  <script type='text/javascript' src='setup.js'></script>
+  <script type='text/javascript'>
+
+  window.onload = function() {
+
+    init();
+
+  };
+
+  </script>
 </head>
 
-<body>
-  <div id="headwrap">
-
-    <div id="headerleft">
-      <h1><a href="http://rhoana.org">RhoANA:</a> <a href="http://rhoana.org/dojo/">Dojo</a></h1>
-      <p class="slogan">Distributed Proofreading of Automatic Segmentations</p>
-    </div>
-    <div id="headerright">
-      <img width="200" src="gfx/SEASLogo_small.png" alt="Harvard School of Engineering and Applied Sciences" />
-    </div>
-  </div>
-
-  <div class="clear"></div>
-    <!-- 
-  <div id="banner">
-      <img width="960" src="gfx/dojo_teaser.jpg" style='opacity:0.3' alt="Dojo Screenshot">
-  </div> -->
-
-  <div id="bodywrap">
-    <div id="sidebar">
-      
-      
-      <h2>Links:</h2>
-      <ul>
-        <li><a href="http://rhoana.org/dojo/">Help</a></li>      
-        <li><a href="http://github.com/Rhoana/dojo">Source code</a></li>
-        <li><a href="http://vcg.harvard.edu">Pfister group</a></li>
-        <li><a href="http://www.hms.harvard.edu/dms/neuroscience/fac/lichtman.php">Lichtman group</a></li>
-      </ul>
-      
-    </div>
-
-    <div id="content">
-
-      <p>
-        <strong>Dojo</strong> is a web-based software for proofreading and annotating automatic segmentations of neurons in EM serial sections. It supports collaborative editing of labeled image data in 2D and 3D.
-      </p>
-      
-      <h2>Setup</h2>
-      <font size=+1>To start, drag'n'drop data files in the boxes below and click <b>Start!</b>.</font><br><br>
-      <div id='image_dropzone'>
-        
-      Please drop .TIF image files here.
-
-      </div>
-      <div id='segmentation_dropzone'>
-        
-      Please drop .TIF segmentation files here.
-
-      </div>
-
-      <br><br>
-      <h3>Feedback</h3>
-      <span style='margin-left:20px;'>Please provide feedback via the <a href='https://github.com/Rhoana/dojo/issues' target='_blank'>issue tracker</a> or via <a href='mailto:haehn@seas.harvard.edu'>email</a>.</span>
-
-
-
-    </div>
-  </div>
+<body id='body'>
+<h1><a href="http://rhoana.org">RhoANA:</a> <a href="http://rhoana.org/dojo/">Dojo</a></h1>
+<p class="slogan">Distributed Proofreading of Automatic Segmentations</p>
+<table width='90%' height='300' style='margin-top:200px;'>
+  <tr>
+    <td align='center' valign='top' >
+      <img src='gfx/img.png' id='image_dropzone'><br>
+      Drag image files (.TIF) here.
+      <div id='img_files' style='font-size:10px'></div>
+    </td>
+    <td align='center' valign='top' >
+      <img src='gfx/seg.png' id='segmentation_dropzone'><br>
+      Drag label files (.TIF) here.
+      <div id='seg_files' style='font-size:10px'></div>
+    </td>
+    </tr>
+  </table>
 </body>
 </html>
