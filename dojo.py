@@ -78,6 +78,7 @@ class ServerLogic:
       # # image
       # (r'/image/(.*)', _dojo.Image(mojo_dir)),
       (r'/ws', _dojo.Websockets, dict(controller=self.__controller)),
+      (r'/ds', _dojo.Datasockets, dict(logic=self)),
       (r'/(.*)', DojoHandler, dict(logic=self))
   
     ])

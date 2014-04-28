@@ -130,7 +130,7 @@ class Controller(object):
   def on_message(self, message):
     '''
     '''
-    print message
+    
     input = json.loads(message)
 
     if input['name'] == 'WELCOME':

@@ -4,6 +4,8 @@ body {
   width:100%; 
   overflow: hidden;
   height:100%; 
+  margin:0px;
+  color: white;
 }
 
 #image_dropzone {
@@ -22,12 +24,33 @@ body {
 
 }
 
-.large_text {
-  opacity: 1.0;
-  font-size:36px;
-  color: black;
-  margin-top:100px;
+
+
+.bg {
+  background: url('../gfx/setup.png');
+  width: 100%;
+  height: 100%;
+  background-size:100% 100%;
+  background-repeat:no-repeat;
 }
-h1 {color:#A51C30; font-size:2em; line-height:1.1em; margin:4px;}
-h1 a {color:#A51C30; font-weight:400; text-transform:none;}
-p,ul,ol,dl {margin:0 0 20px 20px;}
+
+.bg_loading {
+  background: url('../gfx/loading.gif');
+  width: 100%;
+  height: 100%;
+  background-size:100% 100%;
+  background-repeat:no-repeat;
+}
+
+#setup {
+  width: 100%;
+  height: 100%;
+}
+
+#log {
+  position: absolute;
+  bottom: 20%;
+  width: 300px;
+  left: 50%;
+  margin-left: -150px;
+}

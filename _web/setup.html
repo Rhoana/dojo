@@ -3,6 +3,7 @@
 	<title>RhoANA: Dojo - Setup</title>
   <link rel="stylesheet" type="text/css" href="css/setup.css">
   <script type='text/javascript' src='setup.js'></script>
+  <script type='text/javascript' src='datasocket.js'></script>
   <script type='text/javascript'>
 
   window.onload = function() {
@@ -15,21 +16,32 @@
 </head>
 
 <body id='body'>
-<h1><a href="http://rhoana.org">RhoANA:</a> <a href="http://rhoana.org/dojo/">Dojo</a></h1>
-<p class="slogan">Distributed Proofreading of Automatic Segmentations</p>
-<table width='90%' height='300' style='margin-top:200px;'>
-  <tr>
-    <td align='center' valign='top' >
-      <img src='gfx/img.png' id='image_dropzone'><br>
-      Drag image files (.TIF) here.
-      <div id='img_files' style='font-size:10px'></div>
-    </td>
-    <td align='center' valign='top' >
-      <img src='gfx/seg.png' id='segmentation_dropzone'><br>
-      Drag label files (.TIF) here.
-      <div id='seg_files' style='font-size:10px'></div>
-    </td>
-    </tr>
-  </table>
+
+<div id='setup' class='bg'>
+
+  <div id='left' style='position:absolute;top:50%;margin-top:-130px;text-align:center;left:25%'>
+    <img src='gfx/img.png' id='image_dropzone'><br>
+    Drop image files (.TIF) here.
+    <div id='img_files' style='font-size:10px'></div>
+  </div>
+
+
+
+  <div id='right' style='position:absolute;top:50%;margin-top:-130px;text-align:center;right:25%'>
+    <img src='gfx/seg.png' id='segmentation_dropzone'><br>
+    Drop label files (.TIF) here.
+    <div id='seg_files' style='font-size:10px'></div>
+  </div>
+
+</div>
+
+<div id='loading' style='display:none' class='bg_loading'>
+
+  <div id='log' style='font-size:10px'>
+  Uploading..<br>
+  </div>
+
+</div>
+
 </body>
 </html>

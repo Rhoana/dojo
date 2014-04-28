@@ -19,6 +19,7 @@ class Setup(object):
       '.html': 'text/html',
       '.png': 'image/png',
       '.jpg': 'image/jpeg',
+      '.gif': 'image/gif',
       '.map': 'text/html',
       '.css': 'text/css',
       '.cur': 'image/x-win-bitmap'

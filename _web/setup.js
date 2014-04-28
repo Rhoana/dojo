@@ -1,7 +1,10 @@
 var IMG = null;
 var SEG = null;
+var DS = null;
 
 function init() {
+
+  DS = new J.datasocket(on_message);
 
   // Add drop handling
   document.getElementById("body").addEventListener("dragenter", noop_handler, false);
@@ -76,20 +79,28 @@ function upload() {
 
   console.log('uploading...');
 
-  var f = new FormData();
+  var images = new FormData();
+  var segs = new FormData();
 
   for (var i=0; i<IMG.length;i++) {
-    f.append('file',IMG[i]);
+    images.append('file',IMG[i]);
   }  
  
   for (var i=0; i<SEG.length;i++) {
-    f.append('file',SEG[i]);
+    segs.append('file',SEG[i]);
   }  
 
-  console.log(f);
+  var setup = document.getElementById('setup');
+  var loading = document.getElementById('loading');
+  loading.style.display = 'block';
+  setup.style.display = 'none';
+
+  DS.send(IMG[0]);
 
 };
 
-
+function on_message(m) {
+  console.log(m);
+}
 
 
