@@ -32,7 +32,10 @@ class Controller(object):
     
     self.__database = database
 
-    self.__largest_id = self.__database.get_largest_id()
+    if self.__database:
+      self.__largest_id = self.__database.get_largest_id()
+    else:
+      self.__largest_id = 0
 
     self.__split_count = 0
 

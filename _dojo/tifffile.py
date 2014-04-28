@@ -145,6 +145,8 @@ import collections
 from fractions import Fraction
 from xml.etree import cElementTree as ElementTree
 
+warnings.filterwarnings("ignore")
+
 import numpy
 
 __version__ = '2013.05.02'

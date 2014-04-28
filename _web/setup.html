@@ -4,7 +4,7 @@
 	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	<meta name="description" content="Rhoana website" />
 	<meta name="keywords" content="Rhoana,Visualization,Mojo,Dojo,Distributed Proofreading,Dense Automatic Neural Annotation" />
-	<link rel="stylesheet" type="text/css" href="./basic-reader.css" title="Basic Reader CSS template" media="screen,projection" />
+	<link rel="stylesheet" type="text/css" href="css/setup.css" title="Basic Reader CSS template" media="screen,projection" />
 	<title>RhoANA: Dojo</title>
 </head>
 
@@ -12,19 +12,19 @@
   <div id="headwrap">
 
     <div id="headerleft">
-      <h1><a href="http://rhoana.org">RhoANA:</a> <a href="dojo/">Dojo</a></h1>
+      <h1><a href="http://rhoana.org">RhoANA:</a> <a href="http://rhoana.org/dojo/">Dojo</a></h1>
       <p class="slogan">Distributed Proofreading of Automatic Segmentations</p>
     </div>
     <div id="headerright">
-      <img width="200" src="SEASLogo_small.png" alt="Harvard School of Engineering and Applied Sciences" />
+      <img width="200" src="gfx/SEASLogo_small.png" alt="Harvard School of Engineering and Applied Sciences" />
     </div>
   </div>
 
   <div class="clear"></div>
-    
+    <!-- 
   <div id="banner">
-      <img width="960" src="dojo_teaser.jpg" alt="Dojo Screenshot">
-  </div>
+      <img width="960" src="gfx/dojo_teaser.jpg" style='opacity:0.3' alt="Dojo Screenshot">
+  </div> -->
 
   <div id="bodywrap">
     <div id="sidebar">
@@ -32,6 +32,7 @@
       
       <h2>Links:</h2>
       <ul>
+        <li><a href="http://rhoana.org/dojo/">Help</a></li>      
         <li><a href="http://github.com/Rhoana/dojo">Source code</a></li>
         <li><a href="http://vcg.harvard.edu">Pfister group</a></li>
         <li><a href="http://www.hms.harvard.edu/dms/neuroscience/fac/lichtman.php">Lichtman group</a></li>
@@ -44,158 +45,20 @@
       <p>
         <strong>Dojo</strong> is a web-based software for proofreading and annotating automatic segmentations of neurons in EM serial sections. It supports collaborative editing of labeled image data in 2D and 3D.
       </p>
-
-      <p>
-        Our code and installation instructions <a href="http://github.com/Rhoana/dojo">are available on github</a>. A live version can be found <a href='http://monster.krash.net:1337/dojo/' target='_blank'>here</a>.
-      </p>
-
-      <br><br><br>
-
-    </div>
-    <div id='wide_content'>
-
-      <h3>Videos</h3>
-      <p>
-        <iframe width="280" height="158" src="http://www.youtube.com/embed/WoezzrYjzY4?rel=0?rel=0" frameborder="0" allowfullscreen></iframe>
-        <iframe width="280" height="158" src="http://www.youtube.com/embed/xM5jsWn_2ho?rel=0" frameborder="0" allowfullscreen></iframe>
-        <iframe width="280" height="158" src="http://www.youtube.com/embed/rlaBqVg8d2E?rel=0" frameborder="0" allowfullscreen></iframe>
-      </p>
-
-      <h3>Usage Instructions</h3>
       
-      <p>
-        <strong>Viewing and basic interaction</strong>
-        <table style='margin-left:50px;width:700px'>
-         <tr>
-          <td>Mouse 2D</td><td>Keyboard</td>
-         </tr>
-         <tr>
-          <td valign=top>
-            <ul>
-              <li><b>mousewheel</b>: zoom in/out</li>
-              <li><b>right</b>: translate</li>
-            </ul>    
-            Mouse 3D
-            <ul>
-              <li><b>mousewheel</b>: zoom in/out</li>
-              <li><b>left</b>: rotate</li>
-              <li><b>middle</b>: translate</li>
-            </ul>                         
-          </td>
-          <td>
-            <ul>
-              <li><b>W</b>: Next slice</li>
-              <li><b>S</b>: Previous slice</li>
-              <li><b>Q</b>: Toggle segmentation overlay</li>
-              <li><b>A</b>: Toggle borders</li>
-              <li><b>E</b>: Increase segmentation opacity</li>
-              <li><b>D</b>: Decrease segmentation opacity</li>
-              <li><b>X</b>: Zoom in</li>
-              <li><b>C</b>: Zoom out</li>
-              <li><b>L</b>: Lock/Unlock segment<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img width=100 src='locked_segment.png' border=1></li>
-            </ul>
-          </td>
-         </tr>    
-         <tr>
-          <td colspan=2><img src='3d.png' border=0 valign='middle'> Show/Hide <b>3D Rendering mode</b> or use keyboard shortcut <b>4</b> (initial loading might take a few seconds).</td>
-         </tr>
-        </table>
-
+      <h2>Setup</h2>
+      <font size=+1>To start, drag'n'drop data files in the boxes below and click <b>Start!</b>.</font><br><br>
+      <div id='image_dropzone'>
         
-      </p>
-<br><br>
-      <p>
-        <strong>Merge Tool</strong><br>
-        The merge tool can be used to group segments of different labels to one label.<br>
-        <table style='margin-left:50px;width:700px'>
-         <tr>  
-          <td>      
-            <i>Workflow</i>:
-            <ol>
-              <li><img src='merge.png' border=0 valign='middle'> Activate the merge tool via icon or use keyboard shortcut <b>1</b>.</li>
-              <li>Click on the label which you want to propagate to other labels (<b>master</b>).</li>
-              <li>Click on any other labels (<b>slaves</b>) to add them to the master segment.</li>
-              <li>To select another master label, hit <b>ESC</b></li>
-              <li>Exit merge mode by clicking on the icon or use keyboard shortcut <b>1</b>.</li>
-            </ol>
-            <img src='merge1.png' border=1 width=100 height=100> <img src='merge2.png' border=1 width=100 height=100> <img src='merge3.png' border=1 width=100 height=100> <img src='merge4.png' width=100 border=1 height=100>
-          </td>
-        </tr>
-      </table>
-      </p>
-<br><br>
-      <p>
-        <strong>Split Tool</strong><br>
-        The split tool can be used to split one label into two (or more).<br>
-        <table style='margin-left:50px;width:700px'>
-         <tr>  
-          <td>      
-            <i>Workflow</i>:
-            <ol>
-              <li><img src='split.png' border=0 valign='middle'> Activate the split tool via icon or use keyboard shortcut <b>2</b>.</li>
-              <li>Click on the label which you want to split. The region will appear without overlay.</li>
-              <li>Draw a line fully across the label where you want to split it. The line appears in <b><font color=lightblue>blue</font></b>. <br>(To cancel the split hit <b>ESC</b> and choose another label to split.)</li>
-              <li>A <b><font color=lightgreen>green</font></b> split line gets calculated and appears. <br><i>Important:</i> if no green line appears, just draw the <b><font color=lightblue>blue</font></b> line again.</li>
-              <li>If you are not satisified with the <b><font color=lightgreen>green</font></b> line hit <b>ESC</b> and use the <b>- (thinner)</b> or <b>= (thicker)</b> keys to adjust the brush size. Then, draw the <b><font color=lightblue>blue</font></b> line again.</li>
-              <li>Once the <b><font color=lightgreen>green</font></b> line looks right, click on either side of it to accept the split. The clicked region will preserve the label id from the original label.</li>
-              <li>Exit split mode by clicking on the icon or use keyboard shortcut <b>2</b>.</li>
-            </ol>
-            <img src='split1.png' border=1 width=100 height=100> <img src='split2.png' border=1 width=100 height=100> <img src='split3.png' border=1 width=100 height=100> <img src='split4.png' border=1 width=100 height=100> <img src='split5.png' border=1 width=100 height=100>
-          </td>
-        </tr>
-      </table>        
-      </p>
-<br><br>
-      <p>
-        <strong>Adjust Tool</strong><br>
-        The adjust tool can be used to change the boundaries of a label in a fine-grained fashion (pixel by pixel).<br>
-        <table style='margin-left:50px;width:700px'>
-         <tr>  
-          <td>      
-            <i>Workflow</i>:
-            <ol>
-              <li><img src='adjust.png' border=0 valign='middle'> Activate the adjust tool via icon or use keyboard shortcut <b>3</b>.</li>
-              <li>Click on the label which you want to adjust. All other labels will be hidden.</li>
-              <li>It can be useful to deactivate border lines by hitting <b>A</b>.</li>
-              <li>Draw anywhere in the color of the selected label to extend it.<br>
-              Use the <b>- (thinner)</b> or <b>= (thicker)</b> keys to adjust the brush size.</li>
-              <li>Press <b>TAB</b> to accept the changes or <b>ESC</b> to discard them.</li>
-              <li>Exit adjust mode by clicking on the icon or use keyboard shortcut <b>3</b>.</li>
-            </ol>
-            <img src='adjust1.png' border=1 width=100 height=100> <img src='adjust2.png' border=1 width=100 height=100> <img src='adjust3.png' border=1 width=100 height=100> <img src='adjust4.png' width=100 border=1 height=100> <img src='adjust5.png' border=1 width=100 height=100>
-          </td>
-        </tr>
-      </table>            
-      </p>
-<br><br>
-      <p>
-        <strong>Collaboration Mode</strong><br>
-        The collaboration mode can be used to perform simultaneous proofreading among multiple users.
-      </p>
-        <table style='margin-left:50px;width:700px'>
-         <tr>  
-          <td>      
-            <img src='link.png' border=0 valign='middle'> Activate the collaboration mode via icon or use keyboard shortcut <b>5</b>.
-            <br><br>
-            As soon as other users also activate the collaboration mode, there position in the image volume gets synchronized along all collaborators.
-            <br><br>
-            In 2D, other users are only shown if they are working on the current slice.<br>
-            <img src='collab_others.png' border=1 width=100 height=100><br><br>
+      Please drop .TIF image files here.
 
-            It is also possible to mark a complication or a problem by hitting <b>Z</b>. This mark then gets propagated among all users in 2D and 3D.<br>
-            <img src='collab_problem.png' border=1 width=100 height=100><br><br>
+      </div>
+      <div id='segmentation_dropzone'>
+        
+      Please drop .TIF segmentation files here.
 
-            In 3D, other users are always shown as needles (or pins). One can click on a pin or a exclamation mark to jump to the slice of interest.<br>
-            <img src='collab_others_3d.png' border=1><br><br>            
+      </div>
 
-            In general, all actions (split, merge, adjust) get synchronized among all connected clients. Each action results in an entry in the log (bottom right).<br>
-            <img src='collab_log.png' border=1>
-
-
-          </td>
-        </tr>
-      </table>      
-      
       <br><br>
       <h3>Feedback</h3>
       <span style='margin-left:20px;'>Please provide feedback via the <a href='https://github.com/Rhoana/dojo/issues' target='_blank'>issue tracker</a> or via <a href='mailto:haehn@seas.harvard.edu'>email</a>.</span>
