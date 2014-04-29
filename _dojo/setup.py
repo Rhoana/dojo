@@ -2,12 +2,18 @@ import os
 import re
 import StringIO
 
+
 class Setup(object):
 
-  def __init__(self):
+  def __init__(self,mojo_dir, tmp_dir):
     '''
     '''
+
+    self.__mojo_dir = mojo_dir
+    self.__tmp_dir = tmp_dir
+
     self.__query_viewer_regex = re.compile('^/dojo/.*$')
+    self.__post_data_regex = re.compile('^/setup/data$')
 
     self.__web_dir = '_web/'
 
@@ -28,6 +34,9 @@ class Setup(object):
   def handle(self, request):
     '''
     '''
+    if self.__post_data_regex.match(request.uri):
+      self.setup_data(request)
+      return "OK", 'text/html'
 
     if not self.__query_viewer_regex.match(request.uri):
       # this is not a valid request for the viewer
@@ -56,3 +65,32 @@ class Setup(object):
       content = f.read()
 
     return content, self.content_type(extension)
+
+
+  def setup_data(self, request):
+    '''
+
+
+    '''
+
+    img_dir = os.path.join(self.__tmp_dir,'input_images')
+    seg_dir = os.path.join(self.__tmp_dir,'input_labels')
+
+    os.mkdir(img_dir)
+    os.mkdir(seg_dir)
+
+    # print request.files['img0']
+    # return
+    # print request.files['img0'][0]['body']
+    for rf in request.files['img']:
+
+      with open(os.path.join(img_dir, rf['filename']), 'wb') as f:
+        f.write(rf['body'])
+
+    for rf in request.files['seg']:
+
+      with open(os.path.join(seg_dir, rf['filename']), 'wb') as f:
+        f.write(rf['body'])
+
+    print img_dir
+

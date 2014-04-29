@@ -28,7 +28,10 @@ class DojoHandler(tornado.web.RequestHandler):
     '''
     self.__logic.handle(self)
 
-
+  def post(self, uri):
+    '''
+    '''
+    self.__logic.handle(self)
 
 
 
@@ -65,7 +68,7 @@ class ServerLogic:
     self.__viewer = _dojo.Viewer()
 
     # and the setup
-    self.__setup = _dojo.Setup()
+    self.__setup = _dojo.Setup(mojo_dir,tmpdir)
 
     ip = socket.gethostbyname(socket.gethostname())
 
@@ -78,7 +81,6 @@ class ServerLogic:
       # # image
       # (r'/image/(.*)', _dojo.Image(mojo_dir)),
       (r'/ws', _dojo.Websockets, dict(controller=self.__controller)),
-      (r'/ds', _dojo.Datasockets, dict(logic=self)),
       (r'/(.*)', DojoHandler, dict(logic=self))
   
     ])

@@ -1,10 +1,13 @@
 var IMG = null;
 var SEG = null;
-var DS = null;
+var VIEWER = {redraw: function() {}}
+var WS = null;
+var DOJO = {};
 
 function init() {
 
-  DS = new J.datasocket(on_message);
+  VIEWER._controller = new J.controller(VIEWER);
+  VIEWER._websocket = WS = new J.websocket(VIEWER);
 
   // Add drop handling
   document.getElementById("body").addEventListener("dragenter", noop_handler, false);
@@ -79,15 +82,14 @@ function upload() {
 
   console.log('uploading...');
 
-  var images = new FormData();
-  var segs = new FormData();
+  var f = new FormData();
 
   for (var i=0; i<IMG.length;i++) {
-    images.append('file',IMG[i]);
+    f.append('img',IMG[i]);
   }  
  
   for (var i=0; i<SEG.length;i++) {
-    segs.append('file',SEG[i]);
+    f.append('seg',SEG[i]);
   }  
 
   var setup = document.getElementById('setup');
@@ -95,7 +97,15 @@ function upload() {
   loading.style.display = 'block';
   setup.style.display = 'none';
 
-  DS.send(IMG[0]);
+  var i_xhr = new XMLHttpRequest();
+  i_xhr.open('POST', "http://"+window.location.hostname+":"+window.location.port+"/setup/data");
+  i_xhr.onload = function() {
+    console.log('sent data');
+  }
+  i_xhr.send(f);
+
+
+
 
 };
 
