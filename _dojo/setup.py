@@ -95,7 +95,7 @@ class Setup(object):
       with open(os.path.join(seg_dir, rf['filename']), 'wb') as f:
         f.write(rf['body'])
 
-    print 'converting images'
+    print 'converting images', img_dir
     image_tile_calculator.run(img_dir, self.__mojo_dir)
     segmentation_tile_calculator.run(seg_dir, self.__mojo_dir)
 

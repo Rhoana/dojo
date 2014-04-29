@@ -34,7 +34,7 @@ def run(input_dir, output_dir):
     original_input_ids_path  = input_dir
     output_path     = output_dir
 
-    nimages_to_process            = 64
+    nimages_to_process            = 1337
     ncolors                       = 1000
     input_file_format             = 'tif'
 

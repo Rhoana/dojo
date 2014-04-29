@@ -11,11 +11,7 @@ import numpy as np
 
 def mkdir_safe( dir_to_make ):
 
-    if not os.path.exists( dir_to_make ):
-        execute_string = 'mkdir -p ' + '"' + dir_to_make + '"'
-        print execute_string
-        print
-        os.system( execute_string )
+    os.makedirs(dir_to_make)
 
 def run(input_dir, output_dir):
 
@@ -42,11 +38,13 @@ def run(input_dir, output_dir):
 
         original_image = PIL.Image.open( file )
 
+
         ( original_image_num_pixels_x, original_image_num_pixels_y ) = original_image.size
 
         # Enhance contrast to 2% saturation
         saturation_level = 0.02
         sorted2 = np.sort( np.uint8(original_image).ravel() )
+
         minval = np.float32( sorted2[ len(sorted2) * ( saturation_level / 2 ) ] )
         maxval = np.float32( sorted2[ len(sorted2) * ( 1 - saturation_level / 2 ) ] )
 
@@ -59,7 +57,7 @@ def run(input_dir, output_dir):
         tile_index_w               = 0
 
         while current_image_num_pixels_y > tile_num_pixels_y / 2 or current_image_num_pixels_x > tile_num_pixels_x / 2:
-        
+            
             #current_pyramid_image_path = output_pyramid_image_path  + '\\' + 'w=' + '%08d' % ( tile_index_w )
             #current_pyramid_image_name = current_pyramid_image_path + '\\' + 'z=' + '%08d' % ( tile_index_z ) + output_image_extension
             current_tile_image_path    = output_tile_image_path     + os.sep + 'w=' + '%08d' % ( tile_index_w ) + os.sep + 'z=' + '%08d' % ( tile_index_z )
