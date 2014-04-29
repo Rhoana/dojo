@@ -100,7 +100,8 @@ function upload() {
   var i_xhr = new XMLHttpRequest();
   i_xhr.open('POST', "http://"+window.location.hostname+":"+window.location.port+"/setup/data");
   i_xhr.onload = function() {
-    console.log('sent data');
+    console.log('setup completed. we are reloading now.');
+    location.reload();
   }
   i_xhr.send(f);
 

@@ -1,13 +1,16 @@
 import os
 import re
 import StringIO
-
+import image_tile_calculator
+import segmentation_tile_calculator
 
 class Setup(object):
 
-  def __init__(self,mojo_dir, tmp_dir):
+  def __init__(self,logic,mojo_dir, tmp_dir):
     '''
     '''
+
+    self.__logic = logic
 
     self.__mojo_dir = mojo_dir
     self.__tmp_dir = tmp_dir
@@ -92,5 +95,11 @@ class Setup(object):
       with open(os.path.join(seg_dir, rf['filename']), 'wb') as f:
         f.write(rf['body'])
 
-    print img_dir
+    print 'converting images'
+    image_tile_calculator.run(img_dir, self.__mojo_dir)
+    segmentation_tile_calculator.run(seg_dir, self.__mojo_dir)
+
+    # now we need to refresh the datasources
+    self.__logic.finish_setup()
+
 

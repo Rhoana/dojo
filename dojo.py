@@ -56,6 +56,7 @@ class ServerLogic:
 
     # create temp folder
     tmpdir = tempfile.mkdtemp()
+    self.__tmpdir = tmpdir
 
     # register two data sources
     self.__segmentation = _dojo.Segmentation(mojo_dir, tmpdir)
@@ -68,7 +69,7 @@ class ServerLogic:
     self.__viewer = _dojo.Viewer()
 
     # and the setup
-    self.__setup = _dojo.Setup(mojo_dir,tmpdir)
+    self.__setup = _dojo.Setup(self,mojo_dir,tmpdir)
 
     ip = socket.gethostbyname(socket.gethostname())
 
@@ -95,6 +96,25 @@ class ServerLogic:
 
     tornado.ioloop.IOLoop.instance().start()
 
+  def finish_setup(self):
+    '''
+    '''
+
+    mojo_dir = self.__mojo_dir
+    tmpdir = self.__tmpdir
+    out_dir = self.__out_dir
+
+
+    # register two data sources
+    self.__segmentation = _dojo.Segmentation(mojo_dir, tmpdir)
+    self.__image = _dojo.Image(mojo_dir, tmpdir)
+
+    # and the controller
+    self.__controller = _dojo.Controller(mojo_dir, out_dir, tmpdir, self.__segmentation.get_database())
+
+    self.__configured = True
+
+    print 'Setup finished.'
 
   def handle( self, r ):
     '''
