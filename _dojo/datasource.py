@@ -89,6 +89,11 @@ class Datasource(object):
           self.__database = Database(os.path.join(root,f))
 
 
+  def reconfigure(self):
+    '''
+    '''
+    self.__setup()
+
   def get_info_xml(self):
     '''
     '''

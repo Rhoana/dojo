@@ -1,0 +1,45 @@
+<html>
+<head>
+	<title>RhoANA: Dojo - Setup</title>
+  <link rel="stylesheet" type="text/css" href="css/setup.css">
+  <script type='text/javascript' src='setup.js'></script>
+  <script type='text/javascript' src='controller.js'></script>
+  <script type='text/javascript' src='websocket.js'></script>
+  <script type='text/javascript' src='util.js'></script>
+  <script type='text/javascript'>
+
+  window.onload = function() {
+
+    init();
+
+  };
+
+  </script>
+</head>
+
+<body id='body'>
+
+<div id='setup' class='bg'>
+
+  <div id='left' style='position:absolute;top:50%;margin-top:-130px;text-align:center;left:25%'>
+    <img src='gfx/img.png' id='image_dropzone'><br>
+    Drop image files (.TIF) here.
+    <div id='img_files' style='font-size:10px'></div>
+  </div>
+
+
+
+  <div id='right' style='position:absolute;top:50%;margin-top:-130px;text-align:center;right:25%'>
+    <img src='gfx/seg.png' id='segmentation_dropzone'><br>
+    Drop label files (.TIF) here.
+    <div id='seg_files' style='font-size:10px'></div>
+  </div>
+
+</div>
+
+<div id='loading' style='display:none' class='bg_loading'>
+
+</div>
+
+</body>
+</html>

@@ -32,7 +32,10 @@ class Controller(object):
     
     self.__database = database
 
-    self.__largest_id = self.__database.get_largest_id()
+    if self.__database:
+      self.__largest_id = self.__database.get_largest_id()
+    else:
+      self.__largest_id = 0
 
     self.__split_count = 0
 
@@ -127,7 +130,7 @@ class Controller(object):
   def on_message(self, message):
     '''
     '''
-    print message
+    
     input = json.loads(message)
 
     if input['name'] == 'WELCOME':
@@ -354,9 +357,6 @@ class Controller(object):
           m_id = self.lookup_label(m)
           image_data[np.where(image_data == int(m))] = m_id
 
-
-        print 'merge-table applied'
-
         # now store the image data
         out_seg_file = os.path.join(self.__mojo_out_dir, 'ids', 'tiles', 'w='+str(0).zfill(8), z_dir, f)
         h5f = h5py.File(out_seg_file, 'w')
@@ -425,16 +425,17 @@ class Controller(object):
       h5f.create_dataset('dataset_1', data=zoomed_tile)
       h5f.close()
 
-    print 'All saved! Yahoo!'
     print 'Splits', self.__split_count
     print 'Merges', len(self.__merge_table.keys())
+    print 'All saved! Yahoo!'
 
     # ping back
     output = {}
     output['name'] = 'SAVED'
     output['origin'] = input['origin']
     output['value'] = {}
-    self.__websocket.send(json.dumps(output))  
+    if self.__websocket:    
+      self.__websocket.send(json.dumps(output))  
 
 
   def finalize_split(self, input):
