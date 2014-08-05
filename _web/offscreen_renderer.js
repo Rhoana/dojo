@@ -48,6 +48,9 @@ J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
   // create shaders
   this._program = linkShaders(gl, vs_id, fs_id);
   var h = this._program;
+  if (!h) {
+    return false;
+  }
   gl.useProgram(h);
 
   // textures

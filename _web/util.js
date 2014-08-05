@@ -129,6 +129,9 @@ function linkShaders(gl, vs_id, fs_id) {
       console.log(gl.getShaderInfoLog(fragmentShader));
       console.log(gl.getShaderInfoLog(vertexShader));
       console.log(gl.getProgramInfoLog(shaderProgram));
+
+      return null;
+
   }
 
   return shaderProgram;

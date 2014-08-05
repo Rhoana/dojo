@@ -57,6 +57,10 @@ J.viewer = function(container) {
 
   if (!this._offscreen_renderer.init('vs1', 'fs1')) {
     console.log('No WebGL support.');
+
+    // hide the 3d icon
+    document.getElementById('3d').style.display = 'none';
+
     this._webgl_supported = false;
   }
 
@@ -205,6 +209,9 @@ J.viewer.prototype.draw_canvas = function(x,y,z,w,i,s) {
   var highlighted_id = this._controller._highlighted_id;
   var activated_id = this._controller._activated_id;
 
+  var split_mode = this._controller._split_mode;
+  var adjust_mode = this._controller._adjust_mode;
+
   var pos = 0; // running pixel (rgba) index, increases by 4
   var max_colors = this._max_colors;
   var colormap = this._colormap;
@@ -247,6 +254,20 @@ J.viewer.prototype.draw_canvas = function(x,y,z,w,i,s) {
         pixel_data_data[pos++] = 0.3*255;
 
       }
+
+    } else if (adjust_mode > 0 && id != activated_id) {
+
+      pixel_data_data[pos++] = 0;
+      pixel_data_data[pos++] = 0;
+      pixel_data_data[pos++] = 0;        
+      pixel_data_data[pos++] = 0;
+
+    } else if (split_mode > 0 && id == activated_id) {
+
+      pixel_data_data[pos++] = 0;
+      pixel_data_data[pos++] = 0;
+      pixel_data_data[pos++] = 0;        
+      pixel_data_data[pos++] = 0;
 
     } else {
 
