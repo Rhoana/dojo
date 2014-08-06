@@ -86,7 +86,9 @@ class ServerLogic:
   
     ])
 
-    dojo.listen(port)
+    
+
+    dojo.listen(port,max_buffer_size=1024*1024*150000)
 
     print '*'*80
     print '*', '\033[93m'+'DOJO RUNNING', '\033[0m'
