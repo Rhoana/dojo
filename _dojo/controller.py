@@ -759,7 +759,7 @@ class Controller(object):
     mh.imsave('/tmp/dojobox.tif', sub_tile);
 
     sub_tile = mh.gaussian_filter(sub_tile, 1).astype(np.uint8) # gaussian filter
-    sub_tile = (255 * exposure.equalize(sub_tile)).astype(np.uint8) # enhance contrast
+    sub_tile = (255 * exposure.equalize_hist(sub_tile)).astype(np.uint8) # enhance contrast
 
 
     brush_mask = np.zeros((1024,1024),dtype=bool)
