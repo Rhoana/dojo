@@ -126,6 +126,8 @@ DOJO.setup_buttons = function() {
 
       DOJO.threeD_active = false;
 
+      DOJO.threeD.renderer.destroy();
+
     }
 
   };
@@ -392,6 +394,8 @@ DOJO.init_threeD = function() {
   var r = new X.renderer3D();
   r.container = 'threeD';
   r.init();
+
+  DOJO.threeD.renderer = r;
 
   var vol = new X.volume();
   vol.dimensions = [512,512,DOJO.viewer._image.max_z_tiles];
