@@ -21,15 +21,18 @@ class Logic():
 
     # load largest image, combine to tile, store as tif
     
-    data_path = self.__mojo_dir + '/ids/tiles/w=00000000/'
+    data_path = self.__mojo_dir + '/ids/w=00000000/'
 
     for z in os.listdir(data_path):
 
       data_path2 = os.path.join(data_path, z)
 
+      print data_path2
+
       images = os.listdir(data_path2)
       tile = {}
       for i in images:
+
 
         location = os.path.splitext(i)[0].split(',')
         for l in location:
@@ -47,19 +50,27 @@ class Logic():
         tile[x][y] = hdf5_file[list_of_names[0]].value
         hdf5_file.close()        
 
+
+
       row = None
       first_row = True
+
+
 
       # go through rows of each tile
       for r in tile.keys():
         column = None
         first_column = True
 
+        print len(tile[r])
+
         for c in tile[r]:
+
           if first_column:
             column = tile[r][c]
             first_column = False
           else:
+
             column = np.concatenate((column, tile[r][c]), axis=0)
 
         if first_row:
@@ -70,8 +81,10 @@ class Logic():
 
       tile = row
 
+
       
       outfile = os.path.join(outdir, z+'.tif')
+
       tif.imsave( outfile,tile)
       print 'stored', outfile
 

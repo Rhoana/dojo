@@ -23,6 +23,15 @@ class Scanner(object):
     '''
     self._pointer += howmuch
 
+  def scanWithoutMoving(self, where, type, chunks=1):
+    '''
+    '''
+    old_pointer = self._pointer
+    self._pointer = where
+    result = self.scan(type, chunks)
+    self._pointer = old_pointer
+    return result
+
   def scan(self, type, chunks=1):
     '''
     '''
@@ -40,7 +49,12 @@ class Scanner(object):
     f.seek(self._pointer)
     self._pointer += chunk_size
 
-    return struct.unpack(symbol, self._f.read(chunk_size))[0]
+    bytes = struct.unpack(symbol*chunks, self._f.read(chunks*chunk_size))
+
+    if chunks == 1:
+      return bytes[0]
+    else:
+      return bytes
 
 class TIFFile(object):
 
@@ -53,37 +67,39 @@ class TIFFile(object):
 
 
 _TIFF_TAGS = {
-  'NEW_SUBFILE_TYPE': 254,
-  'IMAGE_WIDTH': 256,
-  'IMAGE_LENGTH': 257,
-  'BITS_PER_SAMPLE': 258,
-  'COMPRESSION': 259,
-  'PHOTO_INTERP': 262,
-  'IMAGE_DESCRIPTION': 270,
-  'STRIP_OFFSETS': 273,
-  'ORIENTATION': 274,
-  'SAMPLES_PER_PIXEL': 277,
-  'ROWS_PER_STRIP': 278,
-  'STRIP_BYTE_COUNT': 279,
-  'X_RESOLUTION': 282,
-  'Y_RESOLUTION': 283,
-  'PLANAR_CONFIGURATION': 284,
-  'RESOLUTION_UNIT': 296,
-  'SOFTWARE': 305,
-  'DATE_TIME': 306,
-  'ARTEST': 315,
-  'HOST_COMPUTER': 316,
-  'PREDICTOR': 317,
-  'COLOR_MAP': 320,
-  'TILE_WIDTH': 322,
-  'SAMPLE_FORMAT': 339,
-  'JPEG_TABLES': 347,
-  'METAMORPH1': 33628,
-  'METAMORPH2': 33629,
-  'IPLAB': 34122,
-  'NIH_IMAGE_HDR': 43314,
-  'META_DATA_BYTE_COUNTS': 50838,
-  'META_DATA': 50839
+  254: 'NEW_SUBFILE_TYPE',
+  256: 'IMAGE_WIDTH',
+  257: 'IMAGE_LENGTH',
+  258: 'BITS_PER_SAMPLE',
+  259: 'COMPRESSION',
+  262: 'PHOTO_INTERP',
+  266: 'FILL_ORDER',
+  269: 'DOCUMENT_NAME',
+  270: 'IMAGE_DESCRIPTION',
+  273: 'STRIP_OFFSETS',
+  274: 'ORIENTATION',
+  277: 'SAMPLES_PER_PIXEL',
+  278: 'ROWS_PER_STRIP',
+  279: 'STRIP_BYTE_COUNT',
+  282: 'X_RESOLUTION',
+  283: 'Y_RESOLUTION',
+  284: 'PLANAR_CONFIGURATION',
+  296: 'RESOLUTION_UNIT',
+  305: 'SOFTWARE',
+  306: 'DATE_TIME',
+  315: 'ARTIST',
+  316: 'HOST_COMPUTER',
+  317: 'PREDICTOR',
+  320: 'COLOR_MAP',
+  322: 'TILE_WIDTH',
+  339: 'SAMPLE_FORMAT',
+  347: 'JPEG_TABLES',
+  33628: 'METAMORPH1',
+  33629: 'METAMORPH2',
+  34122: 'IPLAB',
+  43314: 'NIH_IMAGE_HDR',
+  50838: 'META_DATA_BYTE_COUNTS',
+  50839: 'META_DATA'
 
 };
 
@@ -93,7 +109,7 @@ with open(sys.argv[1]) as f:
   t = TIFFile()
   t._little_endian = (s.scan('ushort') == 0x4949)
   if (s.scan('ushort') != 42):
-    raise Error("Invalid magic number")
+    raise Exception("Invalid magic number")
 
   ifd_offset = s.scan('uint')
   s.jumpTo(ifd_offset)
@@ -105,29 +121,93 @@ with open(sys.argv[1]) as f:
     field = s.scan('ushort')
     count = s.scan('uint')
 
-    print field, count
-
     if (field == 0):
       # byte
       value_type = 'uchar'
       byte_size = 1
+    elif (field == 2):
+      # ascii
+      value_type = 'uchar'
     elif (field == 3):
       # short
       value_type = 'ushort'
       byte_size = 2
+    elif (field == 4):
+      # long
+      value_type = 'uint'
+      byte_size = 4
+    elif (field == 5):
+      # long fraction TODO
+      pass
 
     if count * byte_size > 4:
       value = s.scan('uint')
-      # s.jump(4)
+      # value is an offset
+      value = s.scanWithoutMoving(value, value_type, count)
     else:
       value = s.scan(value_type, count)
       s.jump(4-(count*byte_size))
 
-    for tag in _TIFF_TAGS:
-      if _TIFF_TAGS[tag] == identifier:
-        t._tags[tag] = value
+    # if identifier in _TIFF_TAGS:
+    #   print _TIFF_TAGS[identifier], field, count, value, value_type
+
+    if identifier in _TIFF_TAGS:
+      t._tags[_TIFF_TAGS[identifier]] = value
 
   
-  # now move to the data
-  s.jumpTo(t._tags['STRIP_OFFSETS'])
-  
+
+  if sys.argv[2] == 'sub':
+
+    factor = int(sys.argv[3])
+
+    out = np.zeros((16384/factor,16384/factor), dtype=np.uint8)
+
+    # now move to the data
+    k = 0
+    l = 0
+    for i,o in enumerate(t._tags['STRIP_OFFSETS']):
+      if i % factor == 0:
+        # take only every 32th row
+        # s.jumpTo(o)
+        # grab the number of bytes for this strip
+        n = t._tags['STRIP_BYTE_COUNT'][i]
+
+        for j in range(n):
+          if j % factor == 0:
+            s.jumpTo(o+j)
+          
+            out[k,l] = s.scan('uchar')
+        
+            l += 1
+
+        l = 0
+        k += 1
+
+
+    cv2.imwrite('/tmp/sub.jpg', out)
+
+  else:
+
+    width = int(sys.argv[2])
+    height = int(sys.argv[3])
+    row = int(sys.argv[4])
+    col = int(sys.argv[5])    
+
+    out = np.zeros((height, width), dtype=np.uint8)
+
+
+
+    
+    k = 0
+    # grab the right row
+    for i in range(row,row+height):
+      row_byte_offset = t._tags['STRIP_OFFSETS'][i]
+
+      s.jumpTo(row_byte_offset+col)
+      row_data = s.scan('uchar', col+width)
+
+      out[k,:] = row_data
+
+      k += 1
+
+    cv2.imwrite('/tmp/grr.jpg', out)
