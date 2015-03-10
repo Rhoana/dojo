@@ -9,7 +9,7 @@ class Viewer(object):
     '''
     self.__query_viewer_regex = re.compile('^/dojo/.*$')
 
-    self.__web_dir = '_web/'
+    self.__web_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../_web/')
 
   def content_type(self, extension):
     '''
@@ -44,8 +44,6 @@ class Viewer(object):
     # get filename from query
     requested_file = self.__web_dir + url.replace('/dojo/', '')
     extension = os.path.splitext(requested_file)[1]
-
-
 
     if not os.path.exists(requested_file):
       return 'Error 404', 'text/html'
