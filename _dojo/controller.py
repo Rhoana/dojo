@@ -11,7 +11,7 @@ from skimage import exposure
 
 class Controller(object):
 
-  def __init__(self, mojo_dir, out_dir, tmp_dir, database):
+  def __init__(self, mojo_dir, out_dir, tmp_dir, database, neuroblocks):
     '''
     '''
     self.__websocket = None
@@ -31,6 +31,8 @@ class Controller(object):
     self.__mojo_out_dir = out_dir
     
     self.__database = database
+
+    self.__neuroblocks = neuroblocks
 
     if self.__database:
       self.__largest_id = self.__database.get_largest_id()
