@@ -45,6 +45,8 @@ J.controller = function(viewer) {
   this._brush_size = 3;
   this._brush_ijs = [];
 
+  this._neuroblocks = false;
+
   this.create_gl_3d_labels();
 
 };
@@ -101,6 +103,13 @@ J.controller.prototype.receive = function(data) {
   }
 
   if (input.name == 'WELCOME') {
+
+    // check for the config
+    var config = input.value;
+    if (config['neuroblocks'] == true) {
+      this._neuroblocks = true;
+      DOJO.init_save_state_button();
+    }
 
     this.send('WELCOME', {});
 
@@ -1312,5 +1321,39 @@ J.controller.prototype.end = function() {
   this._last_id = null;
 
   this.activate(null);
+
+};
+
+J.controller.prototype.save_state = function() {
+
+  console.log('Saving state..');
+
+  // we need the merge table and the viewport
+
+  // the merge table
+  var merge_table = this._merge_table;
+
+  // the viewport
+  var camera = this._viewer._camera;
+
+  var viewport = {
+    'x': camera._x,
+    'y': camera._y,
+    'z': camera._z,
+    'w': camera._w,
+    'i_j': camera._i_j,
+    'view': camera._view
+  }
+
+  var data = {};
+  data['viewport'] = viewport;
+  data['merge_table'] = merge_table;
+  this.send('SAVE_STATE', data);
+
+  setTimeout(function() {
+
+    DOJO.save_state_done();
+
+  }, 500);
 
 };

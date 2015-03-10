@@ -65,7 +65,11 @@ class Controller(object):
     output = {}
     output['name'] = 'WELCOME'
     output['origin'] = 'SERVER'
-    output['value'] = ''
+
+    config = {}
+    config['neuroblocks'] = self.__neuroblocks != None
+    
+    output['value'] = config
 
     self.__websocket.send(json.dumps(output))
 
@@ -179,6 +183,17 @@ class Controller(object):
 
     elif input['name'] == 'SAVE':
       self.save(input)
+
+    elif input['name'] == 'SAVE_STATE':
+      self.save_state(input)
+
+
+  def save_state(self, input):
+    '''
+    '''
+    values = input['value']
+
+    print values
 
 
   def adjust(self, input):

@@ -12,6 +12,7 @@ DOJO.modes = {
 DOJO.threeD_active = false;
 DOJO.link_active = false;
 DOJO.mousemove_timeout = null;
+DOJO.save_state_active = false;
 
 DOJO.init = function() {
 
@@ -162,6 +163,35 @@ DOJO.setup_buttons = function() {
   };
 
 };
+
+DOJO.init_save_state_button = function() {
+
+  var save_state = document.getElementById('save_state');
+  var save_state_selected = document.getElementById('save_state_selected');
+
+  save_state.onclick = save_state_selected.onclick = function() {
+
+      // link.style.border = '1px solid white';
+      save_state.style.display = 'none';
+      save_state_selected.style.display = 'block';
+
+      DOJO.save_state_active = true;
+
+      DOJO.viewer._controller.save_state();
+
+  };
+
+};
+
+DOJO.save_state_done = function() {
+
+  save_state.style.display = 'block';
+  save_state_selected.style.display = 'none';
+
+  DOJO.save_state_active = false;
+
+};
+
 
 DOJO.reset_tools = function() {
 
