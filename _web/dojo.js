@@ -17,6 +17,24 @@ DOJO.save_state_active = false;
 DOJO.init = function() {
 
   DOJO.viewer = new J.viewer('dojo1');
+
+  // check for neuroblocks args
+  var args = parse_args();
+  if (typeof(args['userName']) != 'undefined') {
+    DOJO.viewer._controller._origin = args['userName'];
+  }  
+  if (typeof(args['userId']) != 'undefined') {
+    DOJO.viewer._controller._neuroblocks_user_id = args['userId'];
+  }
+  if (typeof(args['taskId']) != 'undefined') {
+    DOJO.viewer._controller._neuroblocks_task_id = args['taskId'];
+  }
+  if (typeof(args['appStateId']) != 'undefined') {
+    DOJO.viewer._controller._neuroblocks_state_id = args['appStateId'];
+  }
+
+
+
   DOJO.viewer.init(function() {
 
     DOJO.update_slice_number(1);

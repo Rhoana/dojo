@@ -1,3 +1,4 @@
+import datetime
 import h5py
 import os, errno
 import json
@@ -11,7 +12,7 @@ from skimage import exposure
 
 class Controller(object):
 
-  def __init__(self, mojo_dir, out_dir, tmp_dir, database, neuroblocks):
+  def __init__(self, mojo_dir, out_dir, tmp_dir, database, neuroblocks=None, neuroblocks_project_id=None):
     '''
     '''
     self.__websocket = None
@@ -33,6 +34,8 @@ class Controller(object):
     self.__database = database
 
     self.__neuroblocks = neuroblocks
+
+    self.__neuroblocks_project_id = neuroblocks_project_id
 
     if self.__database:
       self.__largest_id = self.__database.get_largest_id()
@@ -68,6 +71,7 @@ class Controller(object):
 
     config = {}
     config['neuroblocks'] = self.__neuroblocks != None
+    config['neuroblocks_project_id'] = self.__neuroblocks_project_id
     
     output['value'] = config
 
@@ -133,6 +137,19 @@ class Controller(object):
     self.__websocket.send(json.dumps(output))
 
 
+  def send_restore_state(self, origin, state_id):
+    '''
+    '''
+
+    output = {}
+    output['name'] = 'RESTORE_STATE'
+    output['origin'] = origin
+    output['value'] = self.__neuroblocks.get_state(state_id)
+    
+    self.__websocket.send(json.dumps(output))
+
+
+
   def on_message(self, message):
     '''
     '''
@@ -142,6 +159,14 @@ class Controller(object):
     if input['name'] == 'WELCOME':
 
       self.__users.append(input['origin'])
+
+      #
+      # let's check if we should restore a neuroblocks state
+      #
+      state_id = input['value']['neuroblocks_state_id']
+      if state_id:
+        # we do have a state restore request
+        self.send_restore_state(input['origin'], state_id)
 
     elif input['name'] == 'MERGETABLE':
       self.__merge_table = input['value']
@@ -192,8 +217,12 @@ class Controller(object):
     '''
     '''
     values = input['value']
+    values['on'] = datetime.datetime.utcnow()
 
-    print values
+
+    new_id = self.__neuroblocks.save_state(values)
+
+    print 'Stored state', new_id
 
 
   def adjust(self, input):

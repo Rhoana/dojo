@@ -46,6 +46,10 @@ J.controller = function(viewer) {
   this._brush_ijs = [];
 
   this._neuroblocks = false;
+  this._neuroblocks_project_id = null;
+  this._neuroblocks_task_id = null;
+  this._neuroblocks_user_id = null;
+  this._neuroblocks_state_id = null;
 
   this.create_gl_3d_labels();
 
@@ -88,7 +92,6 @@ J.controller.prototype.receive = function(data) {
     // we are the sender or the requester
 
     if (input.name == 'SPLITRESULT') {
-      console.log(input)
       this.show_split_line(input.value);
       return;
     } else if (input.name == 'SPLITDONE') {
@@ -97,6 +100,8 @@ J.controller.prototype.receive = function(data) {
       this.finish_adjust(input.value);
     } else if (input.name == 'SAVED') {
       console.log('All saved. Yahoo!');
+    } else if (input.name == 'RESTORE_STATE') {
+      this.restore_state(input.value);
     }
 
     return;
@@ -108,10 +113,11 @@ J.controller.prototype.receive = function(data) {
     var config = input.value;
     if (config['neuroblocks'] == true) {
       this._neuroblocks = true;
+      this._neuroblocks_project_id = config['neuroblocks_project_id'];
       DOJO.init_save_state_button();
     }
 
-    this.send('WELCOME', {});
+    this.send('WELCOME', {'neuroblocks_state_id': this._neuroblocks_state_id});
 
   } else if (input.name == 'MERGETABLE') {
 
@@ -143,8 +149,7 @@ J.controller.prototype.receive = function(data) {
     console.log('force reload');
     this.reload_tiles(input.value);
 
-
-  }
+  } 
 
 };
 
@@ -1346,8 +1351,14 @@ J.controller.prototype.save_state = function() {
   }
 
   var data = {};
-  data['viewport'] = viewport;
-  data['merge_table'] = merge_table;
+  data['projectId'] = this._neuroblocks_project_id;
+  data['mergeTable'] = merge_table;
+  data['viewPort'] = viewport;
+  data['app'] = 'dojo';
+  data['userId'] = this._neuroblocks_user_id;
+  // data['on'] = new Date(); <-- now on the server
+  data['taskId'] = this._neuroblocks_task_id;
+
   this.send('SAVE_STATE', data);
 
   setTimeout(function() {
@@ -1355,5 +1366,22 @@ J.controller.prototype.save_state = function() {
     DOJO.save_state_done();
 
   }, 500);
+
+};
+
+J.controller.prototype.restore_state = function(state) {
+
+  // the viewport
+  var camera = this._viewer._camera;
+  camera._x = state.viewPort.x;
+  camera._y = state.viewPort.y;
+  camera._z = state.viewPort.z;
+  camera._w = state.viewPort.w;
+  camera._i_j = state.viewPort.i_j;
+  camera._view = state.viewPort.view;
+
+  this.update_merge_table(state.mergeTable)
+
+  this._viewer.redraw();   
 
 };

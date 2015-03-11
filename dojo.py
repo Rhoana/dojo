@@ -42,7 +42,7 @@ class ServerLogic:
     '''
     pass
 
-  def run( self, mojo_dir, out_dir, port, neuroblocks_server, configured ):
+  def run( self, mojo_dir, out_dir, port, neuroblocks_server, neuroblocks_project_id, configured ):
     '''
     '''
 
@@ -68,7 +68,7 @@ class ServerLogic:
     neuroblocks = _dojo.Neuroblocks(neuroblocks_server)
 
     # and the controller
-    self.__controller = _dojo.Controller(mojo_dir, out_dir, tmpdir, self.__segmentation.get_database(), neuroblocks)
+    self.__controller = _dojo.Controller(mojo_dir, out_dir, tmpdir, self.__segmentation.get_database(), neuroblocks, neuroblocks_project_id)
 
     # and the viewer
     self.__viewer = _dojo.Viewer()
@@ -199,6 +199,7 @@ if __name__ == "__main__":
     # and a free port
     port = 1336
     neuroblocks_server = None
+    neuroblocks_project_id = -1
     result = 0
     import socket;
     while result==0:
@@ -213,7 +214,8 @@ if __name__ == "__main__":
     output_dir = sys.argv[2]
     port = sys.argv[3]
     neuroblocks_server = sys.argv[4]
+    neuroblocks_project_id = sys.argv[5]
     configured = True
 
   logic = ServerLogic()
-  logic.run( input_dir, output_dir, port, neuroblocks_server, configured )
+  logic.run( input_dir, output_dir, port, neuroblocks_server, neuroblocks_project_id, configured )
