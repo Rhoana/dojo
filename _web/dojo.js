@@ -13,6 +13,7 @@ DOJO.threeD_active = false;
 DOJO.link_active = false;
 DOJO.mousemove_timeout = null;
 DOJO.save_state_active = false;
+DOJO.picking_active = false;
 
 DOJO.init = function() {
 
@@ -32,7 +33,9 @@ DOJO.init = function() {
   if (typeof(args['appStateId']) != 'undefined') {
     DOJO.viewer._controller._neuroblocks_state_id = args['appStateId'];
   }
-
+  if (typeof(args['pick2d']) != 'undefined') {
+    DOJO.picking_active = true;
+  }
 
 
   DOJO.viewer.init(function() {
@@ -274,6 +277,11 @@ DOJO.onleftclick = function(x, y) {
           DOJO.viewer._controller.remove_fixed_3d_label(id);
           DOJO.viewer._controller.remove_3d_label(id);
         }
+
+      } else if (DOJO.picking_active) {
+
+        // picking of segment in 2d
+        DOJO.viewer._controller.save_pick2d(id);
 
       }
 

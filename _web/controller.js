@@ -1329,6 +1329,20 @@ J.controller.prototype.end = function() {
 
 };
 
+J.controller.prototype.save_pick2d = function(id) {
+
+  console.log('Picked segment', id);
+
+  var data = {};
+  data['projectId'] = this._neuroblocks_project_id;
+  data['taskId'] = this._neuroblocks_task_id;
+  data['userId'] = this._neuroblocks_user_id;
+  data['segmentId'] = id;
+
+  this.send('SAVE_PICK2D', data);
+
+};
+
 J.controller.prototype.save_state = function() {
 
   console.log('Saving state..');

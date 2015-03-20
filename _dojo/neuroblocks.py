@@ -37,6 +37,12 @@ class Neuroblocks(object):
 
     return self._db.appStates.insert(state)
 
+  def save_pick2d(self, values):
+    '''
+    '''
+    return self._db.appPickSegment.insert(values)
+    
+
   def get_state(self, state_id):
     '''
     '''
