@@ -14,6 +14,7 @@ DOJO.link_active = false;
 DOJO.mousemove_timeout = null;
 DOJO.save_state_active = false;
 DOJO.picking_active = false;
+DOJO.single_segment = false;
 
 DOJO.init = function() {
 
@@ -50,6 +51,8 @@ DOJO.init = function() {
 
       DOJO.viewer._controller.activate(id);
       DOJO.viewer._controller.highlight(id);
+
+      DOJO.single_segment = true;
     }
 
   });
@@ -67,7 +70,8 @@ DOJO.setup_buttons = function() {
 
     if (DOJO.mode != DOJO.modes.merge) {
 
-      DOJO.reset_tools();
+      if (!DOJO.single_segment)
+        DOJO.reset_tools();
 
       merge.style.display = 'none';
       merge_selected.style.display = 'block';      
