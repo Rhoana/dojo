@@ -42,6 +42,16 @@ DOJO.init = function() {
 
     DOJO.update_slice_number(1);
 
+    if (typeof(args['activeId'] != 'undefined')) {
+
+      var id = args['activeId'];
+      DOJO.viewer._controller._adjust_mode = 1;
+      DOJO.viewer._controller._adjust_id = id;
+
+      DOJO.viewer._controller.activate(id);
+      DOJO.viewer._controller.highlight(id);
+    }
+
   });
 
   DOJO.setup_buttons();
