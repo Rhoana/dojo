@@ -16,7 +16,9 @@ DOJO.save_state_active = false;
 DOJO.picking_active = false;
 DOJO.single_segment = false;
 
-DOJO.init = function() {
+DOJO.init = function(threeD) {
+
+  var threeD = threeD || false;
 
   DOJO.viewer = new J.viewer('dojo1');
 
@@ -55,7 +57,10 @@ DOJO.init = function() {
       DOJO.single_segment = true;
     }
 
-    
+    if (threeD)
+      DOJO.init_threeD();
+
+
 
   });
 
