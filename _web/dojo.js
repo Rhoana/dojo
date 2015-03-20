@@ -55,6 +55,8 @@ DOJO.init = function() {
       DOJO.single_segment = true;
     }
 
+    
+
   });
 
   DOJO.setup_buttons();

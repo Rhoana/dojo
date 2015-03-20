@@ -49,6 +49,17 @@ body {
   z-index: 1000;
 }
 
+.threeDpanelLarge {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  width:100%;
+  height:100%;
+  background-color:black;
+  opacity: 1;
+  z-index: 1000;
+}
+
 #slicenumber {
   font-weight: bold;
   float: left;
