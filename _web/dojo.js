@@ -43,7 +43,7 @@ DOJO.init = function() {
 
     DOJO.update_slice_number(1);
 
-    if (typeof(args['activeId'] != 'undefined')) {
+    if (typeof(args['activeId']) != 'undefined') {
 
       var id = args['activeId'];
       DOJO.viewer._controller._adjust_mode = 1;

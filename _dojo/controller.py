@@ -215,6 +215,17 @@ class Controller(object):
     elif input['name'] == 'SAVE_PICK2D':
       self.save_pick2d(input)
 
+    elif input['name'] == 'SAVE_ACTION':
+      self.save_action(input)
+
+  def save_action(self, input):
+    '''
+    '''
+    values = input['value']
+    values['on'] = datetime.datetime.utcnow()
+
+    self.__neuroblocks.save_action(values)
+    
 
   def save_pick2d(self, input):
     '''
@@ -223,7 +234,7 @@ class Controller(object):
     values['on'] = datetime.datetime.utcnow()
 
     self.__neuroblocks.save_pick2d(values)
-    
+
 
   def save_state(self, input):
     '''

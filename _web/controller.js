@@ -1078,6 +1078,23 @@ J.controller.prototype.merge = function(id) {
 
   this.highlight(this._last_id);
 
+  // at this point, let's check for neuroblocks
+  if (this._neuroblocks) {
+
+    // we want to store some extra information
+    var data = {};
+    data['operation'] = 'merge';
+    data['projectId'] = this._neuroblocks_project_id;
+    data['app'] = 'dojo';
+    data['userId'] = this._neuroblocks_user_id;
+    // data['on'] = new Date(); <-- now on the server
+    data['taskId'] = this._neuroblocks_task_id;
+    data['values'] = [id, this._last_id];
+
+    this.send('SAVE_ACTION', data);    
+
+  }
+
 };
 
 J.controller.prototype.undo = function(x, y) {

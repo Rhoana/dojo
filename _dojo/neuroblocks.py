@@ -41,7 +41,41 @@ class Neuroblocks(object):
     '''
     '''
     return self._db.appPickSegment.insert(values)
-    
+
+  def save_action(self, values):
+    '''
+    '''
+
+    db = self._db
+
+    project_id = values['projectId']
+    user_id = values['userId']
+    segmentId1 = values['values'][0]
+    segmentId2 = values['values'][1]
+    date = values['on']
+
+
+    segment1 = db.segmentation.find_one({"projectId":project_id, "id":segmentId1});
+
+    segment2 = db.segmentation.find_one({"projectId":project_id, "id":segmentId2});
+
+    db.segmentationLog.insert({'objId':segment1['_id'],
+                               'projectId':project_id,
+                               'operation':'merge',
+                               'by':user_id,
+                               'on': date,
+                               'obj': segment1,
+                               'objId2': segment2['_id'],
+                               'obj2':segment2 });
+
+    voxelsSum = segment1['voxels'] + segment2['voxels'];
+    db.segmentation.update({'_id':segment1['_id']},
+      {'$set':{'voxels': voxelsSum, 'merged':0, 'lastUpdateOn': date, 'lastUpdateBy':user_id}});
+    db.segmentation.update({'_id':segment2['_id']},
+      {'$set':{ 'merged':1, 'lastUpdateOn': date, 'lastUpdateBy':user_id}});
+
+    print 'stored neuroblocks action'
+
 
   def get_state(self, state_id):
     '''
