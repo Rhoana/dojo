@@ -15,6 +15,7 @@ DOJO.mousemove_timeout = null;
 DOJO.save_state_active = false;
 DOJO.picking_active = false;
 DOJO.single_segment = false;
+DOJO.neuroblocks_threed_link = false;
 
 DOJO.init = function(threeD) {
 
@@ -23,7 +24,7 @@ DOJO.init = function(threeD) {
   DOJO.viewer = new J.viewer('dojo1');
 
   // check for neuroblocks args
-  var args = parse_args();
+  args = parse_args();
   if (typeof(args['userName']) != 'undefined') {
     DOJO.viewer._controller._origin = args['userName'];
   }  
@@ -57,8 +58,16 @@ DOJO.init = function(threeD) {
       DOJO.single_segment = true;
     }
 
-    if (threeD)
+    if (threeD) {
+
+      if (typeof(args['link']) != 'undefined') {
+        DOJO.neuroblocks_threed_link = true;
+        DOJO.viewer._websocket_nb = new J.websocketNB();
+      }
+      
+
       DOJO.init_threeD();
+    }
 
 
 
@@ -563,6 +572,14 @@ DOJO.init_threeD = function() {
 
     // we also need to redraw the problem table
     DOJO.viewer._controller.redraw_exclamationmarks();
+
+    if (DOJO.viewer._controller._neuroblocks && DOJO.neuroblocks_threed_link) {
+      console.log('ThreeD view for neuroblocks is ready.', 'pid:'+DOJO.viewer._controller._neuroblocks_project_id);
+
+      // send the project id
+      DOJO.viewer._websocket_nb.send('pid:'+DOJO.viewer._controller._neuroblocks_project_id);
+
+    }
 
   }
 
