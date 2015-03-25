@@ -1381,22 +1381,40 @@ J.controller.prototype.save_state = function() {
     'view': camera._view
   }
 
-  var data = {};
-  data['projectId'] = this._neuroblocks_project_id;
-  data['mergeTable'] = merge_table;
-  data['viewPort'] = viewport;
-  data['app'] = 'dojo';
-  data['userId'] = this._neuroblocks_user_id;
-  // data['on'] = new Date(); <-- now on the server
-  data['taskId'] = this._neuroblocks_task_id;
+  var screenshot = this._viewer._canvas.toDataURL('image/jpeg');
 
-  this.send('SAVE_STATE', data);
+  if (this._viewer._width >= this._viewer._height) {
+    var new_width = 100;
+    var new_height = this._viewer._height / (this._viewer._width / new_width);
+  } else {
+    var new_height = 100;
+    var new_width = this._viewer._width / (this._viewer._height / new_height);
+  }
 
-  setTimeout(function() {
+  // resize the screenshot
+  resize_data_uri(screenshot, new_width, new_height, function(screenshot) {
 
-    DOJO.save_state_done();
+    var data = {};
+    data['projectId'] = this._neuroblocks_project_id;
+    data['mergeTable'] = merge_table;
+    data['viewPort'] = viewport;
+    data['screenshot'] = screenshot;
+    data['app'] = 'dojo';
+    data['userId'] = this._neuroblocks_user_id;
+    // data['on'] = new Date(); <-- now on the server
+    data['taskId'] = this._neuroblocks_task_id;
 
-  }, 500);
+    this.send('SAVE_STATE', data);
+
+
+    setTimeout(function() {
+
+      DOJO.save_state_done();
+
+    }, 500);
+
+
+  }.bind(this));
 
 };
 

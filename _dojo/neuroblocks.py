@@ -35,6 +35,15 @@ class Neuroblocks(object):
     '''
     '''
 
+    # first store the screenshot
+    screenshot = state['screenshot']
+    # delete state['screenshot'];
+    state.pop('screenshot', 0)
+
+    screenshot_id = self._db.screenshotsApps.insert({'img':screenshot, 'type':''})
+
+    state['img_id'] = screenshot_id
+
     return self._db.appStates.insert(state)
 
   def save_pick2d(self, values):
