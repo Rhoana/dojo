@@ -1384,10 +1384,10 @@ J.controller.prototype.save_state = function() {
   var screenshot = this._viewer._canvas.toDataURL('image/jpeg');
 
   if (this._viewer._width >= this._viewer._height) {
-    var new_width = 100;
+    var new_width = 200;
     var new_height = this._viewer._height / (this._viewer._width / new_width);
   } else {
-    var new_height = 100;
+    var new_height = 200;
     var new_width = this._viewer._width / (this._viewer._height / new_height);
   }
 
