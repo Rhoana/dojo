@@ -313,6 +313,15 @@ DOJO.onleftclick = function(x, y) {
         // picking of segment in 2d
         DOJO.viewer._controller.save_pick2d(id);
 
+        // now show only the picked segment
+        DOJO.viewer._controller._adjust_mode = 1;
+        DOJO.viewer._controller._adjust_id = id;
+
+        DOJO.viewer._controller.activate(id);
+        DOJO.viewer._controller.highlight(id);
+
+        DOJO.single_segment = true;        
+
       }
 
     }
