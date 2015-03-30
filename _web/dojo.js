@@ -16,6 +16,7 @@ DOJO.save_state_active = false;
 DOJO.picking_active = false;
 DOJO.single_segment = false;
 DOJO.neuroblocks_threed_link = false;
+DOJO.initial_threeD_id = null;
 
 DOJO.init = function(threeD) {
 
@@ -60,7 +61,14 @@ DOJO.init = function(threeD) {
 
     if (threeD) {
 
+      if (typeof(args['threeD_id']) != 'undefined') {
+
+        DOJO.initial_threeD_id = args['threeD_id'];
+        
+      }
+
       if (typeof(args['link']) != 'undefined') {
+
         DOJO.neuroblocks_threed_link = true;
         DOJO.viewer._websocket_nb = new J.websocketNB();
       }
@@ -587,6 +595,16 @@ DOJO.init_threeD = function() {
 
       // send the project id
       DOJO.viewer._websocket_nb.send('pid:'+DOJO.viewer._controller._neuroblocks_project_id);
+
+    }
+
+    if (DOJO.initial_threeD_id) {
+
+      // directly show one segment
+      DOJO.viewer._controller._use_3d_labels = true;
+
+      DOJO.viewer._controller.add_fixed_3d_label(parseInt(DOJO.initial_threeD_id,10));
+      DOJO.viewer._controller.add_3d_label(parseInt(DOJO.initial_threeD_id,10));
 
     }
 
