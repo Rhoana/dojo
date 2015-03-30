@@ -92,6 +92,7 @@ class Neuroblocks(object):
 
     state = self._db.appStates.find_one({"_id": ObjectId(state_id)})
     state['_id'] = str(state['_id'])
+    state['img_id'] = str(state['img_id'])
     state['on'] = str(state['on'])
 
     return state
