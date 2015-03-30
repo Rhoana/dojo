@@ -186,8 +186,10 @@ J.camera.prototype.slice_up = function() {
   if (this._z == this._viewer._image.max_z_tiles-1) return;
 
   // dont slice when using tools
-  if (this._viewer._controller._split_mode != -1) return;
-  if (this._viewer._controller._adjust_mode != -1) return;
+  if (!DOJO.single_segment) {
+    if (this._viewer._controller._split_mode != -1) return;
+    if (this._viewer._controller._adjust_mode != -1) return;
+  }
 
   this._viewer._controller.clear_exclamationmarks();
   this._viewer._controller.reset_cursors();
@@ -207,8 +209,11 @@ J.camera.prototype.slice_down = function() {
   if (this._z == 0) return;
 
   // dont slice when using tile tools
-  if (this._viewer._controller._split_mode != -1) return;
-  if (this._viewer._controller._adjust_mode != -1) return;
+  if (!DOJO.single_segment) {
+    if (this._viewer._controller._split_mode != -1) return;
+    if (this._viewer._controller._adjust_mode != -1) return;
+  }
+
 
   this._viewer._controller.clear_exclamationmarks();
   this._viewer._controller.reset_cursors();
