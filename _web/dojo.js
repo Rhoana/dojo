@@ -128,6 +128,8 @@ DOJO.setup_buttons = function() {
 
       DOJO.threeD.renderer.destroy();
 
+      DOJO.threeD = null;
+
     }
 
   };

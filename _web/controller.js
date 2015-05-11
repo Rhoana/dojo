@@ -620,7 +620,7 @@ J.controller.prototype.update_3D_textures = function(z, full_bbox, texture) {
   // var byte_start = (x1+y1*512)*4;
   // var byte_end = (x2+y2*512)*4+4;
 
-  console.log('a',byte_start, byte_end, texture.length)
+  // console.log('a',byte_start, byte_end, texture.length)
 
   var vol = DOJO.threeD.volume;
   var dim_x = vol.dimensions[0];
@@ -631,54 +631,100 @@ J.controller.prototype.update_3D_textures = function(z, full_bbox, texture) {
   vol.children[2].children[z].labelmap.texture.updateTexture(texture);
   vol.children[2].children[z].labelmap.modified();
 
-  var bytes_start_t = (x1+y1*512)*4;
-  var bytes_end_t = (x1+y2*512)*4;
 
-  var bytes_per_value = 4;
+  console.log('XY for zoomlevel', x1, y1, x2, y2);
 
-  var nb_pix_per_z = 512*512;
+  for (var x=x1; x<=x2; x++) {
 
-  var px = 0;
-  for (var p=bytes_start_t; p<bytes_end_t; p+=bytes_per_value) {
+    for (var y=y1; y<=y2; y++) {
 
-    //var z = Math.floor(px / nb_pix_per_z);
-    var y = Math.floor((px % nb_pix_per_z) / dim_x);
-    var x = Math.floor((px % nb_pix_per_z) % dim_x);
+      var byte_start = (x + y*dim_y)*4;
+      var pixel_value_x_y_0 = texture[byte_start];
+      var pixel_value_x_y_1 = texture[byte_start + 1];
+      var pixel_value_x_y_2 = texture[byte_start + 2];
+      var pixel_value_x_y_3 = texture[byte_start + 3];
 
-    // var z_index = (x + y*dim_y)*bytes_per_value;
-    var y_index = (x + z*dim_x)*bytes_per_value;
-    var x_index = (y + z*dim_y)*bytes_per_value;
+      // now update the slices in y direction
+      var data = vol.children[1].children[y].labelmap.texture.rawData;
+      var target_byte_start = x + z*dim_z;
+      data[target_byte_start] = pixel_value_x_y_0;
+      data[target_byte_start+1] = pixel_value_x_y_1;
+      data[target_byte_start+2] = pixel_value_x_y_2;
+      data[target_byte_start+3] = pixel_value_x_y_3;
 
-    var old_data_x = vol.children[0].children[x].labelmap.texture.rawData;
-    var old_data_y = vol.children[1].children[y].labelmap.texture.rawData;
-
-    for (var i=0;i<bytes_per_value;i++) {
-
-      old_data_x[x_index+i] = texture[p+i];
-      old_data_y[y_index+i] = texture[p+i];
-      // slices_z[z][z_index+i] = data[p+i];
+      vol.children[1].children[y].labelmap.texture.updateTexture(data);
+      vol.children[1].children[y].labelmap.modified();
 
     }
 
-    px++;
+    // console.log('need to update slice[0]', x);
 
   }
 
-  for (var x=0; x<dim_x; ++x) {
+  
 
-    var old_data_x = vol.children[0].children[x].labelmap.texture.rawData;
-    vol.children[0].children[x].labelmap.texture.updateTexture(old_data_x);
-    vol.children[0].children[x].labelmap.modified();
+  //   console.log('need to update slice[1]', y);
 
-  }
+  // }
 
-  for (var y=0; y<dim_y; ++y) {
 
-    var old_data_y = vol.children[1].children[y].labelmap.texture.rawData;
-    vol.children[1].children[y].labelmap.texture.updateTexture(old_data_y);
-    vol.children[1].children[y].labelmap.modified();
 
-  }
+
+  // var bytes_start_t = (x1+y1*512)*4;
+  // var bytes_end_t = (x2+y2*512)*4;
+
+  // var bytes_per_value = 4;
+
+  // var nb_pix_per_z = 512*512;
+
+  // var px = 0;
+  // for (var p=bytes_start_t; p<bytes_end_t; p+=bytes_per_value) {
+
+  //   //var z = Math.floor(px / nb_pix_per_z);
+  //   var y = Math.floor((px % nb_pix_per_z) / dim_x);
+  //   var x = Math.floor((px % nb_pix_per_z) % dim_x);
+
+  //   // var z_index = (x + y*dim_y)*bytes_per_value;
+  //   var y_index = (x + z*dim_x)*bytes_per_value;
+  //   var x_index = (y + z*dim_y)*bytes_per_value;
+ 
+  //  console.log('XIND',x_index, y_index);
+  //  console.log('XY', x, y, z);
+  //  console.log('DIM', dim_x, dim_y)
+
+  //   var old_data_x = vol.children[0].children[x].labelmap.texture.rawData;
+  //   var old_data_y = vol.children[1].children[y].labelmap.texture.rawData;
+
+  //   for (var i=0;i<bytes_per_value;i++) {
+
+  //     old_data_x[x_index+i] = texture[p+i];
+  //     old_data_y[y_index+i] = texture[p+i];
+  //     // slices_z[z][z_index+i] = data[p+i];
+
+  //   }
+
+  //   px++;
+
+  // }
+
+
+
+  // // propagate all textures in x and y
+  // for (var x=0; x<dim_x; ++x) {
+
+  //   var old_data_x = vol.children[0].children[x].labelmap.texture.rawData;
+  //   vol.children[0].children[x].labelmap.texture.updateTexture(old_data_x);
+  //   vol.children[0].children[x].labelmap.modified();
+
+  // }
+
+  // for (var y=0; y<dim_y; ++y) {
+
+  //   var old_data_y = vol.children[1].children[y].labelmap.texture.rawData;
+  //   vol.children[1].children[y].labelmap.texture.updateTexture(old_data_y);
+  //   vol.children[1].children[y].labelmap.modified();
+
+  // }
 
   // // update pixel data in x
   // for (var x=x1;x<x2;x++) {
