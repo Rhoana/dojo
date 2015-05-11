@@ -132,34 +132,6 @@ DOJO.setup_buttons = function() {
 
   };
 
-  var link = document.getElementById('link');
-  var link_selected = document.getElementById('link_selected');
-
-  link.onclick = link_selected.onclick = function() {
-
-    if (!DOJO.link_active) {
-
-      // link.style.border = '1px solid white';
-      link.style.display = 'none';
-      link_selected.style.display = 'block';
-
-      DOJO.link_active = true;
-
-    } else {
-
-      // link.style.border = '';
-      link.style.display = 'block';
-      link_selected.style.display = 'none';
-
-
-      DOJO.viewer._controller.reset_cursors();
-
-      DOJO.link_active = false;
-
-    }
-
-
-  };
 
 };
 
@@ -237,22 +209,6 @@ DOJO.onleftclick = function(x, y) {
 };
 
 DOJO.onmousemove = function(x, y) {
-
-  if (DOJO.link_active) {
-
-    var i_j = DOJO.viewer.xy2ij(x,y);
-
-    if (i_j[0] == -1) return;
-
-    if (DOJO.mousemove_timeout) {
-      clearTimeout(DOJO.mousemove_timeout);
-    }
-
-    DOJO.mousemove_timeout = setTimeout(function() {
-      DOJO.viewer._controller.send_mouse_move([i_j[0], i_j[1], DOJO.viewer._camera._z]);
-    }, 100);
-
-  }
 
   if (DOJO.mode == DOJO.modes.split && DOJO.viewer._interactor._left_down) {
 

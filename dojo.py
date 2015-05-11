@@ -149,7 +149,7 @@ class ServerLogic:
       content = 'Error 404'
       content_type = 'text/html'
 
-    print 'IP',r.request.remote_ip
+    # print 'IP',r.request.remote_ip
 
     r.set_header('Access-Control-Allow-Origin', '*')
     r.set_header('Content-Type', content_type)
@@ -162,7 +162,7 @@ class ServerLogic:
     print 'Saving..'
     output = {}
     output['origin'] = 'SERVER'
-    self.__controller.save(output)
+    # self.__controller.save(output)
 
     sys.exit(0)
 
