@@ -609,8 +609,8 @@ J.controller.prototype.update_3D_textures = function(z, full_bbox, texture) {
 
   if (!DOJO.threeD) return;
 
-  // console.log(full_bbox, texture);
-  // console.log('upd 3d', full_bbox);
+  console.log(full_bbox, texture);
+  console.log('upd 3d', full_bbox);
 
   var x1 = Math.floor(full_bbox[0] / this._viewer._image.zoom_levels[0][2]);
   var y1 = Math.floor(full_bbox[1] / this._viewer._image.zoom_levels[0][2]);
@@ -620,7 +620,7 @@ J.controller.prototype.update_3D_textures = function(z, full_bbox, texture) {
   // var byte_start = (x1+y1*512)*4;
   // var byte_end = (x2+y2*512)*4+4;
 
-  // console.log('a',byte_start, byte_end, texture.length)
+  console.log('a',byte_start, byte_end, texture.length)
 
   var vol = DOJO.threeD.volume;
   var dim_x = vol.dimensions[0];

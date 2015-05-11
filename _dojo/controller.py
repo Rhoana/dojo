@@ -519,19 +519,19 @@ class Controller(object):
 
     label_image,n = mh.label(s_tile)
 
-    if (n!=3):
-      print 'ERROR',n
+    # if (n!=3):
+    #   print 'ERROR',n
 
     # check which label was selected
     selected_label = label_image[click[1], click[0]]
 
-    print 'selected', selected_label
+    # print 'selected', selected_label
 
     for c in i_js:
       label_image[c[1], c[0]] = selected_label # the line belongs to the selected label
 
 
-    mh.imsave('/tmp/seg2.tif', 10*label_image.astype(np.uint8))
+    # mh.imsave('/tmp/seg2.tif', 10*label_image.astype(np.uint8))
 
 
     # update the segmentation data
@@ -967,7 +967,7 @@ class Controller(object):
     # seeds,n = mh.label(brush_boundary_mask)
     seeds,n = mh.label(seed_mask)
 
-    print n
+    # print n
 
     # remove small regions
     sizes = mh.labeled.labeled_size(seeds)
@@ -981,15 +981,15 @@ class Controller(object):
     #
     ws = mh.cwatershed(brush_image.max() - brush_image, seeds)
 
-    mh.imsave('/tmp/end_points.tif', 50*end_points.astype(np.uint8))
-    mh.imsave('/tmp/seeds_mask.tif', 50*seed_mask.astype(np.uint8))
-    mh.imsave('/tmp/seeds.tif', 50*seeds.astype(np.uint8))
-    mh.imsave('/tmp/ws.tif', 50*ws.astype(np.uint8))
+    # mh.imsave('/tmp/end_points.tif', 50*end_points.astype(np.uint8))
+    # mh.imsave('/tmp/seeds_mask.tif', 50*seed_mask.astype(np.uint8))
+    # mh.imsave('/tmp/seeds.tif', 50*seeds.astype(np.uint8))
+    # mh.imsave('/tmp/ws.tif', 50*ws.astype(np.uint8))
 
     lines_array = np.zeros(ws.shape,dtype=np.uint8)
     lines = []
 
-    print label_id
+    # print label_id
 
     # valid_labels = [label_id]
 
@@ -1017,7 +1017,7 @@ class Controller(object):
           #lines_array[y-1,x] = 1
           lines.append([bbox[0]+x,bbox[2]+y])          
                 
-    mh.imsave('/tmp/lines.tif', 50*lines_array.astype(np.uint8))
+    # mh.imsave('/tmp/lines.tif', 50*lines_array.astype(np.uint8))
 
     output = {}
     output['name'] = 'SPLITRESULT'
