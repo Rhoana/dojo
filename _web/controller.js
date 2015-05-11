@@ -86,7 +86,7 @@ J.controller.prototype.receive = function(data) {
     // we are the sender or the requester
 
     if (input.name == 'SPLITRESULT') {
-      console.log(input)
+      // console.log(input)
       this.show_split_line(input.value);
       return;
     } else if (input.name == 'SPLITDONE') {

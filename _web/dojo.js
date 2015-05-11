@@ -330,7 +330,7 @@ dragresize.isHandle = function(elm)
 
 dragresize.ondragfocus = function() { };
 dragresize.ondragstart = function(isResize) { };
-dragresize.ondragmove = function(isResize) { fire_resize_event(); };
+dragresize.ondragmove = function(isResize) { DOJO.threeD.renderer.onResize(); };
 dragresize.ondragend = function(isResize) { };
 dragresize.ondragblur = function() { };
 
