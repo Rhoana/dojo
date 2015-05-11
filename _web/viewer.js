@@ -4,6 +4,8 @@ J.viewer = function(container) {
 
   var _container = document.getElementById(container);
 
+  this._container = _container;
+
   var _canvas = document.createElement('canvas');
   _canvas.width = _container.clientWidth;
   _canvas.height = _container.clientHeight;

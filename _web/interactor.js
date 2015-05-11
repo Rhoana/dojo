@@ -35,6 +35,19 @@ J.interactor.prototype.init = function() {
   // keyboard
   window.onkeydown = this.onkeydown.bind(this);
 
+  // resize event
+  window.onresize = this.onresize.bind(this);
+
+};
+
+J.interactor.prototype.onresize = function(e) {
+
+  this._viewer._height = DOJO.viewer._container.clientHeight;
+  this._viewer._width = DOJO.viewer._container.clientWidth;
+  this._viewer._canvas.height = this._viewer._height;
+  this._viewer._canvas.width = this._viewer._width;
+  this._camera.reset();
+
 };
 
 J.interactor.prototype.onmousemove = function(e) {
