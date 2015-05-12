@@ -609,8 +609,8 @@ J.controller.prototype.update_3D_textures = function(z, full_bbox, texture) {
 
   if (!DOJO.threeD) return;
 
-  console.log(full_bbox, texture);
-  console.log('upd 3d', full_bbox);
+  // console.log(full_bbox, texture);
+  // console.log('upd 3d', full_bbox);
 
   var x1 = Math.floor(full_bbox[0] / this._viewer._image.zoom_levels[0][2]);
   var y1 = Math.floor(full_bbox[1] / this._viewer._image.zoom_levels[0][2]);
@@ -638,26 +638,38 @@ J.controller.prototype.update_3D_textures = function(z, full_bbox, texture) {
 
     for (var y=y1; y<=y2; y++) {
 
-      var byte_start = (x + y*dim_y)*4;
+      var byte_start = (x + y*dim_x)*4;
       var pixel_value_x_y_0 = texture[byte_start];
       var pixel_value_x_y_1 = texture[byte_start + 1];
       var pixel_value_x_y_2 = texture[byte_start + 2];
       var pixel_value_x_y_3 = texture[byte_start + 3];
 
       // now update the slices in y direction
-      var data = vol.children[1].children[y].labelmap.texture.rawData;
-      var target_byte_start = x + z*dim_z;
+      var slice_y = vol.children[1].children[y].labelmap;
+      var data = slice_y.texture.rawData;
+      var target_byte_start = (x + z*dim_x)*4;
       data[target_byte_start] = pixel_value_x_y_0;
       data[target_byte_start+1] = pixel_value_x_y_1;
       data[target_byte_start+2] = pixel_value_x_y_2;
       data[target_byte_start+3] = pixel_value_x_y_3;
 
-      vol.children[1].children[y].labelmap.texture.updateTexture(data);
-      vol.children[1].children[y].labelmap.modified();
+      slice_y.texture.updateTexture(data);
+      slice_y.modified();
 
-    }
+      // now update the slices in x direction
+      var slice_x = vol.children[0].children[x].labelmap;
+      var data = slice_x.texture.rawData;
+      target_byte_start = (y + z*dim_y)*4;
+      data[target_byte_start] = pixel_value_x_y_0;
+      data[target_byte_start+1] = pixel_value_x_y_1;
+      data[target_byte_start+2] = pixel_value_x_y_2;
+      data[target_byte_start+3] = pixel_value_x_y_3;
 
-    // console.log('need to update slice[0]', x);
+      slice_x.texture.updateTexture(data);
+      slice_x.modified();
+
+
+    }  
 
   }
 
