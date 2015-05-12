@@ -62,6 +62,9 @@ class ServerLogic:
     self.__segmentation = _dojo.Segmentation(mojo_dir, tmpdir)
     self.__image = _dojo.Image(mojo_dir, tmpdir)
 
+    # detect orphans
+    self.__segmentation.detect_orphans()
+
     # and the controller
     self.__controller = _dojo.Controller(mojo_dir, out_dir, tmpdir, self.__segmentation.get_database())
 
