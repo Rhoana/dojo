@@ -645,28 +645,35 @@ J.controller.prototype.update_3D_textures = function(z, full_bbox, texture) {
       var pixel_value_x_y_3 = texture[byte_start + 3];
 
       // now update the slices in y direction
-      var slice_y = vol.children[1].children[y].labelmap;
-      var data = slice_y.texture.rawData;
-      var target_byte_start = (x + z*dim_x)*4;
-      data[target_byte_start] = pixel_value_x_y_0;
-      data[target_byte_start+1] = pixel_value_x_y_1;
-      data[target_byte_start+2] = pixel_value_x_y_2;
-      data[target_byte_start+3] = pixel_value_x_y_3;
+      var slice_y = vol.children[1].children[y];
+      if (slice_y) {
+        var labelmap_y = slice_y.labelmap;
+        var data = labelmap_y.texture.rawData;
+        var target_byte_start = (x + z*dim_x)*4;
+        data[target_byte_start] = pixel_value_x_y_0;
+        data[target_byte_start+1] = pixel_value_x_y_1;
+        data[target_byte_start+2] = pixel_value_x_y_2;
+        data[target_byte_start+3] = pixel_value_x_y_3;
 
-      slice_y.texture.updateTexture(data);
-      slice_y.modified();
+        labelmap_y.texture.updateTexture(data);
+        labelmap_y.modified();
+      }
 
       // now update the slices in x direction
-      var slice_x = vol.children[0].children[x].labelmap;
-      var data = slice_x.texture.rawData;
-      target_byte_start = (y + z*dim_y)*4;
-      data[target_byte_start] = pixel_value_x_y_0;
-      data[target_byte_start+1] = pixel_value_x_y_1;
-      data[target_byte_start+2] = pixel_value_x_y_2;
-      data[target_byte_start+3] = pixel_value_x_y_3;
+      var slice_x = vol.children[0].children[x];
+      if (slice_x) {
+        var labelmap_x = slice_x.labelmap;
+        var data = labelmap_x.texture.rawData;
+        target_byte_start = (y + z*dim_y)*4;
+        data[target_byte_start] = pixel_value_x_y_0;
+        data[target_byte_start+1] = pixel_value_x_y_1;
+        data[target_byte_start+2] = pixel_value_x_y_2;
+        data[target_byte_start+3] = pixel_value_x_y_3;
 
-      slice_x.texture.updateTexture(data);
-      slice_x.modified();
+        labelmap_x.texture.updateTexture(data);
+        labelmap_x.modified();
+
+      }
 
 
     }  

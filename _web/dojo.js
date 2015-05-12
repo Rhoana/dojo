@@ -72,29 +72,6 @@ DOJO.setup_buttons = function() {
 
   };
 
-  var adjust = document.getElementById('adjust');
-  var adjust_selected = document.getElementById('adjust_selected');
-
-  adjust.onclick = adjust_selected.onclick = function() {
-
-    if (DOJO.mode != DOJO.modes.adjust) {
-
-      DOJO.reset_tools();
-
-      adjust.style.display = 'none';
-      adjust_selected.style.display = 'block';      
-
-      DOJO.mode = DOJO.modes.adjust;
-
-    } else {
-
-      DOJO.reset_tools();
-
-    }
-
-  };  
-
-
   var threed = document.getElementById('3d');
   var threed_selected = document.getElementById('3d_selected');
 
@@ -357,7 +334,8 @@ DOJO.init_threeD = function() {
 
   var vol = new X.volume();
   vol.dimensions = [512,512,DOJO.viewer._image.max_z_tiles];
-  vol.spacing = [1,1,3];
+  vol.spacing = [1,1,Math.floor(512/DOJO.viewer._image.max_z_tiles)/2];
+  vol.xySampleRate = 8;
   vol.file = '/image/volume/00000001/&.RZ';
 
   vol.labelmap.use32bit = true;
