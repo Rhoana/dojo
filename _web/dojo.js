@@ -357,7 +357,7 @@ DOJO.init_threeD = function() {
 
   var vol = new X.volume();
   vol.dimensions = [512,512,DOJO.viewer._image.max_z_tiles];
-  vol.spacing = [1,1,3];
+  vol.spacing = [1,1,Math.floor(512/DOJO.viewer._image.max_z_tiles)/2];
   vol.file = '/image/volume/00000001/&.RZ';
 
   vol.labelmap.use32bit = true;
