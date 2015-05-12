@@ -72,29 +72,6 @@ DOJO.setup_buttons = function() {
 
   };
 
-  var adjust = document.getElementById('adjust');
-  var adjust_selected = document.getElementById('adjust_selected');
-
-  adjust.onclick = adjust_selected.onclick = function() {
-
-    if (DOJO.mode != DOJO.modes.adjust) {
-
-      DOJO.reset_tools();
-
-      adjust.style.display = 'none';
-      adjust_selected.style.display = 'block';      
-
-      DOJO.mode = DOJO.modes.adjust;
-
-    } else {
-
-      DOJO.reset_tools();
-
-    }
-
-  };  
-
-
   var threed = document.getElementById('3d');
   var threed_selected = document.getElementById('3d_selected');
 
