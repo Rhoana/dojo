@@ -166,6 +166,15 @@ class Segmentation(Datasource):
     print '   Found', len(valid_labels), 'valid labels'
 
 
+    # run through slices from 0..MAX and sort orphans and potential orphans
+    sorted_orphans = np.empty_like(orphans)
+    for s in range(volume.shape[2]):
+      mask_for_slice = np.in1d(orphans, volume[:,:,s])
+      orphans_in_slice = orphans[mask_for_slice]
+      orphans = np.setdiff1d(orphans, orphans_in_slice)
+      print orphans_in_slice
+      
+
   def get_tile(self, file):
     '''
     '''
