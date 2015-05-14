@@ -28,6 +28,12 @@ DOJO.init = function() {
 
 DOJO.setup_buttons = function() {
 
+  var orphans = document.getElementById('orphans');
+  orphans.style.left = (document.body.clientWidth - 310) + 'px';
+  var threeD = document.getElementById('threeD');
+  threeD.style.left = (document.body.clientWidth - 310) + 'px';  
+  DOJO.make_resizable();
+
   var merge = document.getElementById('merge');
   var merge_selected = document.getElementById('merge_selected');
 
@@ -87,7 +93,6 @@ DOJO.setup_buttons = function() {
       document.getElementById('threeD').style.display = 'block';
 
       if (!DOJO.threeD) {
-        DOJO.make_resizable();
         DOJO.init_threeD();
       }
 
@@ -124,8 +129,8 @@ DOJO.reset_tools = function() {
   split.style.display = 'block';
   split_selected.style.display = 'none';    
 
-  adjust.style.display = 'block';
-  adjust_selected.style.display = 'none';    
+  // adjust.style.display = 'block';
+  // adjust_selected.style.display = 'none';    
 
   DOJO.viewer._controller.end();
 
@@ -278,7 +283,7 @@ DOJO.make_resizable = function() {
 // whose keys constitute optional parameters/settings:
 
 var dragresize = new DragResize('dragresize',
- { handles: ['bl'], minWidth: 300, minHeight: 300, minLeft: 20, minTop: 20, maxLeft: 600, maxTop: 600 });
+ { handles: ['bl'], minWidth: 300, minHeight: 300, minLeft: 10, minTop: 10, minRight: 10, minBottom: 10 });
 
 // Optional settings/properties of the DragResize object are:
 //  enabled: Toggle whether the object is active.
@@ -293,11 +298,11 @@ var dragresize = new DragResize('dragresize',
 
 dragresize.isElement = function(elm)
 {
- if (elm.className && elm.className.indexOf('threeDpanel') > -1) return true;
+ if (elm.className && elm.className.indexOf('draggable_panel') > -1) return true;
 };
 dragresize.isHandle = function(elm)
 {
- if (elm.className && elm.className.indexOf('threeDpanel') > -1) return true;
+ if (elm.className && elm.className.indexOf('drsMoveHandle') > -1) return true;
 };
 
 // You can define optional functions that are called as elements are dragged/resized.
@@ -309,7 +314,7 @@ dragresize.isHandle = function(elm)
 
 dragresize.ondragfocus = function() { };
 dragresize.ondragstart = function(isResize) { };
-dragresize.ondragmove = function(isResize) { DOJO.threeD.renderer.onResize(); };
+dragresize.ondragmove = function(isResize) { if (DOJO.threeD) DOJO.threeD.renderer.onResize(); };
 dragresize.ondragend = function(isResize) { };
 dragresize.ondragblur = function() { };
 
@@ -327,7 +332,7 @@ DOJO.init_threeD = function() {
 
   // create and initialize a 3D renderer
   var r = new X.renderer3D();
-  r.container = 'threeD';
+  r.container = 'threeDcontent';
   r.init();
 
   DOJO.threeD.renderer = r;

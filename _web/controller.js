@@ -134,6 +134,13 @@ J.controller.prototype.receive = function(data) {
     console.log('force reload');
     this.reload_tiles(input.value);
 
+  } else if (input.name == 'ORPHANS') {
+
+    this._orphans = input.value;
+
+  } else if (input.name == 'POTENTIAL_ORPHANS') {
+
+    this._potential_orphans = input.value;
 
   }
 

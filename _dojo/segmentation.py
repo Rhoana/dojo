@@ -19,6 +19,9 @@ class Segmentation(Datasource):
 
     super(Segmentation, self).__init__(mojo_dir, tmp_dir, query, input_format, output_format, sub_dir)
 
+    self._orphans = None
+    self._potential_orphans = None
+
 
   def get_volume_data(self):
     '''
@@ -173,14 +176,16 @@ class Segmentation(Datasource):
       mask_for_slice = np.in1d(orphans, volume[:,:,s])
       orphans_in_slice = orphans[mask_for_slice]
       orphans = np.setdiff1d(orphans, orphans_in_slice)
-      sorted_orphans.append(orphans_in_slice)
+      sorted_orphans.append(orphans_in_slice.tolist())
       
       mask_for_slice = np.in1d(potential_orphans, volume[:,:,s])
       potential_orphans_in_slice = potential_orphans[mask_for_slice]
-      print potential_orphans_in_slice
       potential_orphans = np.setdiff1d(potential_orphans, potential_orphans_in_slice)
-      sorted_potential_orphans.append(potential_orphans_in_slice)
+      sorted_potential_orphans.append(potential_orphans_in_slice.tolist())
 
+
+    self.get_database()._orphans = sorted_orphans
+    self.get_database()._potential_orphans = sorted_potential_orphans
 
 
   def get_tile(self, file):

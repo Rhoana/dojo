@@ -8,6 +8,9 @@ class Database(object):
     self.__connection = sqlite3.connect(file)
     self.__cursor = self.__connection.cursor()
 
+    self._orphans = None
+    self._potential_orphans = None
+
   def get_segment_info(self):
     '''
     '''
@@ -74,4 +77,13 @@ class Database(object):
     except:
       print 'ERROR WHEN MERGING', id1, id2
       
+  def get_orphans(self):
+    '''
+    '''
+    return self._orphans
 
+  def get_potential_orphans(self):
+    '''
+    '''
+    return self._potential_orphans
+    

@@ -52,6 +52,8 @@ class Controller(object):
     self.send_lock_table('SERVER')
     # then the problem table
     self.send_problem_table('SERVER')
+    # and the orphans
+    self.send_orphans()
 
     # then send the redraw command
     self.send_redraw('SERVER')
@@ -66,6 +68,23 @@ class Controller(object):
     output['value'] = ''
 
     self.__websocket.send(json.dumps(output))
+
+  def send_orphans(self):
+    '''
+    '''
+    output = {}
+    output['name'] = 'ORPHANS'
+    output['origin'] = 'SERVER'
+    output['value'] = self.__database.get_orphans()
+
+    self.__websocket.send(json.dumps(output))    
+
+    output = {}
+    output['name'] = 'POTENTIAL_ORPHANS'
+    output['origin'] = 'SERVER'
+    output['value'] = self.__database.get_potential_orphans()
+
+    self.__websocket.send(json.dumps(output))    
 
 
   def send_redraw(self, origin):
