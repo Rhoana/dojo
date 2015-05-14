@@ -159,21 +159,29 @@ class Segmentation(Datasource):
     orphans = np.setdiff1d(unique_labels, touch_counter.keys())
     print '   Found', len(orphans), 'orphans'
 
-    potential_orphans = [k for k in touch_counter if touch_counter[k] == 1]
+    potential_orphans = np.array([k for k in touch_counter if touch_counter[k] == 1])
     print '   Found', len(potential_orphans), 'potential orphans'
 
-    valid_labels = [k for k in touch_counter if touch_counter[k] > 1]
+    valid_labels = np.array([k for k in touch_counter if touch_counter[k] > 1])
     print '   Found', len(valid_labels), 'valid labels'
 
 
     # run through slices from 0..MAX and sort orphans and potential orphans
-    sorted_orphans = np.empty_like(orphans)
+    sorted_orphans = []
+    sorted_potential_orphans = []
     for s in range(volume.shape[2]):
       mask_for_slice = np.in1d(orphans, volume[:,:,s])
       orphans_in_slice = orphans[mask_for_slice]
       orphans = np.setdiff1d(orphans, orphans_in_slice)
-      print orphans_in_slice
+      sorted_orphans.append(orphans_in_slice)
       
+      mask_for_slice = np.in1d(potential_orphans, volume[:,:,s])
+      potential_orphans_in_slice = potential_orphans[mask_for_slice]
+      print potential_orphans_in_slice
+      potential_orphans = np.setdiff1d(potential_orphans, potential_orphans_in_slice)
+      sorted_potential_orphans.append(potential_orphans_in_slice)
+
+
 
   def get_tile(self, file):
     '''
