@@ -7,6 +7,9 @@
   <link rel="stylesheet" type="text/css" href="css/opentip.css">
   <link rel="stylesheet" type="text/css" href="css/dragresize.css">
 
+  <script type='text/javascript' src='lib/jquery.min.js'></script>
+  <script type='text/javascript' src='lib/jquery-ui.min.js'></script>
+  <script type='text/javascript' src='lib/jquery.slimscroll.min.js'></script>
   <script type="text/javascript" src='lib/zlib.min.js'></script>
   <script type="text/javascript" src='lib/xtk.js'></script> 
   <script type="text/javascript" src='lib/opentip-native.min.js'></script>
@@ -362,8 +365,74 @@
     <div id='threeDcontent' style='width:100%;height:100%;'></div>
   </div>
 
-  <div id='orphans' class='draggable_panel' style='left:300px;top:330px;'>
-    <div class="drsMoveHandle">Orphans</div>
+  <div id='todo' class='draggable_panel' style='left:300px;top:330px;'>
+    <div class="drsMoveHandle">ToDo list</div>
+      <div id='orphans_list' class='todo_toplevel'>
+        <div class='todo_header'>Orphans</div>
+        <div id='orphans_content'>
+<!--         <ul>
+        <li>Slice 1
+        <ul>
+
+          <li><div class='todo_color'></div><span class='todo_label'>Label <span class='todo_number'>sfsfsf</span></span><span class='todo_check'><input type='checkbox'></span></li>
+
+          <li>sfsfsf</li><li>sfsfsf</li>
+        </ul>
+
+        </li>
+        <li>Slice 2</li>
+        <li>Slice 3</li>
+        <li>Slice 2</li>
+        <li>Slice 3</li>
+                        <li>Slice 2</li>
+        <li>Slice 3</li>
+
+                <li>Slice 2</li>
+        <li>Slice 3</li>
+                <li>Slice 2</li>
+        <li>Slice 3</li>
+                <li>Slice 2</li>
+        <li>Slice 3</li>
+                <li>Slice 2</li>
+        <li>Slice 3</li>
+                <li>Slice 2</li>
+        <li>Slice 3</li>
+                <li>Slice 2</li>
+        <li>Slice 3</li>
+        </ul> -->
+        </div>
+      </div>
+      <div id='potential_orphans_list' class='todo_toplevel'>
+        <div class='todo_header'>Orphans</div>
+        <div id='potential_orphans_content'>
+        <ul>
+        <li>Slice 1
+        <ul><li>sfsfsf</li><li>sfsfsf</li><li>sfsfsf</li>
+        </ul>
+
+        </li>
+        <li>Slice 2</li>
+        <li>Slice 3</li>
+        <li>Slice 2</li>
+        <li>Slice 3</li>
+                        <li>Slice 2</li>
+        <li>Slice 3</li>
+
+                <li>Slice 2</li>
+        <li>Slice 3</li>
+                <li>Slice 2</li>
+        <li>Slice 3</li>
+                <li>Slice 2</li>
+        <li>Slice 3</li>
+                <li>Slice 2</li>
+        <li>Slice 3</li>
+                <li>Slice 2</li>
+        <li>Slice 3</li>
+                <li>Slice 2</li>
+        <li>Slice 3</li>
+        </ul>
+        </div>
+      </div>
   </div>
 
 </body>

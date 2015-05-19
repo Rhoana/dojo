@@ -28,11 +28,22 @@ DOJO.init = function() {
 
 DOJO.setup_buttons = function() {
 
-  var orphans = document.getElementById('orphans');
-  orphans.style.left = (document.body.clientWidth - 310) + 'px';
+  var todo = document.getElementById('todo');
+  todo.style.left = (document.body.clientWidth - 310) + 'px';
   var threeD = document.getElementById('threeD');
   threeD.style.left = (document.body.clientWidth - 310) + 'px';  
   DOJO.make_resizable();
+
+
+  $('#orphans_content').slimScroll({
+    height: '288px',
+    color: 'deepskyblue'
+  });
+
+  $('#potential_orphans_content').slimScroll({
+    height: '288px',
+    color: 'deepskyblue'
+  });
 
   var merge = document.getElementById('merge');
   var merge_selected = document.getElementById('merge_selected');

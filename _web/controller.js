@@ -136,11 +136,11 @@ J.controller.prototype.receive = function(data) {
 
   } else if (input.name == 'ORPHANS') {
 
-    this._orphans = input.value;
+    this.update_orphan_list(input.value);
 
   } else if (input.name == 'POTENTIAL_ORPHANS') {
 
-    this._potential_orphans = input.value;
+    this.update_potential_orphan_list(input.value);
 
   }
 
@@ -149,6 +149,54 @@ J.controller.prototype.receive = function(data) {
 J.controller.prototype.save = function() {
 
   this.send('SAVE', null);
+
+};
+
+J.controller.prototype.update_orphan_list = function(data) {
+
+  console.log('Updating orphan list..', data);
+
+  for (var z=0; z<data.length; z++) {
+
+    var orphans_for_slice = data[z];
+    var no_orphans_for_slice = orphans_for_slice.length;
+
+    //
+    // create slice entry
+    //
+    $('#orphans_content').append($('<ul><li id="orphans_slice_'+(z+1)+'" class="dropdown">Slice '+(z+1)+' ('+no_orphans_for_slice+' orphans)</li></ul>'));
+
+    if (no_orphans_for_slice > 0) {
+
+      $('#orphans_slice_'+(z+1)).append('<ul id="orphans_slice_list_'+(z+1)+'"></ul>');
+
+    }
+
+    for (var o=0; o<no_orphans_for_slice; o++) {
+
+      var label = orphans_for_slice[o];
+      var color = this._viewer.get_color(label);
+      var rgb_color = 'rgb('+color[0]+','+color[1]+','+color[2]+')';
+      var label_code = "<li id='orphans_label_"+label+"'><div class='todo_color' style='background-color:"+rgb_color+"'></div><span class='todo_label'>Label <span class='todo_number'>"+label+"</span></span><span class='todo_check'><input type='checkbox'></span></li>"
+
+      $('#orphans_slice_list_'+(z+1)).append(label_code);
+
+    }
+
+
+
+  }
+
+  $('li.dropdown').click(function() {
+    console.log(this)
+      $(this).find('ul').slideToggle('slow');
+  });  
+
+};
+
+J.controller.prototype.update_potential_orphan_list = function(data) {
+
+  console.log('Updating potential orphan list..', data);
 
 };
 
