@@ -75,14 +75,14 @@ class Controller(object):
     output = {}
     output['name'] = 'ORPHANS'
     output['origin'] = 'SERVER'
-    output['value'] = self.__database.get_orphans()
+    output['value'] = str(self.__database.get_orphans())
 
     self.__websocket.send(json.dumps(output))    
 
     output = {}
     output['name'] = 'POTENTIAL_ORPHANS'
     output['origin'] = 'SERVER'
-    output['value'] = self.__database.get_potential_orphans()
+    output['value'] = str(self.__database.get_potential_orphans())
 
     self.__websocket.send(json.dumps(output))    
 

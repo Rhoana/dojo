@@ -1,4 +1,5 @@
 import h5py
+import mahotas as mh
 import numpy as np
 import os
 import re
@@ -168,21 +169,22 @@ class Segmentation(Datasource):
     valid_labels = np.array([k for k in touch_counter if touch_counter[k] > 1])
     print '   Found', len(valid_labels), 'valid labels'
 
+    sizes = mh.labeled.labeled_size(volume)
 
-    # run through slices from 0..MAX and sort orphans and potential orphans
-    sorted_orphans = []
-    sorted_potential_orphans = []
-    for s in range(volume.shape[2]):
-      mask_for_slice = np.in1d(orphans, volume[:,:,s])
-      orphans_in_slice = orphans[mask_for_slice]
-      orphans = np.setdiff1d(orphans, orphans_in_slice)
-      sorted_orphans.append(orphans_in_slice.tolist())
-      
-      mask_for_slice = np.in1d(potential_orphans, volume[:,:,s])
-      potential_orphans_in_slice = potential_orphans[mask_for_slice]
-      potential_orphans = np.setdiff1d(potential_orphans, potential_orphans_in_slice)
-      sorted_potential_orphans.append(potential_orphans_in_slice.tolist())
+    orphans_sizes = sizes[orphans]
 
+    potential_orphans_sizes = sizes[potential_orphans]
+
+
+    # now sort the orphans by size
+    sorted_orphans = zip(orphans, orphans_sizes)
+    sorted_orphans.sort(key = lambda t: t[1], reverse=True)
+    sorted_orphans = list(x[0] for x in sorted_orphans)
+    sorted_potential_orphans = zip(potential_orphans, potential_orphans_sizes)
+    sorted_potential_orphans.sort(key = lambda t: t[1], reverse=True)
+    sorted_potential_orphans = list(x[0] for x in sorted_potential_orphans)
+
+    print sorted_orphans
 
     self.get_database()._orphans = sorted_orphans
     self.get_database()._potential_orphans = sorted_potential_orphans
