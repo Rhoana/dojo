@@ -78,7 +78,7 @@ class Controller(object):
     output['name'] = 'ORPHANS'
     output['origin'] = 'SERVER'
     output['value'] = str(self.__database.get_orphans())
-
+    
     self.__websocket.send(json.dumps(output))    
 
     output = {}

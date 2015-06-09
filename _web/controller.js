@@ -183,7 +183,27 @@ J.controller.prototype.update_current_action = function(value) {
 
 J.controller.prototype.update_orphan_list = function(data) {
 
-  console.log('Updating orphan list..', data);
+  // console.log('Updating orphan list..', data);
+  // aaaaaa = data
+
+  data = JSON.parse(data);
+
+  var engulfed_orphans = data[0];
+  var ss_orphans = data[1];
+  var other = data[2];
+
+
+
+
+  var ss_orphans_length = ss_orphans.length;
+  for (var i=0; i<ss_orphans_length; i++) {
+
+    var id = parseInt(ss_orphans[i][0],10);
+    var bbox = ss_orphans[i][1];
+
+    console.log(id);
+
+  }
 
   // for (var z=0; z<data.length; z++) {
 
