@@ -213,7 +213,6 @@ class Controller(object):
     '''
     '''
     values = list(input['value'])
-    print values
     current_action = values[0]
     value = values[1]
     username = input['origin']
@@ -227,8 +226,8 @@ class Controller(object):
 
     if current_action < len(self.__actions[username]) - 1:
       # remove all actions from the last undo'ed one to the current
-      print 'removing', current_action, len(self.__actions[username])
-      self.__actions[username] = self.__actions[username][0:current_action]
+      # print 'removing', current_action, len(self.__actions[username])
+      self.__actions[username] = self.__actions[username][0:current_action+1]
 
     self.__actions[username].append(value)
 
@@ -251,7 +250,7 @@ class Controller(object):
     if username in self.__actions:
       # actions available
       action = self.__actions[username][value]
-      print 'Undoing', action
+      # print 'Undoing', action
 
       #
       # undo merge
@@ -289,9 +288,10 @@ class Controller(object):
     username = input['origin']
 
     if username in self.__actions:
+
       # actions available
       action = self.__actions[username][value]
-      print 'Redoing', action
+      # print 'Redoing', action
 
 
       #
