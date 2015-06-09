@@ -47,6 +47,14 @@ DOJO.init = function() {
 
 DOJO.setup_buttons = function() {
 
+  $('#orphan_left_arrow').on('click', function() {
+
+    
+    console.log('clicked on left arrow');
+
+  });
+
+
   var todo = document.getElementById('todo');
   todo.style.left = (document.body.clientWidth - 310) + 'px';
   var threeD = document.getElementById('threeD');

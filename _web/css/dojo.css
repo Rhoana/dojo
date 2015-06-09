@@ -42,6 +42,7 @@ body {
   opacity: 1;
   border: solid 1px white;  
   z-index: 1000;
+  color: white;
 }
 
 #threeD {

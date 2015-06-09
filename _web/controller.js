@@ -243,6 +243,13 @@ J.controller.prototype.update_orphan_list = function(data) {
 
 };
 
+J.controller.prototype.show_orphan = function() {
+
+
+  $('#orphan_center').html('updated from javascript');
+
+};
+
 J.controller.prototype.update_potential_orphan_list = function(data) {
 
   console.log('Updating potential orphan list..', data);
