@@ -290,7 +290,7 @@ DOJO.update_label = function(x, y) {
 };
 
 DOJO.update_log = function(input) {
-  console.log(input);
+  // console.log(input);
   var log = document.getElementById('log');
 
   var m = input.value;

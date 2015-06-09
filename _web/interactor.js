@@ -159,6 +159,7 @@ J.interactor.prototype.onkeydown = function(e) {
   // 53: 5 DE-/ACTIVATE COLLABORATION MODE
   // 9: TAB FINISH ADJUST
   // 90 + CTRL: CTRL+Z UNDO
+  // 89 + CTRL: CTRL+Y REDO
 
   e.preventDefault();
 
@@ -207,7 +208,14 @@ J.interactor.prototype.onkeydown = function(e) {
   } else if (e.keyCode == 90 && e.ctrlKey) {
 
     this._keypress_callback = setTimeout(function() {
-      this._viewer._controller.undo(this._camera._x, this._camera._y);
+      this._viewer._controller.undo_action();
+      this._keypress_callback = null;
+    }.bind(this),10); 
+
+  } else if (e.keyCode == 89 && e.ctrlKey) {
+
+    this._keypress_callback = setTimeout(function() {
+      this._viewer._controller.redo_action();
       this._keypress_callback = null;
     }.bind(this),10); 
     

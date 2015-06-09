@@ -176,6 +176,9 @@ class Segmentation(Datasource):
     potential_orphans_sizes = sizes[potential_orphans]
 
 
+
+
+
     # now sort the orphans by size
     sorted_orphans = zip(orphans, orphans_sizes)
     sorted_orphans.sort(key = lambda t: t[1], reverse=True)
@@ -184,10 +187,12 @@ class Segmentation(Datasource):
     sorted_potential_orphans.sort(key = lambda t: t[1], reverse=True)
     sorted_potential_orphans = list(x[0] for x in sorted_potential_orphans)
 
-    print sorted_orphans
+    # print sorted_orphans
 
     self.get_database()._orphans = sorted_orphans
     self.get_database()._potential_orphans = sorted_potential_orphans
+
+    return volume, orphans, orphans_sizes
 
 
   def get_tile(self, file):

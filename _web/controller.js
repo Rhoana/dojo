@@ -6,6 +6,8 @@ J.controller = function(viewer) {
 
   this._last_id = null;
 
+  this._current_action = 0;
+
   this._merge_table = null;
 
   this._gl_merge_table_keys = null;
@@ -95,6 +97,8 @@ J.controller.prototype.receive = function(data) {
       this.finish_adjust(input.value);
     } else if (input.name == 'SAVED') {
       console.log('All saved. Yahoo!');
+    } else if (input.name == 'CURRENT_ACTION') {
+    this.update_current_action(input.value);
     }
 
     return;
@@ -149,6 +153,31 @@ J.controller.prototype.receive = function(data) {
 J.controller.prototype.save = function() {
 
   this.send('SAVE', null);
+
+};
+
+J.controller.prototype.add_action = function(type, value) {
+
+  this.send('ACTION', [this._current_action, {'type': type, 'value': value}]);
+
+};
+
+J.controller.prototype.undo_action = function() {
+
+  this.send('UNDO', this._current_action);
+
+};
+
+J.controller.prototype.redo_action = function() {
+
+  this.send('REDO', this._current_action);
+
+};
+
+J.controller.prototype.update_current_action = function(value) {
+
+  this._current_action = parseInt(value,10);
+  console.log('Current action', this._current_action);
 
 };
 
@@ -1184,40 +1213,44 @@ J.controller.prototype.merge = function(id) {
 
   this.highlight(this._last_id);
 
-};
 
-J.controller.prototype.undo = function(x, y) {
-
-  var i_j = this._viewer.xy2ij(x, y);
-
-  if (i_j[0] == -1) return;
-
-  this._viewer.get_segmentation_id_before_merge(i_j[0], i_j[1], function(id) {
-
-    delete this._merge_table[id];
-
-
-    var color1 = DOJO.viewer.get_color(id);
-    var color1_hex = rgbToHex(color1[0], color1[1], color1[2]);
-
-    var colored_id1 = id;
-
-    var log = 'User $USER removed merge for label <font color="'+color1_hex+'">'+colored_id1+'</font>.';
-
-    this.send_log(log);
-
-    this.create_gl_merge_table();
-
-    // this._viewer.redraw();
-
-    this.send_merge_table();  
-
-    this.activate(null);
-
-
-  }.bind(this));
+  // send an action for undo/redo
+  this.add_action('MERGE', [id, this._last_id]);
 
 };
+
+// J.controller.prototype.undo = function(x, y) {
+
+//   var i_j = this._viewer.xy2ij(x, y);
+
+//   if (i_j[0] == -1) return;
+
+//   this._viewer.get_segmentation_id_before_merge(i_j[0], i_j[1], function(id) {
+
+//     delete this._merge_table[id];
+
+
+//     var color1 = DOJO.viewer.get_color(id);
+//     var color1_hex = rgbToHex(color1[0], color1[1], color1[2]);
+
+//     var colored_id1 = id;
+
+//     var log = 'User $USER removed merge for label <font color="'+color1_hex+'">'+colored_id1+'</font>.';
+
+//     this.send_log(log);
+
+//     this.create_gl_merge_table();
+
+//     // this._viewer.redraw();
+
+//     this.send_merge_table();  
+
+//     this.activate(null);
+
+
+//   }.bind(this));
+
+// };
 
 J.controller.prototype.create_gl_merge_table = function() {
 

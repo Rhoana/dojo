@@ -32,6 +32,8 @@ class Controller(object):
     
     self.__database = database
 
+    self.__actions = {}
+
     if self.__database:
       self.__largest_id = self.__database.get_largest_id()
     else:
@@ -196,6 +198,127 @@ class Controller(object):
 
     elif input['name'] == 'SAVE':
       self.save(input)
+
+    elif input['name'] == 'ACTION':
+      self.add_action(input)
+
+    elif input['name'] == 'UNDO':
+      self.undo_action(input)
+
+    elif input['name'] == 'REDO':
+      self.redo_action(input)
+
+
+  def add_action(self, input):
+    '''
+    '''
+    values = list(input['value'])
+    print values
+    current_action = values[0]
+    value = values[1]
+    username = input['origin']
+
+    # check if we have an action stack for this user
+    if not username in self.__actions:
+      self.__actions[username] = []
+
+    # action_type = values['type']
+    # action_value = values['value']
+
+    if current_action < len(self.__actions[username]) - 1:
+      # remove all actions from the last undo'ed one to the current
+      print 'removing', current_action, len(self.__actions[username])
+      self.__actions[username] = self.__actions[username][0:current_action]
+
+    self.__actions[username].append(value)
+
+    #
+    # send the action index
+    #
+    output = {}
+    output['name'] = 'CURRENT_ACTION'
+    output['origin'] = username
+    output['value'] = len(self.__actions[username]) - 1
+    self.__websocket.send(json.dumps(output))
+
+
+  def undo_action(self, input):
+    '''
+    '''
+    value = input['value']
+    username = input['origin']
+
+    if username in self.__actions:
+      # actions available
+      action = self.__actions[username][value]
+      print 'Undoing', action
+
+      #
+      # undo merge
+      #
+      if action['type'] == 'MERGE':
+
+        key = str(action['value'][0])
+
+        if key in self.__merge_table:
+          del self.__merge_table[key]
+        else:
+          # this was already undo'ed before
+          pass     
+
+        self.send_merge_table('SERVER')
+        self.send_redraw('SERVER')
+
+      # decrease value
+      value = max(0, value-1)
+
+
+    #
+    # send the action index
+    #
+    output = {}
+    output['name'] = 'CURRENT_ACTION'
+    output['origin'] = username
+    output['value'] = value
+    self.__websocket.send(json.dumps(output))
+
+  def redo_action(self, input):
+    '''
+    '''
+    value = input['value']
+    username = input['origin']
+
+    if username in self.__actions:
+      # actions available
+      action = self.__actions[username][value]
+      print 'Redoing', action
+
+
+      #
+      # redo merge
+      #
+      if action['type'] == 'MERGE':
+
+        key = str(action['value'][0])
+
+        self.__merge_table[key] = action['value'][1]
+
+        self.send_merge_table('SERVER')
+        self.send_redraw('SERVER')
+
+
+      # increase value
+      value = min(len(self.__actions[username])-1, value+1)
+
+
+    #
+    # send the action index
+    #
+    output = {}
+    output['name'] = 'CURRENT_ACTION'
+    output['origin'] = username
+    output['value'] = value
+    self.__websocket.send(json.dumps(output))
 
 
   def adjust(self, input):
