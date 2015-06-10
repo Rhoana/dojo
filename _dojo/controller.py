@@ -74,6 +74,9 @@ class Controller(object):
   def send_orphans(self):
     '''
     '''
+    if not self.__database:
+      return
+
     output = {}
     output['name'] = 'ORPHANS'
     output['origin'] = 'SERVER'
