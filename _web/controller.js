@@ -135,8 +135,14 @@ J.controller.prototype.receive = function(data) {
   } else if (input.name == 'RELOAD') {
 
     // force reload
-    console.log('force reload');
     this.reload_tiles(input.value);
+
+  } else if (input.name == 'HARD_RELOAD') {
+
+    // force reload
+    this.hard_reload_tiles(input.value);
+
+
 
   } else if (input.name == 'ORPHANS') {
 
@@ -195,15 +201,15 @@ J.controller.prototype.update_orphan_list = function(data) {
 
 
 
-  var ss_orphans_length = ss_orphans.length;
-  for (var i=0; i<ss_orphans_length; i++) {
+  // var ss_orphans_length = ss_orphans.length;
+  // for (var i=0; i<ss_orphans_length; i++) {
 
-    var id = parseInt(ss_orphans[i][0],10);
-    var bbox = ss_orphans[i][1];
+  //   var id = parseInt(ss_orphans[i][0],10);
+  //   var bbox = ss_orphans[i][1];
 
-    console.log(id);
+  //   console.log(id);
 
-  }
+  // }
 
   // for (var z=0; z<data.length; z++) {
 
@@ -245,7 +251,7 @@ J.controller.prototype.update_orphan_list = function(data) {
 
 J.controller.prototype.update_potential_orphan_list = function(data) {
 
-  console.log('Updating potential orphan list..', data);
+  // console.log('Updating potential orphan list..', data);
 
 };
 
@@ -959,6 +965,16 @@ J.controller.prototype.finish_adjust = function(values) {
 
 };
 
+J.controller.prototype.hard_reload_tiles = function(values) {
+
+  // console.log('Hard reload');
+
+  this.reload_tiles(values);
+
+  this._viewer.clear_overlay_buffer();
+
+};
+
 J.controller.prototype.finish_split = function(values) {
 
   // reload all slices, set to split mode -1
@@ -1017,6 +1033,7 @@ J.controller.prototype.start_split = function(id, x, y) {
     data['line'] = this._split_line;
     data['z'] = this._viewer._camera._z;
     data['click'] = i_j;
+    data['current_action'] = this._current_action;
     data['bbox'] = this._brush_bbox;
     this.send('FINALIZESPLIT', data);
 

@@ -91,6 +91,7 @@ class Segmentation(Datasource):
     '''
     '''
     print 'Detecting orphans..'
+    return
     volume = self.get_volume_data()
     
     #
