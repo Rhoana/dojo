@@ -74,6 +74,9 @@ class Controller(object):
   def send_orphans(self):
     '''
     '''
+    if not self.__database:
+      return
+
     output = {}
     output['name'] = 'ORPHANS'
     output['origin'] = 'SERVER'
@@ -231,6 +234,8 @@ class Controller(object):
 
     self.__actions[username].append(value)
 
+    # print 'added action', value
+
     #
     # send the action index
     #
@@ -253,7 +258,7 @@ class Controller(object):
       # print 'Undoing', action
 
       #
-      # undo merge
+      # undo merge and split
       #
       if action['type'] == 'MERGE':
 
@@ -267,6 +272,123 @@ class Controller(object):
 
         self.send_merge_table('SERVER')
         self.send_redraw('SERVER')
+
+      elif action['type'] == 'SPLIT':
+
+        z = action['value'][0]
+        full_bbox = action['value'][1]
+        old_area = action['value'][2]
+        new_area = action['value'][3]
+
+        # try the temporary data first
+        data_path = self.__mojo_tmp_dir + '/ids/tiles/w=00000000/z='+str(z).zfill(8)
+
+        if not os.path.isdir(data_path):
+          data_path = self.__mojo_dir + '/ids/tiles/w=00000000/z='+str(z).zfill(8)
+
+        images = os.listdir(data_path)
+        tile = {}
+        for i in images:
+
+          location = os.path.splitext(i)[0].split(',')
+          for l in location:
+            l = l.split('=')
+            exec(l[0]+'=int("'+l[1]+'")')
+
+          if not x in tile:
+            tile[x] = {}
+
+          hdf5_file = h5py.File(os.path.join(data_path,i))
+          list_of_names = []
+          hdf5_file.visit(list_of_names.append)
+          image_data = hdf5_file[list_of_names[0]].value
+          hdf5_file.close()
+
+          tile[x][y] = image_data
+
+        row = None
+        first_row = True
+
+        # go through rows of each tile
+        for r in tile.keys():
+          column = None
+          first_column = True
+
+          for c in tile[r]:
+            if first_column:
+              column = tile[r][c]
+              first_column = False
+            else:
+              column = np.concatenate((column, tile[r][c]), axis=0)
+
+          if first_row:
+            row = column
+            first_row = False
+          else:
+            row = np.concatenate((row, column), axis=1)
+
+        tile = row
+
+
+        # replace the area in tile with old_area
+        tile[full_bbox[1]:full_bbox[3],full_bbox[0]:full_bbox[2]] = old_area
+
+
+        # split tile and save as hdf5
+        x0y0 = tile[0:512,0:512]
+        x1y0 = tile[0:512,512:1024]
+        x0y1 = tile[512:1024,0:512]
+        x1y1 = tile[512:1024,512:1024]
+
+        output_folder = self.__mojo_tmp_dir + '/ids/tiles/w=00000000/z='+str(z).zfill(8)+'/'
+
+        try:
+          os.makedirs(output_folder)
+        except OSError as exc: # Python >2.5
+          if exc.errno == errno.EEXIST and os.path.isdir(output_folder):
+            pass
+          else: raise
+
+        h5f = h5py.File(output_folder+'y=00000000,x=00000000.hdf5', 'w')
+        h5f.create_dataset('dataset_1', data=x0y0)
+        h5f.close()
+
+        h5f = h5py.File(output_folder+'y=00000001,x=00000000.hdf5', 'w')
+        h5f.create_dataset('dataset_1', data=x0y1)
+        h5f.close()
+
+        h5f = h5py.File(output_folder+'y=00000000,x=00000001.hdf5', 'w')
+        h5f.create_dataset('dataset_1', data=x1y0)
+        h5f.close()
+
+        h5f = h5py.File(output_folder+'y=00000001,x=00000001.hdf5', 'w')
+        h5f.create_dataset('dataset_1', data=x1y1)
+        h5f.close()
+
+        output_folder = self.__mojo_tmp_dir + '/ids/tiles/w=00000001/z='+str(z).zfill(8)+'/'
+
+        try:
+          os.makedirs(output_folder)
+        except OSError as exc: # Python >2.5
+          if exc.errno == errno.EEXIST and os.path.isdir(output_folder):
+            pass
+          else: raise
+
+        # zoomed_tile = tile.reshape(512,512)
+        zoomed_tile = ndimage.interpolation.zoom(tile, .5, order=0, mode='nearest')
+        h5f = h5py.File(output_folder+'y=00000000,x=00000000.hdf5', 'w')
+        h5f.create_dataset('dataset_1', data=zoomed_tile)
+        h5f.close()
+
+        # send reload event
+        output = {}
+        output['name'] = 'HARD_RELOAD'
+        output['origin'] = 'SERVER'
+        output['value'] = {'z':z, 'full_bbox':str(full_bbox)}
+        # print output
+        self.__websocket.send(json.dumps(output))
+
+
 
       # decrease value
       value = max(0, value-1)
@@ -305,6 +427,123 @@ class Controller(object):
 
         self.send_merge_table('SERVER')
         self.send_redraw('SERVER')
+
+
+
+      elif action['type'] == 'SPLIT':
+
+        z = action['value'][0]
+        full_bbox = action['value'][1]
+        old_area = action['value'][2]
+        new_area = action['value'][3]
+
+        # try the temporary data first
+        data_path = self.__mojo_tmp_dir + '/ids/tiles/w=00000000/z='+str(z).zfill(8)
+
+        if not os.path.isdir(data_path):
+          data_path = self.__mojo_dir + '/ids/tiles/w=00000000/z='+str(z).zfill(8)
+
+        images = os.listdir(data_path)
+        tile = {}
+        for i in images:
+
+          location = os.path.splitext(i)[0].split(',')
+          for l in location:
+            l = l.split('=')
+            exec(l[0]+'=int("'+l[1]+'")')
+
+          if not x in tile:
+            tile[x] = {}
+
+          hdf5_file = h5py.File(os.path.join(data_path,i))
+          list_of_names = []
+          hdf5_file.visit(list_of_names.append)
+          image_data = hdf5_file[list_of_names[0]].value
+          hdf5_file.close()
+
+          tile[x][y] = image_data
+
+        row = None
+        first_row = True
+
+        # go through rows of each tile
+        for r in tile.keys():
+          column = None
+          first_column = True
+
+          for c in tile[r]:
+            if first_column:
+              column = tile[r][c]
+              first_column = False
+            else:
+              column = np.concatenate((column, tile[r][c]), axis=0)
+
+          if first_row:
+            row = column
+            first_row = False
+          else:
+            row = np.concatenate((row, column), axis=1)
+
+        tile = row
+
+
+        # replace the area in tile with new_area
+        tile[full_bbox[1]:full_bbox[3],full_bbox[0]:full_bbox[2]] = new_area
+
+
+        # split tile and save as hdf5
+        x0y0 = tile[0:512,0:512]
+        x1y0 = tile[0:512,512:1024]
+        x0y1 = tile[512:1024,0:512]
+        x1y1 = tile[512:1024,512:1024]
+
+        output_folder = self.__mojo_tmp_dir + '/ids/tiles/w=00000000/z='+str(z).zfill(8)+'/'
+
+        try:
+          os.makedirs(output_folder)
+        except OSError as exc: # Python >2.5
+          if exc.errno == errno.EEXIST and os.path.isdir(output_folder):
+            pass
+          else: raise
+
+        h5f = h5py.File(output_folder+'y=00000000,x=00000000.hdf5', 'w')
+        h5f.create_dataset('dataset_1', data=x0y0)
+        h5f.close()
+
+        h5f = h5py.File(output_folder+'y=00000001,x=00000000.hdf5', 'w')
+        h5f.create_dataset('dataset_1', data=x0y1)
+        h5f.close()
+
+        h5f = h5py.File(output_folder+'y=00000000,x=00000001.hdf5', 'w')
+        h5f.create_dataset('dataset_1', data=x1y0)
+        h5f.close()
+
+        h5f = h5py.File(output_folder+'y=00000001,x=00000001.hdf5', 'w')
+        h5f.create_dataset('dataset_1', data=x1y1)
+        h5f.close()
+
+        output_folder = self.__mojo_tmp_dir + '/ids/tiles/w=00000001/z='+str(z).zfill(8)+'/'
+
+        try:
+          os.makedirs(output_folder)
+        except OSError as exc: # Python >2.5
+          if exc.errno == errno.EEXIST and os.path.isdir(output_folder):
+            pass
+          else: raise
+
+        # zoomed_tile = tile.reshape(512,512)
+        zoomed_tile = ndimage.interpolation.zoom(tile, .5, order=0, mode='nearest')
+        h5f = h5py.File(output_folder+'y=00000000,x=00000000.hdf5', 'w')
+        h5f.create_dataset('dataset_1', data=zoomed_tile)
+        h5f.close()
+
+        # send reload event
+        output = {}
+        output['name'] = 'HARD_RELOAD'
+        output['origin'] = 'SERVER'
+        output['value'] = {'z':z, 'full_bbox':str(full_bbox)}
+        # print output
+        self.__websocket.send(json.dumps(output))
 
 
       # increase value
@@ -633,6 +872,7 @@ class Controller(object):
         row = np.concatenate((row, column), axis=1)
 
     tile = row
+    old_tile = tile
 
     # 
     label_id = values['id']
@@ -696,9 +936,30 @@ class Controller(object):
 
     tile = np.add(tile, label_image).astype(np.uint32)
 
-    # mh.imsave('/tmp/fullbbox.tif', 50*label_image[full_bbox[1]:full_bbox[3],full_bbox[0]:full_bbox[2]].astype(np.uint8))
 
-    #mh.imsave('/tmp/newtile.tif', tile.astype(np.uint32))
+
+    # mh.imsave('/tmp/old_tile.tif', old_tile[full_bbox[]].astype(np.uint32))
+    # mh.imsave('/tmp/new_tile.tif', tile[full_coords].astype(np.uint32))
+
+    #
+    # this is for undo
+    #
+    old_area = old_tile[full_bbox[1]:full_bbox[3],full_bbox[0]:full_bbox[2]]
+    new_area = tile[full_bbox[1]:full_bbox[3],full_bbox[0]:full_bbox[2]]
+    current_action = values['current_action']
+
+    action = {}
+    action['origin'] = input['origin']
+    action['name'] = 'ACTION'
+    action_value = {}
+    action_value['type'] = 'SPLIT'
+    action_value['value'] = [values["z"], full_bbox, old_area, new_area]
+    action['value'] = [current_action, action_value]
+
+    self.add_action(action)
+
+
+    # mh.imsave('/tmp/newtile.tif', tile.astype(np.uint32))
 
     # split tile and save as hdf5
     x0y0 = tile[0:512,0:512]
