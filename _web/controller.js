@@ -246,7 +246,7 @@ J.controller.prototype.update_orphan_list = function(data) {
 J.controller.prototype.show_orphan = function() {
 
 
-  $('#orphan_center').html('updated from javascript');
+  //$('#orphan_id').css('background-color','#666');
 
 };
 

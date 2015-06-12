@@ -45,6 +45,107 @@ body {
   color: white;
 }
 
+.panel_unsure {
+  background-color: #660000;
+}
+
+.panel_correct {
+  background-color: #006600;
+}
+
+#orphan_left_arrow {
+  position: absolute;
+  left: 0%;
+  border-right: solid 1px #666;
+  height: 100%;
+  width: 10%;
+  padding-top: 50px;
+  text-align: center;
+  font-size: 2em;
+}
+
+#orphan_right_arrow {
+  position: absolute;
+  right: 0%;
+  border-left: solid 1px #666;
+  height: 100%;
+  width: 10%;
+  padding-top: 50px;
+  text-align: center;
+  font-size: 2em;
+}
+
+.default_arrow {
+  background-color: black;
+}
+
+.pressed_arrow {
+  background-color: #666;
+}
+
+#orphan_color {
+  position: absolute;
+  left: 15%;
+  transform: translateY(-50%);
+  top: 50%;
+  width: 50px;
+  height: 50px;
+  background-color: white;
+  border: solid 1px #666;
+}
+
+#orphan_id {
+  position: absolute;
+  left: 35%;
+  top: 50%;
+  font-size: 1.5em;
+  transform: translateY(-50%);
+}
+
+#orphan_unsure {
+  position: absolute;
+  left: 60%;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
+  border: solid 1px #666;
+  font-size: 3em;
+  text-align: center;
+}
+
+#orphan_correct {
+  position: absolute;
+  left: 75%;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
+  border: solid 1px #666;
+  font-size: 3em;
+  text-align: center;
+}
+
+.orphan_button_off {
+  background-color: black;
+  color: white;
+}
+
+.orphan_button_on {
+  background-color: white;
+  color: black;
+}
+
+.noselect {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+
 #threeD {
   /*right: 10px;*/
   /*top: 10px;*/

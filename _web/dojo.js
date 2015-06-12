@@ -14,6 +14,12 @@ DOJO.link_active = false;
 DOJO.mousemove_timeout = null;
 DOJO.single_segment = false;
 
+//Temporary variables for testing orphan correction gui
+DOJO.orphan_status = [0, 0, 1, 0, 2];
+DOJO.current_orphan = 0;
+DOJO.orphans = [1, 2, 3, 4, 5];
+DOJO.orphan_colors = ['orange', 'blue', 'red', 'green', 'purple'];
+
 DOJO.init = function() {
 
   DOJO.viewer = new J.viewer('dojo1');
@@ -42,18 +48,95 @@ DOJO.init = function() {
   });
 
   DOJO.setup_buttons();
+  //Temporary code!
+  DOJO.update_orphan_panel(DOJO.orphan_status[0]);
 
 };
 
+//Temporary function for updating the orphan correction gui panel
+DOJO.update_orphan_panel = function (status) {
+  DOJO.orphan_status[DOJO.current_orphan] = status;
+  $('#orphan_correct, #orphan_unsure').removeClass('orphan_button_on').addClass('orphan_button_off');
+  $('#todo').removeClass('panel_correct panel_unsure');
+  switch (DOJO.orphan_status[DOJO.current_orphan]) {
+    case 1:
+          $('#todo').addClass('panel_unsure');
+          $('#orphan_unsure').removeClass('orphan_button_off').addClass('orphan_button_on');
+          break;
+    case 2:
+          $('#todo').addClass('panel_correct');
+          $('#orphan_correct').removeClass('orphan_button_off').addClass('orphan_button_on');
+          break;
+  }
+  $('#orphan_id').html('ID: ' + DOJO.orphans[DOJO.current_orphan]);
+  $('#orphan_color').css('background-color', DOJO.orphan_colors[DOJO.current_orphan]);
+  if (DOJO.current_orphan == 0) {
+    $('#orphan_left_arrow').removeClass('default_arrow').addClass('pressed_arrow');
+  } else {
+    $('#orphan_left_arrow').removeClass('pressed_arrow').addClass('default_arrow');
+  }
+  if (DOJO.current_orphan == DOJO.orphans.length - 1) {
+    $('#orphan_right_arrow').removeClass('default_arrow').addClass('pressed_arrow');
+  } else {
+    $('#orphan_right_arrow').removeClass('pressed_arrow').addClass('default_arrow');
+  }
+};
+
 DOJO.setup_buttons = function() {
+  $('#orphan_left_arrow')
+      .mousedown(function() {
+        if (DOJO.current_orphan != 0) {
+          $(this).removeClass('default_arrow').addClass('pressed_arrow');
+        }
+      })
+      .mouseup(function() {
+        if (DOJO.current_orphan != 0) {
+          $(this).removeClass('pressed_arrow').addClass('default_arrow');
+          DOJO.current_orphan--;
+          DOJO.update_orphan_panel(DOJO.orphan_status[DOJO.current_orphan]);
+          //DOJO.viewer._controller.show_orphan();
+        }
+      })
+      .mouseleave(function() {
+        if (DOJO.current_orphan != 0) {
+          $(this).removeClass('pressed_arrow').addClass('default_arrow');
+        }
+      });
 
-  $('#orphan_left_arrow').on('click', function() {
+  $('#orphan_right_arrow')
+      .mousedown(function() {
+        if (DOJO.current_orphan != DOJO.orphans.length - 1) {
+          $(this).removeClass('default_arrow').addClass('pressed_arrow');
+        }
+      })
+      .mouseup(function() {
+        if (DOJO.current_orphan != DOJO.orphans.length - 1) {
+          $(this).removeClass('pressed_arrow').addClass('default_arrow');
+          DOJO.current_orphan++;
+          DOJO.update_orphan_panel(DOJO.orphan_status[DOJO.current_orphan]);
+        }
+      })
+      .mouseleave(function() {
+        if (DOJO.current_orphan != DOJO.orphans.length - 1) {
+          $(this).removeClass('pressed_arrow').addClass('default_arrow');
+        }
+      });
 
-    
-    console.log('clicked on left arrow');
-
+  $('#orphan_unsure').on('click', function() {
+    if (DOJO.orphan_status[DOJO.current_orphan] == 1) {
+      DOJO.update_orphan_panel(0);
+    } else {
+      DOJO.update_orphan_panel(1);
+    }
   });
 
+  $('#orphan_correct').on('click', function() {
+    if (DOJO.orphan_status[DOJO.current_orphan] == 2) {
+      DOJO.update_orphan_panel(0);
+    } else {
+      DOJO.update_orphan_panel(2);
+    }
+  });
 
   var todo = document.getElementById('todo');
   todo.style.left = (document.body.clientWidth - 310) + 'px';
