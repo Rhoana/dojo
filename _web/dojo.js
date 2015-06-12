@@ -123,18 +123,18 @@ DOJO.setup_buttons = function() {
       });
 
   $('#orphan_unsure').on('click', function() {
-    if (DOJO.orphan_status[DOJO.current_orphan] == 1) {
-      DOJO.update_orphan_panel(0);
+    if (DOJO.viewer._controller._orphans[DOJO.viewer._controller._current_orphan][2] == 1) {
+      DOJO.viewer._controller.update_orphan_status(0);
     } else {
-      DOJO.update_orphan_panel(1);
+      DOJO.viewer._controller.update_orphan_status(1);
     }
   });
 
   $('#orphan_correct').on('click', function() {
-    if (DOJO.orphan_status[DOJO.current_orphan] == 2) {
-      DOJO.update_orphan_panel(0);
+    if (DOJO.viewer._controller._orphans[DOJO.viewer._controller._current_orphan][2] == 2) {
+      DOJO.viewer._controller.update_orphan_status(0);
     } else {
-      DOJO.update_orphan_panel(2);
+      DOJO.viewer._controller.update_orphan_status(2);
     }
   });
 

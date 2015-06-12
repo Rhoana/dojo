@@ -8,6 +8,9 @@ J.controller = function(viewer) {
 
   this._current_action = 0;
 
+  this._current_orphan = 0;
+  this._orphans = null;
+
   this._merge_table = null;
 
   this._gl_merge_table_keys = null;
@@ -189,63 +192,14 @@ J.controller.prototype.update_current_action = function(value) {
 
 J.controller.prototype.update_orphan_list = function(data) {
 
-  // console.log('Updating orphan list..', data);
+  console.log('Updating orphan list..');
   // aaaaaa = data
 
   data = JSON.parse(data);
 
-  var engulfed_orphans = data[0];
-  var ss_orphans = data[1];
-  var other = data[2];
+  this._orphans = data;
 
-
-
-
-  // var ss_orphans_length = ss_orphans.length;
-  // for (var i=0; i<ss_orphans_length; i++) {
-
-  //   var id = parseInt(ss_orphans[i][0],10);
-  //   var bbox = ss_orphans[i][1];
-
-  //   console.log(id);
-
-  // }
-
-  // for (var z=0; z<data.length; z++) {
-
-  //   var orphans_for_slice = data[z];
-  //   var no_orphans_for_slice = orphans_for_slice.length;
-
-  //   //
-  //   // create slice entry
-  //   //
-  //   $('#orphans_content').append($('<ul><li id="orphans_slice_'+(z+1)+'" class="dropdown">Slice '+(z+1)+' ('+no_orphans_for_slice+' orphans)</li></ul>'));
-
-  //   if (no_orphans_for_slice > 0) {
-
-  //     $('#orphans_slice_'+(z+1)).append('<ul id="orphans_slice_list_'+(z+1)+'"></ul>');
-
-  //   }
-
-  //   for (var o=0; o<no_orphans_for_slice; o++) {
-
-  //     var label = orphans_for_slice[o];
-  //     var color = this._viewer.get_color(label);
-  //     var rgb_color = 'rgb('+color[0]+','+color[1]+','+color[2]+')';
-  //     var label_code = "<li id='orphans_label_"+label+"'><div class='todo_color' style='background-color:"+rgb_color+"'></div><span class='todo_label'>Label <span class='todo_number'>"+label+"</span></span><span class='todo_check'><input type='checkbox'></span></li>"
-
-  //     $('#orphans_slice_list_'+(z+1)).append(label_code);
-
-  //   }
-
-
-
-  // }
-
-  // $('li.dropdown').click(function() {
-  //   console.log(this)
-  //     $(this).find('ul').slideToggle('slow');
-  // });  
+  // TODO update panel, call show_orphan
 
 };
 
@@ -255,6 +209,34 @@ J.controller.prototype.show_orphan = function() {
   //$('#orphan_id').css('background-color','#666');
 
 };
+
+
+J.controller.prototype.update_orphan_status = function(status) {
+
+  this._orphans[this._current_orphan][2] = status;
+
+  $('#orphan_correct, #orphan_unsure').removeClass('orphan_button_on').addClass('orphan_button_off');
+  $('#todo').removeClass('panel_correct panel_unsure');
+  switch (status) {
+    case 1:
+          $('#todo').addClass('panel_unsure');
+          $('#orphan_unsure').removeClass('orphan_button_off').addClass('orphan_button_on');
+          break;
+    case 2:
+          $('#todo').addClass('panel_correct');
+          $('#orphan_correct').removeClass('orphan_button_off').addClass('orphan_button_on');
+          break;
+  }
+
+
+  var orphan = {};
+  orphan['current_orphan'] = this._current_orphan;
+  orphan['orphan'] = this._orphans[this._current_orphan];
+
+  this.send('UPDATE_ORPHAN', orphan);
+
+};
+
 
 J.controller.prototype.update_potential_orphan_list = function(data) {
 

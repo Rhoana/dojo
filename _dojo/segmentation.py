@@ -91,7 +91,7 @@ class Segmentation(Datasource):
     '''
     '''
     print 'Detecting orphans..'
-    return
+    
     volume = self.get_volume_data()
     
     #
@@ -236,9 +236,9 @@ class Segmentation(Datasource):
 
 
     #Output in JSON
-    engulfed_orphans = [list(a) for a in zip(sorted_engulfed_orphans, engulfed_orphans_bbox)]
-    ss_orphans = [list(a) for a in zip(sorted_ss_orphans, ss_orphans_bbox)]
-    other_orphans = [list(a) for a in zip(other_orphans, other_orphans_bbox)]
+    engulfed_orphans = [list(a) for a in zip(sorted_engulfed_orphans, engulfed_orphans_bbox, [0]*len(sorted_engulfed_orphans))]
+    ss_orphans = [list(a) for a in zip(sorted_ss_orphans, ss_orphans_bbox, [0]*len(sorted_ss_orphans))]
+    other_orphans = [list(a) for a in zip(other_orphans, other_orphans_bbox, [0]*len(other_orphans))]
 
 
 
@@ -254,7 +254,9 @@ class Segmentation(Datasource):
 
     # # print sorted_orphans
 
-    self.get_database()._orphans = [engulfed_orphans, ss_orphans, other_orphans]
+
+
+    self.get_database()._orphans = engulfed_orphans + ss_orphans + other_orphans
     self.get_database()._potential_orphans = sorted_potential_orphans
 
     return volume, orphans, orphans_sizes

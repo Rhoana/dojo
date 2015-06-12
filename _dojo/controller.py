@@ -211,6 +211,9 @@ class Controller(object):
     elif input['name'] == 'REDO':
       self.redo_action(input)
 
+    elif input['name'] == 'UPDATE_ORPHAN':
+      self.update_orphan(input)
+
 
   def add_action(self, input):
     '''
@@ -558,6 +561,17 @@ class Controller(object):
     output['origin'] = username
     output['value'] = value
     self.__websocket.send(json.dumps(output))
+
+
+  def update_orphan(self, input):
+    '''
+    '''
+    index = input['value']['current_orphan'];
+    orphan = input['value']['orphan'];
+
+    self.__database.get_orphans()[index] = orphan;
+
+    self.send_orphans()
 
 
   def adjust(self, input):
