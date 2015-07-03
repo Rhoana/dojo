@@ -74,6 +74,8 @@ class Datasource(object):
           self.__max_mojozoom_level = int(math.ceil( math.log(float(self.__info['numVoxelsPerTileX'])/float(self.__info['numVoxelsX']), 0.5) ))
           # get the max number of Z tiles
           self.__max_z_tiles = int(self.__info['numTilesZ'])
+          # get the file format
+          self.__input_format = str(self.__info['fileExtension'])
 
         # colormap
         elif self.__colormap_file_regex.match(os.path.join(root,f)):

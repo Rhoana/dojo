@@ -42,7 +42,7 @@ class ServerLogic:
     '''
     pass
 
-  def run( self, mojo_dir, out_dir, port, configured ):
+  def run( self, mojo_dir, out_dir, port, orphan_detection, configured ):
     '''
     '''
 
@@ -63,7 +63,7 @@ class ServerLogic:
     self.__image = _dojo.Image(mojo_dir, tmpdir)
 
     # detect orphans
-    if configured:
+    if orphan_detection:
       self.__segmentation.detect_orphans()
 
     # and the controller
@@ -177,6 +177,7 @@ def print_help( scriptName ):
   print description
   print
   print 'Usage: ' + scriptName + ' MOJO_DIRECTORY OUTPUT_DIRECTORY PORT'
+  print '  optional: --skip-orphan-detection'
   print
 
 #
@@ -197,6 +198,7 @@ if __name__ == "__main__":
     output_dir = tempfile.mkdtemp()
     # and a free port
     port = 1336
+    orphan_detection = False
     result = 0
     import socket;
     while result==0:
@@ -210,7 +212,8 @@ if __name__ == "__main__":
     input_dir = sys.argv[1]
     output_dir = sys.argv[2]
     port = sys.argv[3]
+    orphan_detection = len(sys.argv) == 4
     configured = True
 
   logic = ServerLogic()
-  logic.run( input_dir, output_dir, port, configured )
+  logic.run( input_dir, output_dir, port, orphan_detection, configured )

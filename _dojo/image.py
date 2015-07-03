@@ -16,7 +16,7 @@ class Image(Datasource):
     @override
     '''
     query = 'image'
-    input_format = 'tif'
+    input_format = None
     output_format = 'jpg'
     sub_dir = 'images'
 
