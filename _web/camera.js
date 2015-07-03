@@ -106,9 +106,16 @@ J.camera.prototype.zoom = function(x, y, delta) {
   // clamp the linear pixel zoom
   if (future_zoom_level <= 0.7 || future_zoom_level >= 5.0) return;
 
+  var load = false;
+  var no_draw = false;
+  var fzl = future_zoom_level;
+
   if (future_w >= 0 && future_w < this._viewer._image.zoomlevel_count) {
     // start loading the tiles immediately but set no_draw to true
-    this._loader.load_tiles(x, y, this._z, this._w, future_w, true);
+    // this._loader.load_tiles(x, y, this._z, this._w, future_zoom_level, true);
+    // load = true;
+    // no_draw = true;
+    // fzl = future_w;
   }
 
   var old_scale = this._view[0];
@@ -132,9 +139,10 @@ J.camera.prototype.zoom = function(x, y, delta) {
       // this._viewer.loading(true);
 
       // this time we really draw (no_draw = false)
-      this._loader.load_tiles(x, y, this._z, this._w, future_zoom_level, false);
+      load = true;
       
       this._w = future_zoom_level;
+      fzl = future_zoom_level;
 
       if (wheel_sign < 0) {
 
@@ -164,6 +172,10 @@ J.camera.prototype.zoom = function(x, y, delta) {
   // translate to correct point
   this._view[6] -= wheel_sign * Math.abs(u_v[0] - u_new);
   this._view[7] -= wheel_sign * Math.abs(u_v[1] - v_new);  
+
+  if (load) {
+    this._loader.load_tiles(x, y, this._z, this._w, fzl, no_draw);
+  }
 
   this._zoom_end_timeout = setTimeout(this.zoom_end.bind(this), 60);
 

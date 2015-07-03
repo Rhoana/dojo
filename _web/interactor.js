@@ -42,8 +42,6 @@ J.interactor.prototype.init = function() {
 
 J.interactor.prototype.onresize = function(e) {
 
-  console.log('dsfdsfdsf')
-
   this._viewer._height = DOJO.viewer._container.clientHeight;
   this._viewer._width = DOJO.viewer._container.clientWidth;
   this._viewer._canvas.height = this._viewer._height;
@@ -62,6 +60,8 @@ J.interactor.prototype.onmousemove = function(e) {
   this._camera._i_j = this._viewer.xy2ij(x, y);
 
   //var u_v = this._viewer.xy2uv(x, y);
+
+  // console.log('IJ',this._camera._i_j)
 
   DOJO.onmousemove(x, y);
 
@@ -130,6 +130,8 @@ J.interactor.prototype.onmousewheel = function(e) {
   this._camera._i_j = this._viewer.xy2ij(x, y);
 
   this._camera.zoom(x, y, delta);
+
+  this._last_mouse = [x, y];
 
 };
 
