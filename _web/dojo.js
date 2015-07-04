@@ -394,14 +394,17 @@ DOJO.init_threeD = function() {
 
   DOJO.threeD.renderer = r;
 
+  var volume_zoomlevel = pad(DOJO.viewer._image.zoomlevel_count - 1, 8);
+
   var vol = new X.volume();
   vol.dimensions = [512,512,DOJO.viewer._image.max_z_tiles];
   vol.spacing = [1,1,Math.floor(512/DOJO.viewer._image.max_z_tiles)/2];
   vol.xySampleRate = 8;
-  vol.file = '/image/volume/00000001/&.RZ';
+  vol.zSampleRate = 4;
+  vol.file = '/image/volume/'+volume_zoomlevel+'/&.RZ';
 
   vol.labelmap.use32bit = true;
-  vol.labelmap.file = '/segmentation/volume/00000001/&.RZ';
+  vol.labelmap.file = '/segmentation/volume/'+volume_zoomlevel+'/&.RZ';
   vol.labelmap.dimensions = vol.dimensions;
   vol.labelmap.opacity = 0.5;
   // vol.labelmap._dirty = true;

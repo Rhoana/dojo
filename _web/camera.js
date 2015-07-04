@@ -112,7 +112,7 @@ J.camera.prototype.zoom = function(x, y, delta) {
 
   if (future_w >= 0 && future_w < this._viewer._image.zoomlevel_count) {
     // start loading the tiles immediately but set no_draw to true
-    // this._loader.load_tiles(x, y, this._z, this._w, future_zoom_level, true);
+    // this._loader.load_tiles(x, y, this._z, this._w, future_w, true);
     // load = true;
     // no_draw = true;
     // fzl = future_w;

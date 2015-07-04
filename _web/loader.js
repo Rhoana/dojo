@@ -297,7 +297,7 @@ J.loader.prototype.load_tiles = function(x, y, z, w, w_new, no_draw) {
   var space_right = Math.max(0, this._viewer._width - (local_offset_x+512*this._viewer._camera._view[0]));
   var space_bottom = Math.max(0, this._viewer._height - (local_offset_y+512*this._viewer._camera._view[4]));
   
-  console.log('VIEWPORT L', space_left, 'R', space_right, 'T', space_top, 'B', space_bottom)
+  // console.log('VIEWPORT L', space_left, 'R', space_right, 'T', space_top, 'B', space_bottom)
 
 
   // console.log(space_right, current_tile_x)
@@ -309,7 +309,7 @@ J.loader.prototype.load_tiles = function(x, y, z, w, w_new, no_draw) {
 
 
 
-  console.log('LOADING L',no_left, 'R',no_right, 'T',no_top, 'B',no_bottom)
+  // console.log('LOADING L',no_left, 'R',no_right, 'T',no_top, 'B',no_bottom)
   
 
   // no_left = 0
@@ -387,12 +387,13 @@ J.loader.prototype.load_tiles = function(x, y, z, w, w_new, no_draw) {
   }
 
 
-  console.log(tiles_to_load.length)
+  // console.log(tiles_to_load.length)
 
   // clear old tiles
   if (!no_draw) {
     // console.log('clearing',this._viewer._image.zoom_levels[w][0]*512)
-    this._viewer.clear_buffer(this._viewer._image.zoom_levels[w][0]*512, this._viewer._image.zoom_levels[w][1]*512);
+    // this._viewer.clear_buffer(this._viewer._image.zoom_levels[w][0]*512, this._viewer._image.zoom_levels[w][1]*512);
+    this._viewer.clear_buffer(this._viewer._image.width, this._viewer._image.height);
   }
 
   var to_draw = tiles_to_load.length;

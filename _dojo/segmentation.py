@@ -31,7 +31,6 @@ class Segmentation(Datasource):
     '''
     files = super(Segmentation, self).get_volume(1)
 
-
     out = None
     out_is_there = False
 
