@@ -140,13 +140,18 @@ function linkShaders(gl, vs_id, fs_id) {
 
 function from32bitTo8bit(value) {
 
-  // pack value to 4 bytes (little endian)
-  var b3 = Math.floor(value / (256*256*256)); // lsb
-  var b2 = Math.floor((value-b3) / (256*256));
-  var b1 = Math.floor((value-b3-b2) / (256));
-  var b0 = Math.floor(value-b1*(256)-b2*(256*256)-b3*(256*256*256)); // msb  
+  // // pack value to 4 bytes (little endian)
+  // var b3 = Math.floor(value / (256*256*256)); // lsb
+  // var b2 = Math.floor((value-b3) / (256*256));
+  // var b1 = Math.floor((value-b3-b2) / (256));
+  // var b0 = Math.floor(value-b1*(256)-b2*(256*256)-b3*(256*256*256)); // msb  
 
-  return [b0, b1, b2, b3];
+  // return [b0, b1, b2, b3];
+
+  arr = new ArrayBuffer(4); // an Int32 takes 4 bytes
+  view = new DataView(arr);
+  view.setUint32(0, value, true); // byteOffset = 0; litteEndian = false
+  return new Uint8Array(arr);
 
 }
 
