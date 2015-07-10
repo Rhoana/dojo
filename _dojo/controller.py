@@ -280,6 +280,24 @@ class Controller(object):
         self.send_merge_table('SERVER')
         self.send_redraw('SERVER')
 
+      elif action['type'] == 'MERGE_GROUP':
+
+        ids = action['value'][0]
+
+        for i in ids:
+
+          key = str(i)
+
+          if key in self.__merge_table:
+            del self.__merge_table[key]
+          else:
+            # this was already undo'ed before
+            pass
+
+        self.send_merge_table('SERVER')
+        self.send_redraw('SERVER')
+
+
       elif action['type'] == 'SPLIT':
 
         z = action['value'][0]
@@ -435,6 +453,22 @@ class Controller(object):
         self.send_merge_table('SERVER')
         self.send_redraw('SERVER')
 
+      elif action['type'] == 'MERGE_GROUP':
+
+        ids = action['value'][0]
+
+        for i in ids:
+
+          if i == action['value'][1]:
+            # avoid GPU crash
+            continue
+
+          key = str(i)
+
+          self.__merge_table[key] = action['value'][1]
+            
+        self.send_merge_table('SERVER')
+        self.send_redraw('SERVER')
 
 
       elif action['type'] == 'SPLIT':

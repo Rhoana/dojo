@@ -630,7 +630,7 @@ J.controller.prototype.send_problem_table = function() {
 
 J.controller.prototype.update_merge_table = function(data) {
 
-  // console.log('Received new merge table', data);
+  console.log('Received new merge table', data);
 
   this._merge_table = data;
 
@@ -718,7 +718,7 @@ J.controller.prototype.lock = function(x, y) {
 
 J.controller.prototype.larger_brush = function() {
 
-  this._brush_size = Math.min(100, this._brush_size+=1);
+  this._brush_size = Math.min(30, this._brush_size+=1);
 
 };
 
@@ -1303,13 +1303,26 @@ J.controller.prototype.draw_merge = function(x, y) {
   context.lineWidth = this._brush_size;
   context.stroke();
 
-  DOJO.viewer.get_segmentation_id(i_j[0], i_j[1], function(id) {
+  var left = Math.floor(i_j[0] - this._brush_size/2);
+  var right = Math.floor(i_j[0] + this._brush_size/2);
 
-    if (this._merge_target_ids.indexOf(id) == -1) {
-      this._merge_target_ids.push(id);
-    }
+  console.log(left, right)
 
-  }.bind(this));
+  for (var i=left; i<right; i++) {
+
+
+    DOJO.viewer.get_segmentation_id(i, i_j[1], function(id) {
+
+
+
+      if (this._merge_target_ids.indexOf(id) == -1) {
+        this._merge_target_ids.push(id);
+      }
+
+    }.bind(this));
+
+
+  }
 
 
     // var color = this._viewer.get_color(this._merge_id);
@@ -1355,6 +1368,25 @@ J.controller.prototype.end_draw_merge = function(x, y) {
 
   this._viewer._canvas.style.cursor = '';
   this._viewer.clear_overlay_buffer();
+  
+  var color2 = DOJO.viewer.get_color(this._last_id);
+  var color2_hex = rgbToHex(color2[0], color2[1], color2[2]);
+  var log = 'User $USER merged many labels to <font color="'+color2_hex+'">' +this._last_id + '</font>.';
+
+  this.send_log(log);
+
+
+  this.create_gl_merge_table();
+
+  // this._viewer.redraw();
+
+  this.send_merge_table();
+
+  this.highlight(this._last_id);
+
+
+  // send an action for undo/redo
+  this.add_action('MERGE_GROUP', [this._merge_target_ids, this._last_id]);
 
   this._merge_mode = -1;
 
@@ -1386,33 +1418,33 @@ J.controller.prototype.merge = function(id) {
 
   this._merge_table[id] = this._last_id;
 
-  var color1 = DOJO.viewer.get_color(id);
-  var color1_hex = rgbToHex(color1[0], color1[1], color1[2]);
-  var color2 = DOJO.viewer.get_color(this._last_id);
-  var color2_hex = rgbToHex(color2[0], color2[1], color2[2]);
+  // var color1 = DOJO.viewer.get_color(id);
+  // var color1_hex = rgbToHex(color1[0], color1[1], color1[2]);
+  // var color2 = DOJO.viewer.get_color(this._last_id);
+  // var color2_hex = rgbToHex(color2[0], color2[1], color2[2]);
 
-  var colored_id1 = id;
-  var colored_id2 = this._last_id;
+  // var colored_id1 = id;
+  // var colored_id2 = this._last_id;
 
-  var log = 'User $USER merged labels <font color="'+color1_hex+'">'+colored_id1+'</font> and <font color="'+color2_hex+'">' +colored_id2 + '</font>.';
+  // var log = 'User $USER merged labels <font color="'+color1_hex+'">'+colored_id1+'</font> and <font color="'+color2_hex+'">' +colored_id2 + '</font>.';
 
-  this.send_log(log);
+  // this.send_log(log);
   // shouldn't be required
   // DOJO.update_log(log);
 
   // this._viewer.redraw();
 
-  this.create_gl_merge_table();
+  // this.create_gl_merge_table();
 
-  // this._viewer.redraw();
+  // // this._viewer.redraw();
 
-  this.send_merge_table();
+  // this.send_merge_table();
 
-  this.highlight(this._last_id);
+  // this.highlight(this._last_id);
 
 
-  // send an action for undo/redo
-  this.add_action('MERGE', [id, this._last_id]);
+  // // send an action for undo/redo
+  // this.add_action('MERGE', [id, this._last_id]);
 
 };
 
