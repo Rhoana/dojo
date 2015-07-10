@@ -50,6 +50,10 @@ J.controller = function(viewer) {
   this._brush_size = 3;
   this._brush_ijs = [];
 
+  this._merge_mode = -1;
+  this._merge_id = -1;
+  this._merge_target_ids = [];
+
   this.create_gl_3d_labels();
 
 };
@@ -714,7 +718,7 @@ J.controller.prototype.lock = function(x, y) {
 
 J.controller.prototype.larger_brush = function() {
 
-  this._brush_size = Math.min(10, this._brush_size+=1);
+  this._brush_size = Math.min(100, this._brush_size+=1);
 
 };
 
@@ -1242,6 +1246,117 @@ J.controller.prototype.end_draw_split = function(x, y) {
   }
 
 
+
+};
+
+J.controller.prototype.start_merge = function(id, x, y) {
+
+  if (this._merge_mode != -1) return;
+
+  console.log('start merge');
+
+  this._merge_mode = 1;
+  this._merge_id = id;
+  this._merge_target_ids =[];
+  this._brush_ijs = [];
+
+  this._viewer._canvas.style.cursor = 'crosshair';
+
+  this.activate(id);    
+
+
+  var i_j = this._viewer.xy2ij(x, y);
+  var u_v = this._viewer.ij2uv_no_zoom(i_j[0],i_j[1]);
+  // var u_v = this._viewer.ij2uv(i_j[0], i_j[1]);
+  // var u_v = [x*this._viewer._camera._view[0],y*this._viewer._camera._view[4]];
+
+  var context = this._viewer._overlay_buffer_context;
+
+  this._brush_ijs = [];
+  this._brush_bbox = [];
+  context.beginPath();
+  context.moveTo(u_v[0], u_v[1]);  
+
+};
+
+J.controller.prototype.draw_merge = function(x, y) {
+
+
+  if (this._merge_mode != 1 && this._merge_mode != 2) return;
+
+  console.log('draw merge')
+
+  this._merge_mode = 2;
+
+
+  var i_j = this._viewer.xy2ij(x, y);
+  if (i_j[0] == -1) return;
+  var u_v = this._viewer.ij2uv_no_zoom(i_j[0],i_j[1]);
+
+  var context = this._viewer._overlay_buffer_context;
+
+  // and store the i_j's for later use
+  this._brush_ijs.push(i_j);
+
+  context.lineTo(u_v[0], u_v[1]);
+  context.strokeStyle = 'rgba(0,191,255,0.1)';
+  context.lineWidth = this._brush_size;
+  context.stroke();
+
+  DOJO.viewer.get_segmentation_id(i_j[0], i_j[1], function(id) {
+
+    if (this._merge_target_ids.indexOf(id) == -1) {
+      this._merge_target_ids.push(id);
+    }
+
+  }.bind(this));
+
+
+    // var color = this._viewer.get_color(this._merge_id);
+
+    // var id = this._viewer._overlay_buffer_context.createImageData(this._brush_size, this._brush_size);
+    // var d = id.data;
+    // for(var j=0;j<this._brush_size*this._brush_size;j++) {
+    //   d[j*4+0] = color[0];
+    //   d[j*4+1] = color[1];
+    //   d[j*4+2] = color[2];
+    //   d[j*4+3] = this._viewer._overlay_opacity;
+    // }
+
+    // var brush_ij = [Math.floor(i_js[0]-this._brush_size/2), Math.floor(i_js[1]-this._brush_size/2)];
+    // var u_v = this._viewer.ij2uv_no_zoom(brush_ij[0], brush_ij[1]);
+
+    // this._brush_ijs.push(brush_ij);
+
+    // this._viewer._overlay_buffer_context.putImageData(id, u_v[0], u_v[1]);
+
+  // }.bind(this));
+
+};
+
+J.controller.prototype.end_draw_merge = function(x, y) {
+
+  console.log('end draw merge')
+
+  this._last_id = this._merge_id;
+
+  // add all to merge table
+  var no_target_ids = this._merge_target_ids.length;
+  for (var i=0; i<no_target_ids; i++) {
+
+    //this._merge_table[this._merge_target_ids[i]] = this._merge_id;
+    this.merge(this._merge_target_ids[i]);
+
+
+  }
+
+  var context = this._viewer._image_buffer_context;    
+  context.closePath();  
+
+  this._viewer._canvas.style.cursor = '';
+  this._viewer.clear_overlay_buffer();
+
+  this._merge_mode = -1;
 
 };
 

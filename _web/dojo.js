@@ -214,7 +214,8 @@ DOJO.onleftclick = function(x, y) {
     if (DOJO.mode == DOJO.modes.merge) {
 
       if (!DOJO.viewer.is_locked(id))
-        DOJO.viewer._controller.merge(id);
+        DOJO.viewer._controller.start_merge(id, x, y);
+        // DOJO.viewer._controller.merge(id);
       
     } else if (DOJO.mode == DOJO.modes.split) {
 
@@ -259,6 +260,10 @@ DOJO.onmousemove = function(x, y) {
 
     DOJO.viewer._controller.draw_adjust(x, y);
 
+  } else if (DOJO.mode == DOJO.modes.merge && DOJO.viewer._interactor._left_down) {
+
+    DOJO.viewer._controller.draw_merge(x, y);
+
   }
 
 };
@@ -270,6 +275,10 @@ DOJO.onmouseup = function(x, y) {
   if (DOJO.mode == DOJO.modes.split) {
 
     DOJO.viewer._controller.end_draw_split(x, y);
+
+  } else if (DOJO.mode == DOJO.modes.merge) {
+
+    DOJO.viewer._controller.end_draw_merge(x,y);
 
   }
 
