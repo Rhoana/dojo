@@ -53,6 +53,23 @@ class Datasource(object):
 
     self.__setup()
 
+  def get_info(self):
+    '''
+    '''
+    return self.__info
+
+
+  def get_input_format(self):
+    '''
+    '''
+    return self.__input_format
+
+
+  def get_max_zoomlevel(self):
+    '''
+    '''
+    return self.__max_mojozoom_level
+
 
   def __setup(self):
     '''
@@ -76,6 +93,9 @@ class Datasource(object):
           self.__max_z_tiles = int(self.__info['numTilesZ'])
           # get the file format
           self.__input_format = str(self.__info['fileExtension'])
+          # width and height
+          self._width = int(self.__info['numVoxelsX'])
+          self._height = int(self.__info['numVoxelsY'])
 
         # colormap
         elif self.__colormap_file_regex.match(os.path.join(root,f)):

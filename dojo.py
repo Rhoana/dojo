@@ -67,7 +67,7 @@ class ServerLogic:
       self.__segmentation.detect_orphans()
 
     # and the controller
-    self.__controller = _dojo.Controller(mojo_dir, out_dir, tmpdir, self.__segmentation.get_database())
+    self.__controller = _dojo.Controller(mojo_dir, out_dir, tmpdir, self.__segmentation.get_database(), self)
 
     # and the viewer
     self.__viewer = _dojo.Viewer()
@@ -101,6 +101,18 @@ class ServerLogic:
     print '*'*80
 
     tornado.ioloop.IOLoop.instance().start()
+
+
+  def get_image(self):
+    '''
+    '''
+    return self.__image
+
+
+  def get_segmentation(self):
+    '''
+    '''
+    return self.__segmentation
 
   def finish_setup(self):
     '''

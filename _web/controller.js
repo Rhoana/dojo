@@ -195,6 +195,8 @@ J.controller.prototype.update_orphan_list = function(data) {
   console.log('Updating orphan list..');
   // aaaaaa = data
 
+  if (data=="None") return;
+
   data = JSON.parse(data);
 
   this._orphans = data;

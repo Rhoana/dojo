@@ -273,6 +273,7 @@ class Segmentation(Datasource):
     hdf5_file.close()
 
     #print file, image_data[0][0], image_data.shape
+    # print image_data.dtype
 
     c_image_data = zlib.compress(image_data)
 
