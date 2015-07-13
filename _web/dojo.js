@@ -183,6 +183,24 @@ DOJO.setup_buttons = function() {
 
   };  
 
+  var undo = document.getElementById('undo');
+
+  undo.onclick = function() {
+
+    DOJO.viewer._controller.undo_action();
+
+  };  
+
+
+  var redo = document.getElementById('redo');
+
+  redo.onclick = function() {
+
+    DOJO.viewer._controller.redo_action();
+
+  };  
+
+
 
 };
 

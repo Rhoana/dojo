@@ -362,51 +362,45 @@ class Controller(object):
         tile[full_bbox[1]:full_bbox[3],full_bbox[0]:full_bbox[2]] = old_area
 
 
-        # split tile and save as hdf5
-        x0y0 = tile[0:512,0:512]
-        x1y0 = tile[0:512,512:1024]
-        x0y1 = tile[512:1024,0:512]
-        x1y1 = tile[512:1024,512:1024]
-
         output_folder = self.__mojo_tmp_dir + '/ids/tiles/w=00000000/z='+str(z).zfill(8)+'/'
 
-        try:
-          os.makedirs(output_folder)
-        except OSError as exc: # Python >2.5
-          if exc.errno == errno.EEXIST and os.path.isdir(output_folder):
-            pass
-          else: raise
+        # try:
+        #   os.makedirs(output_folder)
+        # except OSError as exc: # Python >2.5
+        #   if exc.errno == errno.EEXIST and os.path.isdir(output_folder):
+        #     pass
+        #   else: raise
 
-        h5f = h5py.File(output_folder+'y=00000000,x=00000000.hdf5', 'w')
-        h5f.create_dataset('dataset_1', data=x0y0)
-        h5f.close()
+        # h5f = h5py.File(output_folder+'y=00000000,x=00000000.hdf5', 'w')
+        # h5f.create_dataset('dataset_1', data=x0y0)
+        # h5f.close()
 
-        h5f = h5py.File(output_folder+'y=00000001,x=00000000.hdf5', 'w')
-        h5f.create_dataset('dataset_1', data=x0y1)
-        h5f.close()
+        # h5f = h5py.File(output_folder+'y=00000001,x=00000000.hdf5', 'w')
+        # h5f.create_dataset('dataset_1', data=x0y1)
+        # h5f.close()
 
-        h5f = h5py.File(output_folder+'y=00000000,x=00000001.hdf5', 'w')
-        h5f.create_dataset('dataset_1', data=x1y0)
-        h5f.close()
+        # h5f = h5py.File(output_folder+'y=00000000,x=00000001.hdf5', 'w')
+        # h5f.create_dataset('dataset_1', data=x1y0)
+        # h5f.close()
 
-        h5f = h5py.File(output_folder+'y=00000001,x=00000001.hdf5', 'w')
-        h5f.create_dataset('dataset_1', data=x1y1)
-        h5f.close()
+        # h5f = h5py.File(output_folder+'y=00000001,x=00000001.hdf5', 'w')
+        # h5f.create_dataset('dataset_1', data=x1y1)
+        # h5f.close()
 
-        output_folder = self.__mojo_tmp_dir + '/ids/tiles/w=00000001/z='+str(z).zfill(8)+'/'
+        # output_folder = self.__mojo_tmp_dir + '/ids/tiles/w=00000001/z='+str(z).zfill(8)+'/'
 
-        try:
-          os.makedirs(output_folder)
-        except OSError as exc: # Python >2.5
-          if exc.errno == errno.EEXIST and os.path.isdir(output_folder):
-            pass
-          else: raise
+        # try:
+        #   os.makedirs(output_folder)
+        # except OSError as exc: # Python >2.5
+        #   if exc.errno == errno.EEXIST and os.path.isdir(output_folder):
+        #     pass
+        #   else: raise
 
-        # zoomed_tile = tile.reshape(512,512)
-        zoomed_tile = ndimage.interpolation.zoom(tile, .5, order=0, mode='nearest')
-        h5f = h5py.File(output_folder+'y=00000000,x=00000000.hdf5', 'w')
-        h5f.create_dataset('dataset_1', data=zoomed_tile)
-        h5f.close()
+        # # zoomed_tile = tile.reshape(512,512)
+        # zoomed_tile = ndimage.interpolation.zoom(tile, .5, order=0, mode='nearest')
+        # h5f = h5py.File(output_folder+'y=00000000,x=00000000.hdf5', 'w')
+        # h5f.create_dataset('dataset_1', data=zoomed_tile)
+        # h5f.close()
 
         # send reload event
         output = {}

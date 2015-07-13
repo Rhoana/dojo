@@ -11,6 +11,21 @@ body {
   background-color:black;
 }
 
+#undoredo {
+  width: 60px;
+  margin-left: -4px;
+}
+
+#undo {
+  width: 20px;
+  opacity: 0.3;
+}
+
+#redo {
+  width: 20px;
+  opacity: 0.3;
+}
+
 #blocker {
   position: absolute;
   top:0px;

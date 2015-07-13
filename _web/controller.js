@@ -7,6 +7,7 @@ J.controller = function(viewer) {
   this._last_id = null;
 
   this._current_action = 0;
+  this._first_action = true;
 
   this._current_orphan = 0;
   this._orphans = null;
@@ -180,17 +181,26 @@ J.controller.prototype.save = function() {
 
 J.controller.prototype.add_action = function(type, value) {
 
+  this._first_action = false;
+
+  $('#undo').css('opacity', '1.0');
+
   this.send('ACTION', [this._current_action, {'type': type, 'value': value}]);
 
 };
 
 J.controller.prototype.undo_action = function() {
 
+  $('#redo').css('opacity', '1.0');
+
   this.send('UNDO', this._current_action);
 
 };
 
 J.controller.prototype.redo_action = function() {
+
+  $('#redo').css('opacity', '0.3');  
+  $('#undo').css('opacity', '1.0');  
 
   this.send('REDO', this._current_action);
 
@@ -200,6 +210,10 @@ J.controller.prototype.update_current_action = function(value) {
 
   this._current_action = parseInt(value,10);
   console.log('Current action', this._current_action);
+
+  if (this._first_action && this._current_action == 0) {
+    $('#undo').css('opacity', '0.3');      
+  }
 
 };
 
