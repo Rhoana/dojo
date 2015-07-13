@@ -204,6 +204,9 @@ class Controller(object):
       self.adjust(input)
 
     elif input['name'] == 'SAVE':
+      input['name'] = 'SAVING'
+      input['origin'] = 'SERVER'
+      self.__websocket.send(json.dumps(input))
       self.save(input)
 
     elif input['name'] == 'ACTION':
@@ -751,14 +754,18 @@ class Controller(object):
   def save(self, input):
     '''
     '''
+    print 'SAVING..'
+
+    # first, copy the mojo dir to the output dir
+    shutil.rmtree(self.__mojo_out_dir, True)
+    shutil.copytree(self.__mojo_dir, self.__mojo_out_dir)
+
+
 
     # parse the mojo directory for w=0 (largest images)
     mojo_dir = (os.path.join(self.__mojo_dir, 'ids','tiles','w='+str(0).zfill(8)))
     mojo_tmp_dir = (os.path.join(self.__mojo_tmp_dir, 'ids','tiles','w='+str(0).zfill(8)))
 
-    # first, copy the mojo dir to the output dir
-    shutil.rmtree(self.__mojo_out_dir, True)
-    shutil.copytree(self.__mojo_dir, self.__mojo_out_dir)
 
     for root, dirs, files in os.walk(mojo_dir):  
 
@@ -766,13 +773,15 @@ class Controller(object):
 
         # grab z
         z_dir = os.path.dirname(os.path.join(root,f)).split('/')[-1]
-        print z_dir
+        # print z_dir
         # check if there is a temporary file (==newer data)
         if os.path.exists(os.path.join(mojo_tmp_dir,z_dir,f)):
-          print 'Found TEMP'
+          print 'Found TEMP', os.path.join(mojo_tmp_dir,z_dir,f)
           segfile = os.path.join(mojo_tmp_dir, z_dir, f)
         else:
           segfile = os.path.join(root,f)
+
+        print segfile
 
         # now open the segfile and apply the merge table
         hdf5_file = h5py.File(segfile)
@@ -799,10 +808,12 @@ class Controller(object):
         print 'stored', out_seg_file
 
 
-    # now we need to create the zoomlevel 1
-    # TODO support multiple zoomlevels
+    max_zoomlevel = self.__dojoserver.get_segmentation().get_max_zoomlevel()
 
-    w0_new_dir = os.path.join(self.__mojo_out_dir, 'ids', 'tiles', 'w='+str(0).zfill(8))
+
+    # now we need to create the zoomlevels from the new w=0 where the merge table was applied
+    w0_new_dir = os.path.join(self.__mojo_out_dir, 'ids', 'tiles', 'w='+str(0).zfill(8))      
+
     for z in os.listdir(w0_new_dir):
 
       data_path = os.path.join(w0_new_dir, z)
@@ -850,13 +861,25 @@ class Controller(object):
 
       tile = row
 
-      # now downsample and save as w=00000001
-      zoomed_tile = ndimage.interpolation.zoom(tile, .5, order=0, mode='nearest')
+      for w in range(1, max_zoomlevel+1):
 
-      out_seg_file = os.path.join(self.__mojo_out_dir, 'ids', 'tiles', 'w='+str(1).zfill(8), z, 'y=00000000,x=00000000.hdf5')
-      h5f = h5py.File(out_seg_file, 'w')
-      h5f.create_dataset('dataset_1', data=zoomed_tile)
-      h5f.close()
+        tile = ndimage.interpolation.zoom(tile, .5, order=0, mode='nearest')
+
+        y_tiles = range(tile.shape[0] // 512)
+        x_tiles = range(tile.shape[1] // 512)
+
+        for x in x_tiles:
+          for y in y_tiles:
+
+            tile_area = tile[y*512:y*512+512, x*512:x*512+512]
+            out_seg_file = os.path.join(self.__mojo_out_dir, 'ids', 'tiles', 'w='+str(w).zfill(8), z, 'y='+str(y).zfill(8)+',x='+str(x).zfill(8)+'.hdf5')
+            h5f = h5py.File(out_seg_file, 'w')
+            h5f.create_dataset('dataset_1', data=tile)
+            h5f.close()            
+
+            print 'written', os.path.join(self.__mojo_out_dir, 'ids', 'tiles', 'w='+str(w).zfill(8), z, 'y='+str(y).zfill(8)+',x='+str(x).zfill(8)+'.hdf5')
+
+
 
     print 'Splits', self.__split_count
     print 'Merges', len(self.__merge_table.keys())
@@ -865,7 +888,7 @@ class Controller(object):
     # ping back
     output = {}
     output['name'] = 'SAVED'
-    output['origin'] = input['origin']
+    output['origin'] = 'SERVER'#input['origin']
     output['value'] = {}
     if self.__websocket:    
       self.__websocket.send(json.dumps(output))  
@@ -1131,7 +1154,9 @@ class Controller(object):
         old_tile = np.array(tile)        
         # segmentation = row_seg
 
+      else:
 
+        label_touches_border = False
 
 
     i_js = values['line']
@@ -1633,11 +1658,16 @@ class Controller(object):
     # if not os.path.isdir(ids_data_path):
     #   ids_data_path = self.__mojo_dir + '/ids/tiles/w=00000000/z='+str(values["z"]).zfill(8)
 
+
+    # print 'YOYOYO', values
+
     # find tiles we need for this split on highest res
     bb = values['brush_bbox']
 
     x_tiles = range((bb[0]//512), (((bb[0] + bb[1]-bb[0]-1)//512) + 1))
     y_tiles = range((bb[2]//512), (((bb[2] + bb[3]-bb[2]-1)//512) + 1))    
+
+    print x_tiles, y_tiles
 
 
     tile = {}
@@ -1674,7 +1704,7 @@ class Controller(object):
 
         segtile[x][y] = image_data
 
-
+    # print 'mofo', tile.keys()
 
     # go through rows of each tile and segmentation
     row = None
@@ -1685,6 +1715,7 @@ class Controller(object):
 
       for c in tile[r]:
         if first_column:
+          # print 'first col'
           column = tile[r][c]
           column_seg = segtile[r][c]
           first_column = False
@@ -1796,7 +1827,7 @@ class Controller(object):
 
 
 
-    mh.imsave('/tmp/tilebef.jpg', tile)
+    # mh.imsave('/tmp/tilebef.jpg', tile)
 
 
 
@@ -1828,7 +1859,11 @@ class Controller(object):
 
       new_data = False
 
+      print touches_left, touches_right, touches_top, touches_bottom, x_tiles[0]
+
       if touches_left and x_tiles[0] > 0:
+
+        # print 'left'
 
         # alright, we need to include more tiles in left x direction
         x_tiles = [x_tiles[0]-1] + x_tiles
@@ -1846,8 +1881,12 @@ class Controller(object):
 
       if touches_bottom and y_tiles[-1] < max_y_tiles-1:
 
+        # print 'bottom', max_y_tiles-1
+
         y_tiles = y_tiles + [y_tiles[-1] + 1]
         new_data = True
+
+      print new_data
 
       if new_data:
 
@@ -1882,7 +1921,7 @@ class Controller(object):
             if not os.path.exists(os.path.join(ids_data_path,s)):
               ids_data_path = self.__mojo_dir + '/ids/tiles/w=00000000/z='+str(values["z"]).zfill(8)
 
-            print os.path.join(ids_data_path,s)
+            # print os.path.join(ids_data_path,s)
 
             hdf5_file = h5py.File(os.path.join(ids_data_path,s))
             list_of_names = []
@@ -1921,11 +1960,12 @@ class Controller(object):
         tile = row
         segmentation = row_seg
 
+      else:
+
+        label_touches_border = False
 
     # mh.imsave('/tmp/tileaft.jpg', tile)
     # tif.imsave('/tmp/tileaft.tif', segmentation)
-
-
 
     # #
     # # crop according to bounding box
@@ -1996,6 +2036,7 @@ class Controller(object):
 
     # make sparse points in i_js a dense line (with linear interpolation)
     dense_brush = []
+    print 'starting loop'
     for i in range(len(i_js)-1):       
       # two sparse points
       p0 = i_js[i]
@@ -2145,7 +2186,7 @@ class Controller(object):
 
 
 
-
+    # print 'loop done'
 
 
 
@@ -2239,6 +2280,8 @@ class Controller(object):
           lines.append([bbox[0]+x,bbox[2]+y])          
                 
     # mh.imsave('/tmp/lines.tif', 50*lines_array.astype(np.uint8))
+
+    print 'split done'
 
     output = {}
     output['name'] = 'SPLITRESULT'

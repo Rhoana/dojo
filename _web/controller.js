@@ -102,8 +102,7 @@ J.controller.prototype.receive = function(data) {
       this.finish_split(input.value);
     } else if (input.name == 'ADJUSTDONE') {
       this.finish_adjust(input.value);
-    } else if (input.name == 'SAVED') {
-      console.log('All saved. Yahoo!');
+
     } else if (input.name == 'CURRENT_ACTION') {
     this.update_current_action(input.value);
     }
@@ -158,6 +157,16 @@ J.controller.prototype.receive = function(data) {
   } else if (input.name == 'POTENTIAL_ORPHANS') {
 
     this.update_potential_orphan_list(input.value);
+
+  } else if (input.name == 'SAVING') {
+
+    console.log('saving in progress');
+
+    $('#blocker').show();
+
+  } else if (input.name == 'SAVED') {
+      console.log('All saved. Yahoo!');
+      $('#blocker').hide();
 
   }
 
@@ -1182,7 +1191,7 @@ J.controller.prototype.draw_split = function(x, y) {
     // update bounding box
     if (this._brush_bbox.length > 0) {
 
-      var brush = Math.ceil(this._brush_size);
+      var brush = Math.ceil(3);//this._brush_size);
 
       var factor = 1;
 
@@ -1207,7 +1216,7 @@ J.controller.prototype.draw_split = function(x, y) {
 
     context.lineTo(u_v[0], u_v[1]);
     context.strokeStyle = 'rgba(0,191,255,0.1)';
-    context.lineWidth = this._brush_size;
+    context.lineWidth = 3;//this._brush_size;
     context.stroke();
     // context.restore();
   }
@@ -1234,7 +1243,7 @@ J.controller.prototype.end_draw_split = function(x, y) {
     data['brush_bbox'] = this._brush_bbox;
     data['i_js'] = this._brush_ijs;
     data['z'] = this._viewer._camera._z;
-    data['brush_size'] = this._brush_size;
+    data['brush_size'] = 3;//this._brush_size;
     this.send('SPLIT', data);
 
 
@@ -1368,7 +1377,7 @@ J.controller.prototype.end_draw_merge = function(x, y) {
 
   this._viewer._canvas.style.cursor = '';
   this._viewer.clear_overlay_buffer();
-  
+
   var color2 = DOJO.viewer.get_color(this._last_id);
   var color2_hex = rgbToHex(color2[0], color2[1], color2[2]);
   var log = 'User $USER merged many labels to <font color="'+color2_hex+'">' +this._last_id + '</font>.';

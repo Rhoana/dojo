@@ -11,6 +11,18 @@ body {
   background-color:black;
 }
 
+#blocker {
+  position: absolute;
+  top:0px;
+  left:0px;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  z-index: 500000;
+  color: white;
+  display: none;
+}
+
 .toolbar {
   width:32px;
   height:200px;
@@ -82,6 +94,12 @@ body {
 
 .pressed_arrow {
   background-color: #666;
+}
+
+#save {
+  margin-top: 6px;
+  width: 30px;
+  margin-left: 3px;
 }
 
 #orphan_color {

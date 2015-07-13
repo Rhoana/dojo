@@ -173,6 +173,16 @@ DOJO.setup_buttons = function() {
 
   };
 
+  var save = document.getElementById('save');
+
+  save.onclick = function() {
+
+    $('#blocker').show();
+
+    DOJO.viewer._controller.save();
+
+  };  
+
 
 };
 
