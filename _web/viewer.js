@@ -457,9 +457,28 @@ J.viewer.prototype.ij2uv_no_zoom = function(i, j) {
 
 J.viewer.prototype.ijk2xyz = function(i, j, k) {
 
-  return [Math.floor((i*512)/this._image.height) - 256, Math.floor((j*512)/this._image.width) - 256, Math.floor(k - (this._image.max_z_tiles-1)/2)*DOJO.threeD.volume.spacing[2]];
+  var spacing = 1;
+
+  // if (DOJO.threeD) {
+  //   spacing = DOJO.threeD.volume.spacing[2];
+  // }
+
+  return [Math.floor((i*512)/this._image.height) - 256, Math.floor((j*512)/this._image.width) - 256, Math.floor(k - (this._image.max_z_tiles-1)/2)*spacing];
 
 };
+
+J.viewer.prototype.ijk2xyz3d = function(i, j, k) {
+
+  var spacing = 1;
+
+  if (DOJO.threeD) {
+    spacing = DOJO.threeD.volume.spacing[2];
+  }
+
+  return [Math.floor((i*512)/this._image.height) - 256, Math.floor((j*512)/this._image.width) - 256, Math.floor(k - (this._image.max_z_tiles-1)/2)*spacing];
+
+};
+
 
 J.viewer.prototype.xyz2ijk = function(x, y, z) {
 

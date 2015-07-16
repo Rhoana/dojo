@@ -67,14 +67,40 @@ J.camera.prototype.jump = function(i, j, k) {
 
   var x_y_z = this._viewer.ijk2xyz(i, j, k);
 
-  if (DOJO.threeD)
+  if (DOJO.threeD) {
+    x_y_z = this._viewer.ijk2xyz3d(i, j, k);
     DOJO.threeD.slice.transform.matrix[14] = x_y_z[2];
+  }
 
-  DOJO.update_slice_number(k+1);
+  DOJO.update_slice_number(parseInt(k,10)+1);
 
   this._loader.load_tiles(i, j, k, this._w, this._w, false);
 
 };
+
+
+
+J.camera.prototype.jumpIJK = function(i, j, k) {
+
+  this._z = k;
+
+  // var x_y_z = this._viewer.ijk2xyz(i, j, k);
+
+  DOJO.update_slice_number(parseInt(k,10)+1);
+
+  this._viewer._camera._i_j = [i,j]; 
+  this._w = 0;
+
+  this._viewer._camera._view[0] = 1;
+  this._viewer._camera._view[4] = 1;
+  this._viewer._camera._view[6] = -i+this._viewer._width/2;
+  this._viewer._camera._view[7] = -j+this._viewer._height/2;
+
+  this._loader.load_tiles(i, j, k, this._w, this._w, false);
+
+};
+
+
 
 ///
 J.camera.prototype.zoom = function(x, y, delta) {

@@ -323,7 +323,7 @@ DOJO.onmouseup = function(x, y) {
 DOJO.update_slice_number = function(n) {
 
   var slicenumber = document.getElementById('slicenumber');
-  slicenumber.innerHTML = n+'/'+DOJO.viewer._image.max_z_tiles;
+  slicenumber.innerHTML = n-1+'/'+(DOJO.viewer._image.max_z_tiles-1);
 
   // reset the cursors if we are in collab mode
   if (DOJO.link_active) {
@@ -339,7 +339,7 @@ DOJO.update_label = function(x, y) {
   var label = document.getElementById('label');
 
   if (i_j[0] == -1) {
-    label.innerHTML = 'Label n/a';
+    label.innerHTML = ' Label n/a';
     if (DOJO.mode != DOJO.modes.merge)
       DOJO.viewer._controller.reset_3d_labels();
     return;
@@ -352,7 +352,7 @@ DOJO.update_label = function(x, y) {
     var color = DOJO.viewer.get_color(id);
     var color_hex = rgbToHex(color[0], color[1], color[2]);
 
-    label.innerHTML = 'Label <font color="' + color_hex + '">' + id + '</font>';
+    label.innerHTML = ' Label <font color="' + color_hex + '">' + id + '</font> (' + i_j[0] + ',' + i_j[1] + ')';
 
     DOJO.viewer._controller.highlight(id);
 

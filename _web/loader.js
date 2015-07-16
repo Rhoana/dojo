@@ -230,7 +230,7 @@ J.loader.prototype.load_tiles = function(x, y, z, w, w_new, no_draw) {
 
   // now we need the global offset of our tile
   var local_offset_x = (offset_x + x*(512 * this._viewer._camera._view[0]));
-  var local_offset_y = (offset_y + y*(512 * this._viewer._camera._view[0]));
+  var local_offset_y = (offset_y + y*(512 * this._viewer._camera._view[4]));
   // console.log('LOCAL OFFSET', local_offset_x)
 
 

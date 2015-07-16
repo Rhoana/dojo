@@ -145,6 +145,8 @@ J.interactor.prototype.onkeydown = function(e) {
   // 65: A TOGGLE BORDERS
   // 69: E INCREASE OPACITY
   // 70: F combined Q and A
+  // 74: J JUMP
+  // 74: K JUMP (SLICE ONLY)
   // 68: D DECREASE OPACITY
   // 87: W SLICE UP
   // 83: S SLICE DOWN
@@ -180,6 +182,46 @@ J.interactor.prototype.onkeydown = function(e) {
       this._viewer.toggle_segmentation();
       this._keypress_callback = null;
     }.bind(this),10);   
+
+  } else if (e.keyCode == 74) {
+  
+    this._keypress_callback = setTimeout(function() {
+      
+      var coords = window.prompt('Where to jump (X,Y,Z) to? e.g. 100,100,100');
+
+      if (coords) {
+
+        coords = coords.split(',');
+
+        if (coords.length != 3) {
+
+          window.alert('Error parsing position.');
+
+        } else {
+
+          DOJO.viewer._camera.jumpIJK(coords[0], coords[1], coords[2]);
+
+        }
+
+      }
+
+      this._keypress_callback = null;
+    }.bind(this),10);   
+
+
+  } else if (e.keyCode == 75) {
+  
+    this._keypress_callback = setTimeout(function() {
+      
+      var coords = window.prompt('Which slice to jump to?');
+
+      if (coords) {
+        DOJO.viewer._camera.jump(coords, coords, coords);  
+      }
+      
+
+      this._keypress_callback = null;
+    }.bind(this),10);       
 
   } else if (e.keyCode == 83) {
   
