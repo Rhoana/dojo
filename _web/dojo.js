@@ -177,9 +177,17 @@ DOJO.setup_buttons = function() {
 
   save.onclick = function() {
 
-    $('#blocker').show();
+    if (confirm("Saving might take hours and Dojo will be unusable during this time!\n\nDo you really want to save right now?") == true) {
 
-    DOJO.viewer._controller.save();
+
+      $('#blocker').show();
+
+
+
+      DOJO.viewer._controller.save();
+
+    }
+
 
   };  
 
