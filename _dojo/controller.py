@@ -34,6 +34,10 @@ class Controller(object):
     
     self.__database = database
 
+    if self.__database._merge_table:
+      print 'Updated merge table from database..'
+      self.__merge_table = self.__database._merge_table
+
     self.__dojoserver = dojoserver
 
     self.__actions = {}

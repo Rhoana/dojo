@@ -109,6 +109,9 @@ class Datasource(object):
         elif self.__segmentinfo_file_regex.match(os.path.join(root,f)):
           print 'Connecting to DB'
           self.__database = Database(os.path.join(root,f))
+          # grab existing merge table
+          self.__database._merge_table = self.__database.get_merge_table()
+
 
 
   def reconfigure(self):

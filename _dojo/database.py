@@ -11,6 +11,8 @@ class Database(object):
     self._orphans = None
     self._potential_orphans = None
 
+    self._merge_table = None
+
   def get_segment_info(self):
     '''
     '''
