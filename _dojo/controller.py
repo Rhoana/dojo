@@ -56,17 +56,7 @@ class Controller(object):
 
     self.send_welcome()
 
-    # always send the merge table first thing
-    self.send_merge_table('SERVER')
-    # then the lock table
-    self.send_lock_table('SERVER')
-    # then the problem table
-    self.send_problem_table('SERVER')
-    # and the orphans
-    self.send_orphans()
 
-    # then send the redraw command
-    self.send_redraw('SERVER')
 
 
   def send_welcome(self):
@@ -180,6 +170,18 @@ class Controller(object):
     if input['name'] == 'WELCOME':
 
       self.__users.append(input['origin'])
+
+      # always send the merge table first thing
+      self.send_merge_table(input['origin'])
+      # then the lock table
+      self.send_lock_table(input['origin'])
+      # then the problem table
+      self.send_problem_table(input['origin'])
+      # and the orphans
+      self.send_orphans()
+
+      # then send the redraw command
+      self.send_redraw('SERVER')      
 
     elif input['name'] == 'MERGETABLE':
       self.__merge_table = input['value']

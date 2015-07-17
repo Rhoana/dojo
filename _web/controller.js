@@ -62,6 +62,8 @@ J.controller = function(viewer) {
 
   this.create_gl_3d_labels();
 
+  this._welcomed = false;
+
 };
 
 J.controller.prototype.activate = function(id) {
@@ -110,22 +112,34 @@ J.controller.prototype.receive = function(data) {
       this.finish_adjust(input.value);
 
     } else if (input.name == 'CURRENT_ACTION') {
-    this.update_current_action(input.value);
+      this.update_current_action(input.value);
+    } else if (input.name == 'MERGETABLE') {
+
+      // received new merge table
+      this._viewer._controller.update_merge_table(input.value);
+
+    } else if (input.name == 'LOCKTABLE') {
+
+      // received new lock table
+      this._viewer._controller.update_lock_table(input.value);
+
+      return;
     }
 
-    return;
   }
 
-  if (input.name == 'WELCOME') {
+  if (!this._welcomed && input.name == 'WELCOME') {
+
+    this._welcomed = true;
 
     this.send('WELCOME', {});
 
-  } else if (input.name == 'MERGETABLE') {
+  // } else if (input.name == 'MERGETABLE') {
 
-    // received new merge table
-    this._viewer._controller.update_merge_table(input.value);
+  //   // received new merge table
+  //   this._viewer._controller.update_merge_table(input.value);
 
-  } else if (input.name == 'MERGETABLE_SUBSET') {
+  } else if (input.name == 'MERGETABLE_SUBSET' && this._origin != input.origin) {
 
     this._viewer._controller.update_merge_table_subset(input.value)
 
@@ -664,7 +678,7 @@ J.controller.prototype.send_problem_table = function() {
 
 J.controller.prototype.update_merge_table = function(data) {
 
-  console.log('Received new merge table', data);
+  console.log('Received new merge table', data.length);
 
   this._merge_table = data;
 
@@ -674,7 +688,7 @@ J.controller.prototype.update_merge_table = function(data) {
 
 J.controller.prototype.update_merge_table_subset = function(data) {
 
-  console.log('Received new merge table subset', data);
+  console.log('Received new merge table subset', data.length);
 
   for (var d in data) {
 
