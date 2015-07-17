@@ -14,14 +14,19 @@ J.controller = function(viewer) {
 
   this._merge_table = null;
 
-  this._gl_merge_table_keys = null;
-  this._gl_merge_table_values = null;
+  // this._gl_merge_table_keys = null;
+  // this._gl_merge_table_values = null;
+  this._gl_merge_table = new Uint8Array(8192*8192*4);
+  this._gl_merge_table_changed = true;
   this._merge_table_length = -1;
+
+  this._gl_colormap_changed = true;
 
   this._lock_table = null;
 
   this._gl_lock_table = null;
   this._lock_table_length = -1;
+  this._gl_lock_table_changed = true;
 
   this._highlighted_id = null;
 
@@ -1374,6 +1379,9 @@ J.controller.prototype.end_draw_merge = function(x, y) {
 
   console.log('end draw merge')
 
+  if (this._merge_mode == -1)
+    return;
+
   this._last_id = this._merge_id;
 
   // add all to merge table
@@ -1400,6 +1408,8 @@ J.controller.prototype.end_draw_merge = function(x, y) {
 
 
   this.create_gl_merge_table();
+
+  this._gl_merge_table_changed = true;
 
   // this._viewer.redraw();
 
@@ -1506,49 +1516,64 @@ J.controller.prototype.merge = function(id) {
 
 J.controller.prototype.create_gl_merge_table = function() {
 
+
+  
+
   var keys = Object.keys(this._merge_table);
   var no_keys = keys.length;
 
-  if (no_keys == 0) {
+  for (var k=0; k<no_keys; k++) {
 
-    // we need to pass an empty array to the GPU
-    this._merge_table_length = 2;
-    this._gl_merge_table_keys = new Uint8Array(4 * 2);
-    this._gl_merge_table_values = new Uint8Array(4 * 2);
-    return;
+    var key = parseInt(keys[k],10)*4;
+    var value = this._merge_table[keys[k]];
+    var b = from32bitTo8bit(value);
+    this._gl_merge_table[key] = b[0];
+    this._gl_merge_table[key+1] = b[1];
+    this._gl_merge_table[key+2] = b[2];
+    this._gl_merge_table[key+3] = b[3];
 
   }
 
-  var new_length = Math.pow(2,Math.ceil(Math.log(no_keys)/Math.log(2)));
+  // if (no_keys == 0) {
 
-  this._merge_table_length = new_length;
+  //   // we need to pass an empty array to the GPU
+  //   this._merge_table_length = 2;
+  //   this._gl_merge_table_keys = new Uint8Array(4 * 2);
+  //   this._gl_merge_table_values = new Uint8Array(4 * 2);
+  //   return;
 
-  this._gl_merge_table_keys = new Uint8Array(4 * new_length);
+  // }
 
-  var pos = 0;
-  for (var k=0; k<no_keys; k++) {
-    // pack value to 4 bytes (little endian)
-    var value = parseInt(keys[k],10);
-    var b = from32bitTo8bit(value);
-    this._gl_merge_table_keys[pos++] = b[0];
-    this._gl_merge_table_keys[pos++] = b[1];
-    this._gl_merge_table_keys[pos++] = b[2];
-    this._gl_merge_table_keys[pos++] = b[3];
-  }
+  // var new_length = Math.pow(2,Math.ceil(Math.log(no_keys)/Math.log(2)));
 
-  this._gl_merge_table_values = new Uint8Array(4 * new_length);
+  // this._merge_table_length = new_length;
 
-  pos = 0;
-  for (var k=0; k<no_keys; k++) {
-    // pack value to 4 bytes (little endian)
-    var key = parseInt(keys[k],10);
-    var value = this._merge_table[key];
-    var b = from32bitTo8bit(value);
-    this._gl_merge_table_values[pos++] = b[0];
-    this._gl_merge_table_values[pos++] = b[1];
-    this._gl_merge_table_values[pos++] = b[2];
-    this._gl_merge_table_values[pos++] = b[3];
-  }  
+  // this._gl_merge_table_keys = new Uint8Array(4 * new_length);
+
+  // var pos = 0;
+  // for (var k=0; k<no_keys; k++) {
+  //   // pack value to 4 bytes (little endian)
+  //   var value = parseInt(keys[k],10);
+  //   var b = from32bitTo8bit(value);
+  //   this._gl_merge_table_keys[pos++] = b[0];
+  //   this._gl_merge_table_keys[pos++] = b[1];
+  //   this._gl_merge_table_keys[pos++] = b[2];
+  //   this._gl_merge_table_keys[pos++] = b[3];
+  // }
+
+  // this._gl_merge_table_values = new Uint8Array(4 * new_length);
+
+  // pos = 0;
+  // for (var k=0; k<no_keys; k++) {
+  //   // pack value to 4 bytes (little endian)
+  //   var key = parseInt(keys[k],10);
+  //   var value = this._merge_table[key];
+  //   var b = from32bitTo8bit(value);
+  //   this._gl_merge_table_values[pos++] = b[0];
+  //   this._gl_merge_table_values[pos++] = b[1];
+  //   this._gl_merge_table_values[pos++] = b[2];
+  //   this._gl_merge_table_values[pos++] = b[3];
+  // }  
 
 };
 

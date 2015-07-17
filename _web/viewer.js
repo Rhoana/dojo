@@ -294,7 +294,7 @@ J.viewer.prototype.draw_canvas = function(x,y,z,w,i,s) {
 
 J.viewer.prototype.lookup_id = function(id) {
 
-  if (this._controller._merge_table_length == -1) return;
+  if (!this._controller._merge_table) return;
 
   // check if this has an entry in the merge table
   while(typeof this._controller._merge_table[id] !== 'undefined') {

@@ -38,8 +38,8 @@
     uniform sampler2D uImageSampler;
     uniform sampler2D uTextureSampler;
     uniform sampler2D uColorMapSampler;
-    uniform sampler2D uMergeTableKeySampler;
-    uniform sampler2D uMergeTableValueSampler;
+    uniform sampler2D uMergeTableSampler;
+    // uniform sampler2D uMergeTableValueSampler;
     uniform sampler2D uLockTableSampler;
     //uniform sampler2D uTextureSampler2;
     uniform float uOpacity;
@@ -49,11 +49,11 @@
     uniform int uAdjustMode;
     uniform float uMaxColors;
     uniform int uBorders;
-    uniform int uMergeTableLength;
+    // uniform int uMergeTableLength;
     uniform int uLockTableLength;
     uniform bool uShowOverlay;
 
-    const int MAX = 10000;
+    const int MAX = 100;
 
     varying vec3 vPosition;
     varying vec2 vTexturePosition;
@@ -106,27 +106,46 @@
     //
     float lookup_id_(float id) {
 
-      for (int m=0; m<MAX; m++) {
+      vec2 onePixel = vec2(1.0, 1.0) / 8192.;
 
-        if (m>uMergeTableLength) break;
+      float y = floor(id / 8192.);
+      float x = floor(id - (y * 8192.));
 
-        vec4 m_key = texture2D(uMergeTableKeySampler, vec2(float(m)/float(uMergeTableLength), 0.));
-        float m_id = unpack(m_key)*255.;
 
-        // if m_id is larger than our id, then we are done since all entries are sorted
-        if (larger(m_id, id)) break;
+      float u = onePixel.x * x;
+      float v = onePixel.y * y;
 
-        if (equals(id, m_id)) {
-          // found entry
-          vec4 m_value = texture2D(uMergeTableValueSampler, vec2(float(m)/float(uMergeTableLength), 0.));
-          id = unpack(m_value)*255.;
+      vec4 m_bytes = texture2D(uMergeTableSampler, vec2(u,v));
 
-          return id;
-        }
+      float m_id = unpack(m_bytes)*255.;
 
+      if (equals(m_id, 0.)) {
+        return id;
       }
 
-      return id;
+      return m_id;
+
+      // for (int m=0; m<MAX; m++) {
+
+      //   if (m>uMergeTableLength) break;
+
+      //   vec4 m_key = texture2D(uMergeTableKeySampler, vec2(float(m)/float(uMergeTableLength), 0.));
+      //   float m_id = unpack(m_key)*255.;
+
+      //   // if m_id is larger than our id, then we are done since all entries are sorted
+      //   if (larger(m_id, id)) break;
+
+      //   if (equals(id, m_id)) {
+      //     // found entry
+      //     vec4 m_value = texture2D(uMergeTableValueSampler, vec2(float(m)/float(uMergeTableLength), 0.));
+      //     id = unpack(m_value)*255.;
+
+      //     return id;
+      //   }
+
+      // }
+
+      // return id;
 
     }
 
