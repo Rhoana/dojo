@@ -34,7 +34,7 @@ class Controller(object):
     
     self.__database = database
 
-    if self.__database._merge_table:
+    if database and self.__database._merge_table:
       print 'Updated merge table from database.. (', len(self.__database._merge_table), 'entries )'
       self.__merge_table = self.__database._merge_table
 

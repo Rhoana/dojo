@@ -67,7 +67,11 @@ class ServerLogic:
       self.__segmentation.detect_orphans()
 
     # and the controller
-    self.__controller = _dojo.Controller(mojo_dir, out_dir, tmpdir, self.__segmentation.get_database(), self)
+    if self.__segmentation:
+      db = self.__segmentation.get_database()
+    else:
+      db = None
+    self.__controller = _dojo.Controller(mojo_dir, out_dir, tmpdir, db, self)
 
     # and the viewer
     self.__viewer = _dojo.Viewer()
