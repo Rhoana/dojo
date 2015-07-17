@@ -136,6 +136,18 @@ class Controller(object):
 
     self.__websocket.send(json.dumps(output))
 
+  def send_merge_table_subset(self, input):
+    '''
+    '''
+
+    output = {}
+    output['name'] = 'MERGETABLE_SUBSET'
+    output['origin'] = input['origin']
+    output['value'] = input['value']
+
+    self.__websocket.send(json.dumps(output))
+
+
   def send_lock_table(self, origin):
     '''
     '''
@@ -175,6 +187,17 @@ class Controller(object):
       self.send_merge_table(input['origin'])
 
       self.send_redraw(input['origin'])
+
+    elif input['name'] == 'MERGETABLE_SUBSET':
+      merge_table_subset = input['value']
+
+      for m in merge_table_subset:
+
+        self.__merge_table[m] = merge_table_subset[m];
+
+      self.send_merge_table_subset(input)
+
+      self.send_redraw(input['origin'])      
 
     elif input['name'] == 'LOCKTABLE':
       self.__lock_table = input['value']

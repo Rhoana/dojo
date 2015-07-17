@@ -125,12 +125,18 @@ J.controller.prototype.receive = function(data) {
     // received new merge table
     this._viewer._controller.update_merge_table(input.value);
 
+  } else if (input.name == 'MERGETABLE_SUBSET') {
+
+    this._viewer._controller.update_merge_table_subset(input.value)
+
   } else if (input.name == 'LOCKTABLE') {
 
     // received new lock table
     this._viewer._controller.update_lock_table(input.value);
 
   } else if (input.name == 'REDRAW') {
+
+    this._gl_merge_table_changed = true;
 
     this._viewer.redraw();
     this.update_threeD();
@@ -666,9 +672,33 @@ J.controller.prototype.update_merge_table = function(data) {
 
 };
 
+J.controller.prototype.update_merge_table_subset = function(data) {
+
+  console.log('Received new merge table subset', data);
+
+  for (var d in data) {
+
+    var m = data[d];
+
+    this._merge_table[d] = m;
+
+  }
+
+  this._merge_table_subset = data;
+
+  this.create_gl_merge_table(true);
+
+};
+
 J.controller.prototype.send_merge_table = function() {
 
   this.send('MERGETABLE', this._merge_table);
+
+};
+
+J.controller.prototype.send_merge_table_subset = function() {
+
+  this.send('MERGETABLE_SUBSET', this._merge_table_subset);
 
 };
 
@@ -1384,6 +1414,8 @@ J.controller.prototype.end_draw_merge = function(x, y) {
 
   this._last_id = this._merge_id;
 
+  this._merge_table_subset = {};
+
   // add all to merge table
   var no_target_ids = this._merge_target_ids.length;
   for (var i=0; i<no_target_ids; i++) {
@@ -1407,13 +1439,13 @@ J.controller.prototype.end_draw_merge = function(x, y) {
   this.send_log(log);
 
 
-  this.create_gl_merge_table();
+  this.create_gl_merge_table(true); // use only subset
 
   this._gl_merge_table_changed = true;
 
   // this._viewer.redraw();
 
-  this.send_merge_table();
+  this.send_merge_table_subset();
 
   this.highlight(this._last_id);
 
@@ -1449,7 +1481,7 @@ J.controller.prototype.merge = function(id) {
 
   // this._merge_table[id].push(this._last_id);
 
-  this._merge_table[id] = this._last_id;
+  this._merge_table_subset[id] = this._last_id;
 
   // var color1 = DOJO.viewer.get_color(id);
   // var color1_hex = rgbToHex(color1[0], color1[1], color1[2]);
@@ -1514,18 +1546,27 @@ J.controller.prototype.merge = function(id) {
 
 // };
 
-J.controller.prototype.create_gl_merge_table = function() {
+J.controller.prototype.create_gl_merge_table = function(use_subset) {
 
-
+  if (typeof use_subset == 'undefined') {
+    var use_subset = false;
+    var mt = this._merge_table;  
+    console.log('using real mt')
+  } else {
+    var mt = this._merge_table_subset;
+    console.log('using mt subset', mt)
+  }
+  
   
 
-  var keys = Object.keys(this._merge_table);
+
+  var keys = Object.keys(mt);
   var no_keys = keys.length;
 
   for (var k=0; k<no_keys; k++) {
 
     var key = parseInt(keys[k],10)*4;
-    var value = this._merge_table[keys[k]];
+    var value = mt[keys[k]];
     var b = from32bitTo8bit(value);
     this._gl_merge_table[key] = b[0];
     this._gl_merge_table[key+1] = b[1];
