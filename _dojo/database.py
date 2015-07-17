@@ -66,8 +66,7 @@ class Database(object):
     output = {}
 
     for r in result:
-      # output[r[0]] = r[1:][0]
-      pass
+      output[r[0]] = r[1:][0]
 
     return output
 
