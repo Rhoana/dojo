@@ -137,6 +137,26 @@ class Controller(object):
 
     self.__websocket.send(json.dumps(output))
 
+  def send_undo_merge(self, origin, ids):
+    '''
+    '''
+    output = {}
+    output['name'] = 'UNDO_MERGE_GROUP'
+    output['origin'] = origin
+    output['value'] = ids
+
+    self.__websocket.send(json.dumps(output))
+
+  def send_redo_merge(self, origin, values):
+    '''
+    '''
+    output = {}
+    output['name'] = 'REDO_MERGE_GROUP'
+    output['origin'] = origin
+    output['value'] = values
+
+    self.__websocket.send(json.dumps(output))
+
 
   def send_lock_table(self, origin):
     '''
@@ -326,7 +346,8 @@ class Controller(object):
             # this was already undo'ed before
             pass
 
-        self.send_merge_table('SERVER')
+        # self.send_merge_table('SERVER')
+        self.send_undo_merge('SERVER', ids)
         self.send_redraw('SERVER')
 
 
@@ -636,16 +657,19 @@ class Controller(object):
 
         for i in ids:
 
+
           if i == action['value'][1]:
             # avoid GPU crash
-            continue
+            continue          
 
           key = str(i)
 
           self.__merge_table[key] = action['value'][1]
-            
-        self.send_merge_table('SERVER')
+
+        # self.send_merge_table('SERVER')
+        self.send_redo_merge('SERVER', action['value'])
         self.send_redraw('SERVER')
+
 
 
       elif action['type'] == 'SPLIT':

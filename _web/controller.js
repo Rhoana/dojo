@@ -148,6 +148,48 @@ J.controller.prototype.receive = function(data) {
     // received new lock table
     this._viewer._controller.update_lock_table(input.value);
 
+  } else if (input.name == 'REDO_MERGE_GROUP') {
+
+    var value = input.value[1];
+
+    this._merge_table_subset = {};
+
+    for (var i=1; i<input.value[0].length; i++) {
+
+      var id = input.value[0][i];
+
+      this._merge_table[id] = value;
+
+      this._merge_table_subset[id] = value;
+
+    }
+
+    this.create_gl_merge_table(true);
+
+    this._gl_merge_table_changed = true;
+
+
+  } else if (input.name == 'UNDO_MERGE_GROUP') {    
+
+    for (var i=1; i<input.value.length; i++) {
+
+      var id = input.value[i];
+
+      delete this._merge_table[id];
+
+      var key = id*4;
+
+      this._gl_merge_table[key] = 0;
+      this._gl_merge_table[key+1] = 0;
+      this._gl_merge_table[key+2] = 0;
+      this._gl_merge_table[key+3] = 0;      
+
+    }
+
+    this._gl_merge_table_changed = true;
+    
+
+
   } else if (input.name == 'REDRAW') {
 
     this._gl_merge_table_changed = true;
