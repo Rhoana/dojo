@@ -822,6 +822,8 @@ J.controller.prototype.lock = function(x, y) {
 
     this.create_gl_lock_table();
 
+    this._gl_lock_table_changed = true;
+
     this.send_lock_table();
 
     this._viewer.redraw();
