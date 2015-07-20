@@ -1452,12 +1452,20 @@ J.controller.prototype.end_draw_merge = function(x, y) {
 
   this.send_log(log);
 
+  // put the subset into the real merge
+
 
   this.create_gl_merge_table(true); // use only subset
 
   this._gl_merge_table_changed = true;
 
   // this._viewer.redraw();
+
+  for (var id in this._merge_table_subset) {
+
+    this._merge_table[id] = this._merge_table_subset[id];
+
+  }
 
   this.send_merge_table_subset();
 
