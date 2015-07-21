@@ -1278,7 +1278,7 @@ class Controller(object):
 
     # find tiles we need for this split on highest res
     bb = values['bbox']
-
+    print 'bb', bb
     #
     # make sure the bb is valid
     #
@@ -2377,7 +2377,7 @@ class Controller(object):
         
     # brush_mask = brush_mask[bbox[2]:bbox[3],bbox[0]:bbox[1]]
         
-    # for i in range(brush_size):
+    # for i in range(brush_size)
     #     brush_mask = mh.morph.dilate(brush_mask)
 
     # brush_mask = mh.morph.dilate(brush_mask, np.ones((brush_size, brush_size)))
@@ -2610,19 +2610,26 @@ class Controller(object):
     for y in range(ws.shape[0]-1):
       for x in range(ws.shape[1]-1):
 
-        if ws[y,x] != ws[y,x+1] and self.lookup_label(seg_sub_tile[y,x]) == label_id:  
+        if self.lookup_label(seg_sub_tile[y,x]) != label_id:
+          continue
+
+        if ws[y,x] != ws[y,x+1]:  
           lines_array[y,x] = 1
           lines.append([bbox[0]+x,bbox[2]+y])
-        if ws[y,x] != ws[y+1,x] and self.lookup_label(seg_sub_tile[y,x]) == label_id:
+        if ws[y,x] != ws[y+1,x]:
           lines_array[y,x] = 1
           lines.append([bbox[0]+x,bbox[2]+y])
 
     for y in range(1,ws.shape[0]):
       for x in range(1,ws.shape[1]):
-        if ws[y,x] != ws[y,x-1] and self.lookup_label(seg_sub_tile[y,x]) == label_id:  
+
+        if self.lookup_label(seg_sub_tile[y,x]) != label_id:
+          continue
+        
+        if ws[y,x] != ws[y,x-1]:  
           lines_array[y,x] = 1
           lines.append([bbox[0]+x,bbox[2]+y])
-        if ws[y,x] != ws[y-1,x] and self.lookup_label(seg_sub_tile[y,x]) == label_id:
+        if ws[y,x] != ws[y-1,x]:
           lines_array[y,x] = 1
           #lines_array[y-1,x] = 1
           lines.append([bbox[0]+x,bbox[2]+y])          
