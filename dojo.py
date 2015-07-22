@@ -59,7 +59,7 @@ class ServerLogic:
     self.__tmpdir = tmpdir
 
     # register two data sources
-    self.__segmentation = _dojo.Segmentation(mojo_dir, tmpdir)
+    self.__segmentation = _dojo.Segmentation(mojo_dir, tmpdir, out_dir)
     self.__image = _dojo.Image(mojo_dir, tmpdir)
 
     # detect orphans
@@ -69,6 +69,7 @@ class ServerLogic:
     # and the controller
     if self.__segmentation:
       db = self.__segmentation.get_database()
+
     else:
       db = None
     self.__controller = _dojo.Controller(mojo_dir, out_dir, tmpdir, db, self)

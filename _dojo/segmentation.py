@@ -11,7 +11,7 @@ from datasource import Datasource
 
 class Segmentation(Datasource):
 
-  def __init__(self, mojo_dir, tmp_dir):
+  def __init__(self, mojo_dir, tmp_dir, out_dir):
     '''
     @override
     '''
@@ -20,7 +20,7 @@ class Segmentation(Datasource):
     output_format = 'raw'
     sub_dir = 'ids'
 
-    super(Segmentation, self).__init__(mojo_dir, tmp_dir, query, input_format, output_format, sub_dir)
+    super(Segmentation, self).__init__(mojo_dir, tmp_dir, query, input_format, output_format, sub_dir, out_dir)
 
     self._orphans = None
     self._potential_orphans = None

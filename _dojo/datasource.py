@@ -1,6 +1,7 @@
 import math
 import os
 import re
+import shutil
 
 import h5py
 import json
@@ -10,7 +11,7 @@ from database import Database
 
 class Datasource(object):
 
-  def __init__(self, mojo_dir, tmp_dir, query, input_format, output_format, sub_dir):
+  def __init__(self, mojo_dir, tmp_dir, query, input_format, output_format, sub_dir, out_dir=None):
     '''
     '''
 
@@ -21,6 +22,8 @@ class Datasource(object):
     self.__input_format = input_format
     self.__output_format = output_format
     self.__sub_dir = sub_dir
+
+    self.__out_dir = out_dir
 
     # {'numBytesPerVoxel': '4', 'numVoxelsPerTileZ': '1', 'numVoxelsX': '1024', 'numVoxelsPerTileY': '512', 'numVoxelsPerTileX': '512', 'dxgiFormat': 'R32_UInt', 'numTilesX': '2', 'numTilesY': '2', 'numTilesZ': '20', 'fileExtension': 'hdf5', 'numTilesW': '2', 'numVoxelsZ': '20', 'numVoxelsY': '1024', 'isSigned': 'false'}
     self.__info = None
@@ -107,8 +110,15 @@ class Datasource(object):
 
         # segmentinfo database
         elif self.__segmentinfo_file_regex.match(os.path.join(root,f)):
+
+          old_db_file = os.path.join(root,f)
+          new_db_file = old_db_file.replace(self.__mojo_dir, self.__out_dir+'/')
+          
+          os.mkdir(self.__out_dir+'/ids')
+          print 'Copied DB from', old_db_file, 'to', new_db_file
+          shutil.copy(old_db_file, new_db_file)
           print 'Connecting to DB'
-          self.__database = Database(os.path.join(root,f))
+          self.__database = Database(new_db_file)
           # grab existing merge table
           self.__database._merge_table = self.__database.get_merge_table()
 

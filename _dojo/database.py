@@ -68,16 +68,28 @@ class Database(object):
     for r in result:
       output[r[0]] = r[1:][0]
 
+    # print output
+
     return output
 
   def insert_merge(self, id1, id2):
     '''
     '''
-    try:
-      with self.__connection:
-        self.__connection.execute('INSERT INTO relabelMap VALUES (?,?)', id1, id2);
-    except:
-      print 'ERROR WHEN MERGING', id1, id2
+    # try:
+    self.__connection.execute('INSERT INTO relabelMap VALUES (?,?)', (id1, id2))
+    
+
+    # except:
+      # print 'ERROR WHEN MERGING', id1, id2
+
+    # self.get_merge_table()
+
+
+  def store(self):
+    '''
+    '''
+    self.__connection.commit()
+    # self.__connection.close()
       
   def get_orphans(self):
     '''

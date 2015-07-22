@@ -1099,158 +1099,169 @@ class Controller(object):
     '''
     print 'SAVING..'
 
+
     # first, copy the mojo dir to the output dir
-    shutil.rmtree(self.__mojo_out_dir, True)
-    shutil.copytree(self.__mojo_dir, self.__mojo_out_dir)
+    # shutil.rmtree(self.__mojo_out_dir, True)
+    if os.path.exists(self.__mojo_tmp_dir+'/ids/tiles'):
+      shutil.copytree(self.__mojo_tmp_dir+'/ids/tiles', self.__mojo_out_dir+'/ids/tiles')
+
+    print 'STORED TEMP FOLDER'
+
+    for i in self.__merge_table:
+      self.__database.insert_merge(i, self.__merge_table[i])
+
+
+    self.__database.store()
+
+    print 'STORED MERGE TABLE'
+
+
+    # # parse the mojo directory for w=0 (largest images)
+    # mojo_dir = (os.path.join(self.__mojo_dir, 'ids','tiles','w='+str(0).zfill(8)))
+    # mojo_tmp_dir = (os.path.join(self.__mojo_tmp_dir, 'ids','tiles','w='+str(0).zfill(8)))
+
+
+    # for root, dirs, files in os.walk(mojo_dir):  
+
+    #   # print files
+
+    #   for f in files:
+
+    #     if f.startswith('.') or not f.endswith('.hdf5'):
+    #       continue
 
 
 
-    # parse the mojo directory for w=0 (largest images)
-    mojo_dir = (os.path.join(self.__mojo_dir, 'ids','tiles','w='+str(0).zfill(8)))
-    mojo_tmp_dir = (os.path.join(self.__mojo_tmp_dir, 'ids','tiles','w='+str(0).zfill(8)))
+    #     # grab z
+    #     z_dir = os.path.dirname(os.path.join(root,f)).split('/')[-1]
+    #     # print z_dir
+
+    #     # if z_dir != 'z=00000146':
+    #     #   print 'skipping2'
+    #     #   continue
 
 
-    for root, dirs, files in os.walk(mojo_dir):  
+    #     # check if there is a temporary file (==newer data)
+    #     if os.path.exists(os.path.join(mojo_tmp_dir,z_dir,f)):
+    #       print 'Found TEMP', os.path.join(mojo_tmp_dir,z_dir,f)
+    #       segfile = os.path.join(mojo_tmp_dir, z_dir, f)
+    #     else:
+    #       segfile = os.path.join(root,f)
 
-      # print files
+    #     print segfile
 
-      for f in files:
+    #     # now open the segfile and apply the merge table
+    #     hdf5_file = h5py.File(segfile)
+    #     list_of_names = []
+    #     hdf5_file.visit(list_of_names.append)
+    #     image_data = hdf5_file[list_of_names[0]].value
+    #     hdf5_file.close()
 
-        if f.startswith('.') or not f.endswith('.hdf5'):
-          continue
+    #     # for y in range(image_data.shape[0]):
+    #     #   for x in range(image_data.shape[1]):
 
+    #     #     image_data[y,x] = self.lookup_label(image_data[y,x])
 
+    #     for m in self.__merge_table.keys():
+    #       m_id = self.lookup_label(m)
+    #       image_data[np.where(image_data == int(m))] = m_id
 
-        # grab z
-        z_dir = os.path.dirname(os.path.join(root,f)).split('/')[-1]
-        # print z_dir
+    #     # now store the image data
+    #     out_seg_file = os.path.join(self.__mojo_out_dir, 'ids', 'tiles', 'w='+str(0).zfill(8), z_dir, f)
+    #     h5f = h5py.File(out_seg_file, 'w')
+    #     h5f.create_dataset('dataset_1', data=image_data)
+    #     h5f.close()
 
-        # if z_dir != 'z=00000146':
-        #   print 'skipping2'
-        #   continue
-
-
-        # check if there is a temporary file (==newer data)
-        if os.path.exists(os.path.join(mojo_tmp_dir,z_dir,f)):
-          print 'Found TEMP', os.path.join(mojo_tmp_dir,z_dir,f)
-          segfile = os.path.join(mojo_tmp_dir, z_dir, f)
-        else:
-          segfile = os.path.join(root,f)
-
-        print segfile
-
-        # now open the segfile and apply the merge table
-        hdf5_file = h5py.File(segfile)
-        list_of_names = []
-        hdf5_file.visit(list_of_names.append)
-        image_data = hdf5_file[list_of_names[0]].value
-        hdf5_file.close()
-
-        # for y in range(image_data.shape[0]):
-        #   for x in range(image_data.shape[1]):
-
-        #     image_data[y,x] = self.lookup_label(image_data[y,x])
-
-        for m in self.__merge_table.keys():
-          m_id = self.lookup_label(m)
-          image_data[np.where(image_data == int(m))] = m_id
-
-        # now store the image data
-        out_seg_file = os.path.join(self.__mojo_out_dir, 'ids', 'tiles', 'w='+str(0).zfill(8), z_dir, f)
-        h5f = h5py.File(out_seg_file, 'w')
-        h5f.create_dataset('dataset_1', data=image_data)
-        h5f.close()
-
-        print 'stored', out_seg_file
+    #     print 'stored', out_seg_file
 
 
-    max_zoomlevel = self.__dojoserver.get_segmentation().get_max_zoomlevel()
+    # max_zoomlevel = self.__dojoserver.get_segmentation().get_max_zoomlevel()
 
 
-    # now we need to create the zoomlevels from the new w=0 where the merge table was applied
-    w0_new_dir = os.path.join(self.__mojo_out_dir, 'ids', 'tiles', 'w='+str(0).zfill(8))      
+    # # now we need to create the zoomlevels from the new w=0 where the merge table was applied
+    # w0_new_dir = os.path.join(self.__mojo_out_dir, 'ids', 'tiles', 'w='+str(0).zfill(8))      
 
-    for z in os.listdir(w0_new_dir):
+    # for z in os.listdir(w0_new_dir):
 
-      if z.startswith('.'):
-        continue
+    #   if z.startswith('.'):
+    #     continue
 
-      # if z != 'z=00000146':
-      #   print 'skipping'
-      #   continue
+    #   # if z != 'z=00000146':
+    #   #   print 'skipping'
+    #   #   continue
 
-      data_path = os.path.join(w0_new_dir, z)
+    #   data_path = os.path.join(w0_new_dir, z)
 
-      images = os.listdir(data_path)
-      tile = {}
-      for i in images:
+    #   images = os.listdir(data_path)
+    #   tile = {}
+    #   for i in images:
 
-        if i.startswith('.'):
-          continue
+    #     if i.startswith('.'):
+    #       continue
 
-        if not i.endswith('.hdf5'):
-          continue
+    #     if not i.endswith('.hdf5'):
+    #       continue
 
-        print 'IMAGE', i
+    #     print 'IMAGE', i
 
 
 
-        location = os.path.splitext(i)[0].split(',')
-        for l in location:
-          l = l.split('=')
-          exec(l[0]+'=int("'+l[1]+'")')
+    #     location = os.path.splitext(i)[0].split(',')
+    #     for l in location:
+    #       l = l.split('=')
+    #       exec(l[0]+'=int("'+l[1]+'")')
 
-        if not x in tile:
-          tile[x] = {}
+    #     if not x in tile:
+    #       tile[x] = {}
 
-        hdf5_file = h5py.File(os.path.join(data_path,i))
-        list_of_names = []
-        hdf5_file.visit(list_of_names.append)
-        image_data = hdf5_file[list_of_names[0]].value
-        hdf5_file.close()
+    #     hdf5_file = h5py.File(os.path.join(data_path,i))
+    #     list_of_names = []
+    #     hdf5_file.visit(list_of_names.append)
+    #     image_data = hdf5_file[list_of_names[0]].value
+    #     hdf5_file.close()
 
-        tile[x][y] = image_data
+    #     tile[x][y] = image_data
 
-      row = None
-      first_row = True
+    #   row = None
+    #   first_row = True
 
-      # go through rows of each tile
-      for r in tile.keys():
-        column = None
-        first_column = True
+    #   # go through rows of each tile
+    #   for r in tile.keys():
+    #     column = None
+    #     first_column = True
 
-        for c in tile[r]:
-          if first_column:
-            column = tile[r][c]
-            first_column = False
-          else:
-            column = np.concatenate((column, tile[r][c]), axis=0)
+    #     for c in tile[r]:
+    #       if first_column:
+    #         column = tile[r][c]
+    #         first_column = False
+    #       else:
+    #         column = np.concatenate((column, tile[r][c]), axis=0)
 
-        if first_row:
-          row = column
-          first_row = False
-        else:
-          row = np.concatenate((row, column), axis=1)
+    #     if first_row:
+    #       row = column
+    #       first_row = False
+    #     else:
+    #       row = np.concatenate((row, column), axis=1)
 
-      tile = row
+    #   tile = row
 
-      for w in range(1, max_zoomlevel+1):
+    #   for w in range(1, max_zoomlevel+1):
 
-        tile = ndimage.interpolation.zoom(tile, .5, order=0, mode='nearest')
+    #     tile = ndimage.interpolation.zoom(tile, .5, order=0, mode='nearest')
 
-        y_tiles = range(tile.shape[0] // 512)
-        x_tiles = range(tile.shape[1] // 512)
+    #     y_tiles = range(tile.shape[0] // 512)
+    #     x_tiles = range(tile.shape[1] // 512)
 
-        for x in x_tiles:
-          for y in y_tiles:
+    #     for x in x_tiles:
+    #       for y in y_tiles:
 
-            tile_area = tile[y*512:y*512+512, x*512:x*512+512]
-            out_seg_file = os.path.join(self.__mojo_out_dir, 'ids', 'tiles', 'w='+str(w).zfill(8), z, 'y='+str(y).zfill(8)+',x='+str(x).zfill(8)+'.hdf5')
-            h5f = h5py.File(out_seg_file, 'w')
-            h5f.create_dataset('dataset_1', data=tile)
-            h5f.close()            
+    #         tile_area = tile[y*512:y*512+512, x*512:x*512+512]
+    #         out_seg_file = os.path.join(self.__mojo_out_dir, 'ids', 'tiles', 'w='+str(w).zfill(8), z, 'y='+str(y).zfill(8)+',x='+str(x).zfill(8)+'.hdf5')
+    #         h5f = h5py.File(out_seg_file, 'w')
+    #         h5f.create_dataset('dataset_1', data=tile)
+    #         h5f.close()            
 
-            print 'written', os.path.join(self.__mojo_out_dir, 'ids', 'tiles', 'w='+str(w).zfill(8), z, 'y='+str(y).zfill(8)+',x='+str(x).zfill(8)+'.hdf5')
+    #         print 'written', os.path.join(self.__mojo_out_dir, 'ids', 'tiles', 'w='+str(w).zfill(8), z, 'y='+str(y).zfill(8)+',x='+str(x).zfill(8)+'.hdf5')
 
 
 
