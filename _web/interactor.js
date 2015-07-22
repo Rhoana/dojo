@@ -191,7 +191,7 @@ J.interactor.prototype.onkeydown = function(e) {
 
       if (coords) {
 
-        coords = coords.split(',');
+        coords = coords.replace('(','').replace(')','').split(',');
 
         if (coords.length != 3) {
 
