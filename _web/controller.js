@@ -1376,9 +1376,11 @@ J.controller.prototype.start_merge = function(id, x, y) {
   this._merge_target_ids =[];
   this._brush_ijs = [];
 
+  this._split_mode = 666;
+
   this._viewer._canvas.style.cursor = 'crosshair';
 
-  this.activate(id);    
+  this.activate(id);
 
 
   var i_j = this._viewer.xy2ij(x, y);
