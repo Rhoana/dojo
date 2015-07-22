@@ -75,12 +75,12 @@ class Database(object):
   def insert_merge(self, id1, id2):
     '''
     '''
-    # try:
-    self.__connection.execute('INSERT INTO relabelMap VALUES (?,?)', (id1, id2))
+    try:
+      self.__connection.execute('INSERT INTO relabelMap VALUES (?,?)', (id1, id2))
     
 
-    # except:
-      # print 'ERROR WHEN MERGING', id1, id2
+    except:
+      print 'ERROR WHEN MERGING', id1, id2
 
     # self.get_merge_table()
 
