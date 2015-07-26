@@ -20,6 +20,8 @@ class Controller(object):
 
     self.__merge_table = {}
 
+    self.__new_merge_table = {}
+
     self.__lock_table = {'0':True}
 
     self.__problem_table = []
@@ -215,7 +217,8 @@ class Controller(object):
 
       for m in merge_table_subset:
 
-        self.__merge_table[m] = merge_table_subset[m];
+        self.__merge_table[m] = merge_table_subset[m]
+        self.__new_merge_table[m] = merge_table_subset[m]
 
       self.send_merge_table_subset(input)
 
@@ -342,6 +345,7 @@ class Controller(object):
 
           if key in self.__merge_table:
             del self.__merge_table[key]
+            del self.__new_merge_table[key]
           else:
             # this was already undo'ed before
             pass
@@ -665,6 +669,7 @@ class Controller(object):
           key = str(i)
 
           self.__merge_table[key] = action['value'][1]
+          self.__new_merge_table[key] = action['value'][1]
 
         # self.send_merge_table('SERVER')
         self.send_redo_merge('SERVER', action['value'])
@@ -1097,18 +1102,18 @@ class Controller(object):
   def save(self, input):
     '''
     '''
-    print 'SAVING..'
+    # print 'SAVING..'
 
 
     # first, copy the mojo dir to the output dir
-    # shutil.rmtree(self.__mojo_out_dir, True)
-    if os.path.exists(self.__mojo_tmp_dir+'/ids/tiles'):
-      shutil.copytree(self.__mojo_tmp_dir+'/ids/tiles', self.__mojo_out_dir+'/ids/tiles')
+    # # shutil.rmtree(self.__mojo_out_dir, True)
+    # if os.path.exists(self.__mojo_tmp_dir+'/ids/tiles'):
+    #   shutil.copytree(self.__mojo_tmp_dir+'/ids/tiles', self.__mojo_out_dir+'/ids/tiles')
 
-    print 'STORED TEMP FOLDER'
+    # print 'STORED TEMP FOLDER'
 
-    for i in self.__merge_table:
-      self.__database.insert_merge(i, self.__merge_table[i])
+    for i in self.__new_merge_table:
+      self.__database.insert_merge(i, self.__new_merge_table[i])
 
 
     self.__database.store()

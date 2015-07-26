@@ -112,13 +112,13 @@ class Datasource(object):
         elif self.__segmentinfo_file_regex.match(os.path.join(root,f)):
 
           old_db_file = os.path.join(root,f)
-          new_db_file = old_db_file.replace(self.__mojo_dir, self.__out_dir+'/')
+          # new_db_file = old_db_file.replace(self.__mojo_dir, self.__out_dir+'/')
           
-          os.mkdir(self.__out_dir+'/ids')
-          print 'Copied DB from', old_db_file, 'to', new_db_file
-          shutil.copy(old_db_file, new_db_file)
+          # os.mkdir(self.__out_dir+'/ids')
+          # print 'Copied DB from', old_db_file, 'to', new_db_file
+          # shutil.copy(old_db_file, new_db_file)
           print 'Connecting to DB'
-          self.__database = Database(new_db_file)
+          self.__database = Database(old_db_file)
           # grab existing merge table
           self.__database._merge_table = self.__database.get_merge_table()
 
