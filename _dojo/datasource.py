@@ -124,9 +124,16 @@ class Datasource(object):
     tile_files = []
 
     for d in dirs:
+      if d.startswith('.'):
+	continue
+
       files = os.listdir(os.path.join(w_path,d))
 
       for f in files:
+
+	if f.startswith('.'):
+	  continue
+
         # check if we have an updated version for this tile
         if os.path.exists(os.path.join(w_path_tmp, d, f)):
           tile_files.append(os.path.join(w_path_tmp, d, f))
