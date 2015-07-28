@@ -1503,9 +1503,19 @@ class Controller(object):
         label_touches_border = False
 
 
+    print 'label_touches_border done'
+
     i_js = values['line']
     bbox = values['bbox']
     click = values['click']
+
+
+    print 'i_js', i_js
+    print 'bbox', bbox
+    print 'click', click
+    print 'label_id', label_id
+
+
 
     bbox_relative = np.array(bbox)
     
@@ -1520,13 +1530,15 @@ class Controller(object):
     bbox_relative[2] -= offset_y
     bbox_relative[3] -= offset_y
 
-
+    #mh.imsave('/tmp/input_tile.tif', tile)
 
     # run through tile
     # lookup each label
     # for i in range(tile.shape[0]):
     #   for j in range(tile.shape[1]):
     #     tile[i,j] = self.lookup_label(tile[i,j])
+
+    print '0'
 
     s_tile = np.zeros(tile.shape)
 
@@ -1536,12 +1548,15 @@ class Controller(object):
       tile[tile == int(l)] = label_id
 
     #mh.imsave('/tmp/seg.tif', s_tile.astype(np.uint8))
+    #mh.imsave('/tmp/tile.tif', tile.astype(np.uint8))
 
 
     for c in i_js:
       s_tile[c[1]-offset_y, c[0]-offset_x] = 0
 
     label_image,n = mh.label(s_tile)
+
+    print '1'
 
     # if (n!=3):
     #   print 'ERROR',n
@@ -1556,7 +1571,7 @@ class Controller(object):
 
 
     # mh.imsave('/tmp/seg2.tif', 10*label_image.astype(np.uint8))
-
+    print '2'
 
     # update the segmentation data
 
@@ -1578,7 +1593,7 @@ class Controller(object):
 
     tile = np.add(tile, label_image).astype(np.uint32)
 
-
+    print '3'
 
     # mh.imsave('/tmp/old_tile.tif', old_tile[full_bbox[]].astype(np.uint32))
     # mh.imsave('/tmp/new_tile.tif', tile[full_coords].astype(np.uint32))
@@ -2623,6 +2638,8 @@ class Controller(object):
     #   label_id = self.__merge_table.values()[]
     #   valid_labels.append(label_id)
 
+    print 'long loop start'
+
     for y in range(ws.shape[0]-1):
       for x in range(ws.shape[1]-1):
 
@@ -2649,6 +2666,8 @@ class Controller(object):
           lines_array[y,x] = 1
           #lines_array[y-1,x] = 1
           lines.append([bbox[0]+x,bbox[2]+y])          
+
+    print 'long loop end'
                 
     # mh.imsave('/tmp/lines.tif', 50*lines_array.astype(np.uint8))
 
@@ -2666,10 +2685,18 @@ class Controller(object):
     '''
     # print self.__merge_table, label_id
     # print self.__merge_table.keys()
-    while str(label_id) in self.__merge_table.keys():
+    # print 'lookup loop', label_id
+    # label_id = str(label_id)
+    # keys = self.__merge_table.keys()
+    while label_id in self.__merge_table:
       # print 'label id', label_id
       # print 'merge[label id]', self.__merge_table[str(label_id)]
-      label_id = self.__merge_table[str(label_id)]
+
+      # old_label_id = label_id
+      label_id = self.__merge_table[label_id]
+
+      # if old_label_id == label_id:
+        # return label_id
 
     # print 'new label', label_id
 
