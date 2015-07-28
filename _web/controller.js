@@ -124,6 +124,10 @@ J.controller.prototype.receive = function(data) {
       this._viewer._controller.update_lock_table(input.value);
 
       return;
+    } else if (input.name == 'UNBLOCK') {
+
+      $('#loading_blocker').hide();
+
     }
 
   }

@@ -18,6 +18,7 @@ class Viewer(object):
       '.js': 'text/javascript',
       '.html': 'text/html',
       '.png': 'image/png',
+      '.jpg': 'image/jpg',
       '.map': 'text/html',
       '.css': 'text/css',
       '.cur': 'image/x-win-bitmap'

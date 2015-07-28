@@ -177,7 +177,7 @@ DOJO.setup_buttons = function() {
 
   save.onclick = function() {
 
-    if (confirm("Saving might take hours and Dojo will be unusable during this time!\n\nDo you really want to save right now?") == true) {
+    // if (confirm("Saving might take hours and Dojo will be unusable during this time!\n\nDo you really want to save right now?") == true) {
 
 
       $('#blocker').show();
@@ -186,7 +186,7 @@ DOJO.setup_buttons = function() {
 
       DOJO.viewer._controller.save();
 
-    }
+    // }
 
 
   };  

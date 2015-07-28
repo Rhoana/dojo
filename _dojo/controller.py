@@ -182,6 +182,17 @@ class Controller(object):
 
     self.__websocket.send(json.dumps(output))
 
+  def send_unblock(self, origin):
+    '''
+    '''
+
+    output = {}
+    output['name'] = 'UNBLOCK'
+    output['origin'] = origin
+    output['value'] = ''
+
+    self.__websocket.send(json.dumps(output))
+
 
   def on_message(self, message):
     '''
@@ -201,6 +212,8 @@ class Controller(object):
       self.send_problem_table(input['origin'])
       # and the orphans
       self.send_orphans()
+
+      self.send_unblock(input['origin'])
 
       # then send the redraw command
       self.send_redraw('SERVER')      
@@ -1503,17 +1516,17 @@ class Controller(object):
         label_touches_border = False
 
 
-    print 'label_touches_border done'
+    # print 'label_touches_border done'
 
     i_js = values['line']
     bbox = values['bbox']
     click = values['click']
 
 
-    print 'i_js', i_js
-    print 'bbox', bbox
-    print 'click', click
-    print 'label_id', label_id
+    # print 'i_js', i_js
+    # print 'bbox', bbox
+    # print 'click', click
+    # print 'label_id', label_id
 
 
 
@@ -1534,18 +1547,22 @@ class Controller(object):
 
     # run through tile
     # lookup each label
-    # for i in range(tile.shape[0]):
-    #   for j in range(tile.shape[1]):
-    #     tile[i,j] = self.lookup_label(tile[i,j])
+    for i in range(tile.shape[0]):
+      for j in range(tile.shape[1]):
+        tile[i,j] = self.lookup_label(tile[i,j])
+
+
 
     print '0'
 
     s_tile = np.zeros(tile.shape)
 
-    for l in self.lookup_merge_label(label_id):
+    # for l in self.lookup_merge_label(label_id):
 
-      s_tile[tile == int(l)] = 1
-      tile[tile == int(l)] = label_id
+    #   s_tile[tile == int(l)] = 1
+    #   tile[tile == int(l)] = label_id
+
+    s_tile[tile == label_id] = 1
 
     #mh.imsave('/tmp/seg.tif', s_tile.astype(np.uint8))
     #mh.imsave('/tmp/tile.tif', tile.astype(np.uint8))
@@ -2080,6 +2097,11 @@ class Controller(object):
         hdf5_file.visit(list_of_names.append)
         image_data = hdf5_file[list_of_names[0]].value
         hdf5_file.close()
+
+        # for i in range(image_data.shape[0]):
+        #   for j in range(image_data.shape[1]):
+        #     image_data[i,j] = self.lookup_label(image_data[i,j])
+
 
         segtile[x][y] = image_data
 
@@ -2622,10 +2644,10 @@ class Controller(object):
     #
     ws = mh.cwatershed(brush_image.max() - brush_image, seeds)
 
-    # mh.imsave('/tmp/end_points.tif', 50*end_points.astype(np.uint8))
-    # mh.imsave('/tmp/seeds_mask.tif', 50*seed_mask.astype(np.uint8))
-    # mh.imsave('/tmp/seeds.tif', 50*seeds.astype(np.uint8))
-    # mh.imsave('/tmp/ws.tif', 50*ws.astype(np.uint8))
+    mh.imsave('/tmp/end_points.tif', 50*end_points.astype(np.uint8))
+    mh.imsave('/tmp/seeds_mask.tif', 50*seed_mask.astype(np.uint8))
+    mh.imsave('/tmp/seeds.tif', 50*seeds.astype(np.uint8))
+    mh.imsave('/tmp/ws.tif', 50*ws.astype(np.uint8))
 
     lines_array = np.zeros(ws.shape,dtype=np.uint8)
     lines = []
@@ -2640,8 +2662,42 @@ class Controller(object):
 
     print 'long loop start'
 
+    # for y in range(ws.shape[0]-1):
+    #   for x in range(ws.shape[1]-1):
+
+    #     # if self.lookup_label(seg_sub_tile[y,x]) != label_id:
+    #       # continue
+
+    #     if ws[y,x] != ws[y,x+1]:  
+    #       lines_array[y,x] = 1
+    #       lines.append([bbox[0]+x,bbox[2]+y])
+    #     if ws[y,x] != ws[y+1,x]:
+    #       lines_array[y,x] = 1
+    #       lines.append([bbox[0]+x,bbox[2]+y])
+
+    # for y in range(1,ws.shape[0]):
+    #   for x in range(1,ws.shape[1]):
+
+    #     # if self.lookup_label(seg_sub_tile[y,x]) != label_id:
+    #       # continue
+        
+    #     if ws[y,x] != ws[y,x-1]:  
+    #       lines_array[y,x] = 1
+    #       lines.append([bbox[0]+x,bbox[2]+y])
+    #     if ws[y,x] != ws[y-1,x]:
+    #       lines_array[y,x] = 1
+    #       #lines_array[y-1,x] = 1
+    #       lines.append([bbox[0]+x,bbox[2]+y])          
+
+
+    print 'Looking for ', label_id
+    print 'new mt', self.__new_merge_table
+
+
     for y in range(ws.shape[0]-1):
       for x in range(ws.shape[1]-1):
+
+        # print 'looking for', seg_sub_tile[y,x]
 
         if self.lookup_label(seg_sub_tile[y,x]) != label_id:
           continue
@@ -2655,10 +2711,10 @@ class Controller(object):
 
     for y in range(1,ws.shape[0]):
       for x in range(1,ws.shape[1]):
-
+        
         if self.lookup_label(seg_sub_tile[y,x]) != label_id:
           continue
-        
+
         if ws[y,x] != ws[y,x-1]:  
           lines_array[y,x] = 1
           lines.append([bbox[0]+x,bbox[2]+y])
@@ -2666,6 +2722,9 @@ class Controller(object):
           lines_array[y,x] = 1
           #lines_array[y-1,x] = 1
           lines.append([bbox[0]+x,bbox[2]+y])          
+                
+    # mh.imsave('/tmp/lines.tif', 50*lines_array.astype(np.uint8))
+
 
     print 'long loop end'
                 
@@ -2686,21 +2745,29 @@ class Controller(object):
     # print self.__merge_table, label_id
     # print self.__merge_table.keys()
     # print 'lookup loop', label_id
-    # label_id = str(label_id)
+    label_id = str(label_id)
     # keys = self.__merge_table.keys()
+
+
+    while label_id in self.__new_merge_table:
+
+      label_id = self.__new_merge_table[label_id]
+
     while label_id in self.__merge_table:
       # print 'label id', label_id
       # print 'merge[label id]', self.__merge_table[str(label_id)]
 
       # old_label_id = label_id
-      label_id = self.__merge_table[label_id]
+      label_id = self.__merge_table[label_id]      
+
+
 
       # if old_label_id == label_id:
         # return label_id
 
     # print 'new label', label_id
 
-    return label_id
+    return int(label_id)
 
   def lookup_merge_label(self,label_id):
     '''

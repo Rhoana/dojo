@@ -55,8 +55,14 @@ class ServerLogic:
     self.__out_dir = out_dir
 
     # create temp folder
-    tmpdir = tempfile.mkdtemp()
-    self.__tmpdir = tmpdir
+    tmpdir = out_dir#tempfile.mkdtemp()
+    self.__tmpdir = out_dir#tmpdir
+
+    #
+    # since we just have an output dir,
+    # create it now
+    #
+
 
     # register two data sources
     self.__segmentation = _dojo.Segmentation(mojo_dir, tmpdir, out_dir)
@@ -180,7 +186,7 @@ class ServerLogic:
   def close(self, signal, frame):
     '''
     '''
-    print 'Saving..'
+    print 'Sayonara..!!'
     output = {}
     output['origin'] = 'SERVER'
     # self.__controller.save(output)
