@@ -59,8 +59,8 @@ class Neuroblocks(object):
 
     project_id = values['projectId']
     user_id = values['userId']
-    segmentId1 = values['values'][0]
-    segmentId2 = values['values'][1]
+    segmentId2 = values['values'][0]
+    segmentId1 = values['values'][1]
     date = values['on']
 
 
@@ -79,7 +79,7 @@ class Neuroblocks(object):
 
     voxelsSum = segment1['voxels'] + segment2['voxels'];
     db.segmentation.update({'_id':segment1['_id']},
-      {'$set':{'voxels': voxelsSum, 'merged':0, 'lastUpdateOn': date, 'lastUpdateBy':user_id}});
+      {'$set':{'voxels': voxelsSum, 'merged':2, 'lastUpdateOn': date, 'lastUpdateBy':user_id}});
     db.segmentation.update({'_id':segment2['_id']},
       {'$set':{ 'merged':1, 'lastUpdateOn': date, 'lastUpdateBy':user_id}});
 
