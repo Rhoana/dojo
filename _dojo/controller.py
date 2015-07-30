@@ -1592,8 +1592,11 @@ class Controller(object):
 
     # update the segmentation data
 
+    print 'largest id', self.__largest_id
+
     self.__largest_id += 1
     new_id = self.__largest_id
+    print 'new largest id', new_id - self.lookup_label(label_id)
 
     # unselected_label = selected_label==1 ? unselected_label=2 : unselected_label:1
 
@@ -1605,6 +1608,8 @@ class Controller(object):
     full_coords = np.where(label_image > 0)
     full_bbox = [min(full_coords[1]), min(full_coords[0]), max(full_coords[1]), max(full_coords[0])]
 
+    # tif.imsave('/tmp/labelimage_bef.tif', label_image.astype(np.uint32))
+
     label_image[label_image == selected_label] = 0 # should be zero then
     label_image[label_image == unselected_label] = new_id - self.lookup_label(label_id)
 
@@ -1612,8 +1617,10 @@ class Controller(object):
 
     print '3'
 
+    # tif.imsave('/tmp/labelimage_aft.tif', label_image.astype(np.uint32))
+
     # mh.imsave('/tmp/old_tile.tif', old_tile[full_bbox[]].astype(np.uint32))
-    # mh.imsave('/tmp/new_tile.tif', tile[full_coords].astype(np.uint32))
+    tif.imsave('/tmp/new_tile.tif', tile.astype(np.uint32))
 
     #
     # this is for undo

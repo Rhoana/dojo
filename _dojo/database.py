@@ -32,14 +32,25 @@ class Database(object):
     '''
     self.__cursor.execute('SELECT * FROM segmentInfo ORDER BY id DESC')
 
-    result = self.__cursor.fetchone()
+    result = self.__cursor.fetchone()[0]
+
+
+    self.__cursor.execute('SELECT * FROM relabelMap ORDER BY fromId DESC')
+
+    result2 = self.__cursor.fetchone()[0]
 
     # output = [None] * (len(result) + 1)
 
     # for r in result:
     #   output[r[0]] = r[1:]
 
-    return result[0] 
+    if result > result2:
+      return result
+
+    if result2 > result:
+      return result2
+
+    return result 
 
   def get_id_tile_index(self,tile_id):
     '''
