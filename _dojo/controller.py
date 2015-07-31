@@ -1115,7 +1115,7 @@ class Controller(object):
   def save(self, input):
     '''
     '''
-    # print 'SAVING..'
+    print 'SAVING..'
 
 
     # first, copy the mojo dir to the output dir

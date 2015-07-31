@@ -135,43 +135,43 @@ DOJO.setup_buttons = function() {
 
   };
 
-  var threed = document.getElementById('3d');
-  var threed_selected = document.getElementById('3d_selected');
+  // var threed = document.getElementById('3d');
+  // var threed_selected = document.getElementById('3d_selected');
 
-  threed.onclick = threed_selected.onclick = function() {
+  // threed.onclick = threed_selected.onclick = function() {
 
-    if (!DOJO.threeD_active) {
+  //   if (!DOJO.threeD_active) {
 
-      // threed.style.border = '1px solid white';
+  //     // threed.style.border = '1px solid white';
 
-      threed.style.display = 'none';
-      threed_selected.style.display = 'block';
+  //     threed.style.display = 'none';
+  //     threed_selected.style.display = 'block';
 
-      document.getElementById('threeD').style.display = 'block';
+  //     document.getElementById('threeD').style.display = 'block';
 
-      if (!DOJO.threeD) {
-        DOJO.init_threeD();
-      }
+  //     if (!DOJO.threeD) {
+  //       DOJO.init_threeD();
+  //     }
 
-      DOJO.threeD_active = true;
+  //     DOJO.threeD_active = true;
 
-    } else {
+  //   } else {
 
-      // threed.style.border = '';
-      threed.style.display = 'block';
-      threed_selected.style.display = 'none';      
+  //     // threed.style.border = '';
+  //     threed.style.display = 'block';
+  //     threed_selected.style.display = 'none';      
 
-      document.getElementById('threeD').style.display = 'none';
+  //     document.getElementById('threeD').style.display = 'none';
 
-      DOJO.threeD_active = false;
+  //     DOJO.threeD_active = false;
 
-      DOJO.threeD.renderer.destroy();
+  //     DOJO.threeD.renderer.destroy();
 
-      DOJO.threeD = null;
+  //     DOJO.threeD = null;
 
-    }
+  //   }
 
-  };
+  // };
 
   var save = document.getElementById('save');
 
