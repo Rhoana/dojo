@@ -48,6 +48,7 @@ J.viewer = function(container) {
   this._overlay_show = true;
   this._overlay_opacity = 100;  
   this._overlay_borders = true;
+  this._only_locked = false;
 
   this._loader = new J.loader(this);
   this._camera = new J.camera(this);

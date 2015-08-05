@@ -141,6 +141,7 @@ J.interactor.prototype.onkeydown = function(e) {
 
   if (this._keypress_callback) return;
   
+  // 80: P TOGGLE LOCKED ONLY MODE
   // 81: Q HIDE/SHOW SEGMENTATION
   // 65: A TOGGLE BORDERS
   // 69: E INCREASE OPACITY
@@ -172,6 +173,16 @@ J.interactor.prototype.onkeydown = function(e) {
   
     this._keypress_callback = setTimeout(function() {
       this._camera.slice_up();
+      this._keypress_callback = null;
+    }.bind(this),10); 
+
+  } else if (e.keyCode == 80) {
+    
+    console.log('P')
+
+    this._keypress_callback = setTimeout(function() {
+      this._viewer._only_locked = !this._viewer._only_locked;
+      this._viewer.redraw();
       this._keypress_callback = null;
     }.bind(this),10);   
 
