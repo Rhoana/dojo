@@ -40,6 +40,10 @@ class Controller(object):
       print 'Updated merge table from database.. (', len(self.__database._merge_table), 'entries )'
       self.__merge_table = self.__database._merge_table
 
+    if database and self.__database._lock_table:
+      print 'Updated lock table from database.. (', len(self.__database._lock_table), 'entries )'
+      self.__lock_table = self.__database._lock_table
+
     self.__dojoserver = dojoserver
 
     self.__actions = {}
@@ -1127,11 +1131,25 @@ class Controller(object):
 
     for i in self.__new_merge_table:
       self.__database.insert_merge(i, self.__new_merge_table[i])
+      # self.__database.store()
+
+    print 'STORED MERGE TABLE'
+
+    # print self.__lock_table
+
+    for i in self.__lock_table:
+      if i=='0':
+        continue
+      self.__database.insert_lock(i)
+      # self.__database.store()
+
+    print 'STORED LOCK TABLE'
+
 
 
     self.__database.store()
 
-    print 'STORED MERGE TABLE'
+    print 'ALL STORED'
 
 
     # # parse the mojo directory for w=0 (largest images)

@@ -12,6 +12,7 @@ class Database(object):
     self._potential_orphans = None
 
     self._merge_table = None
+    self._lock_table = None
 
   def get_segment_info(self):
     '''
@@ -27,6 +28,21 @@ class Database(object):
 
     return output
 
+  def get_lock_table(self):
+    '''
+    '''
+    self.__cursor.execute('SELECT * FROM segmentInfo WHERE confidence=100')
+
+    result = self.__cursor.fetchall()
+
+    output = {'0':True}
+    # return output
+
+    for r in result:
+      output[r[0]] = True
+
+    return output
+
   def get_largest_id(self):
     '''
     '''
@@ -37,7 +53,11 @@ class Database(object):
 
     self.__cursor.execute('SELECT * FROM relabelMap ORDER BY fromId DESC')
 
-    result2 = self.__cursor.fetchone()[0]
+    result2 = self.__cursor.fetchone()
+    if result2:
+      result2 = result2[0]
+    else:
+      result2 = -1
 
     # output = [None] * (len(result) + 1)
 
@@ -82,6 +102,20 @@ class Database(object):
     # print output
 
     return output
+
+  def insert_lock(self, id):
+    '''
+    '''
+    try:
+      self.__connection.execute('SELECT * FROM segmentInfo WHERE id='+str(id))
+      result = self.__cursor.fetchone()
+      if result:
+        self.__connection.execute('UPDATE segmentInfo SET confidence=100 WHERE id='+str(id))
+      else:
+        self.__connection.execute('INSERT INTO segmentInfo VALUES (?,?,?,?,?,?)', (id, 'newone', 0, 100, 'None', 'None'))
+    
+    except:
+      print 'ERROR WHEN LOCKING', id
 
   def insert_merge(self, id1, id2):
     '''

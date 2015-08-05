@@ -121,6 +121,7 @@ class Datasource(object):
           self.__database = Database(old_db_file)
           # grab existing merge table
           self.__database._merge_table = self.__database.get_merge_table()
+          self.__database._lock_table = self.__database.get_lock_table()
 
 
 
