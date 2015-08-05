@@ -14,6 +14,8 @@ J.controller = function(viewer) {
 
   this._merge_table = null;
 
+  this._merge_table_subset = {};
+
   // this._gl_merge_table_keys = null;
   // this._gl_merge_table_values = null;
   this._gl_merge_table = new Uint8Array(8192*8192*4);
