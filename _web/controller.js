@@ -58,6 +58,12 @@ J.controller = function(viewer) {
   this._brush_size = 3;
   this._brush_ijs = [];
 
+  this._neuroblocks = false;
+  this._neuroblocks_project_id = null;
+  this._neuroblocks_task_id = null;
+  this._neuroblocks_user_id = null;
+  this._neuroblocks_state_id = null;
+
   this._merge_mode = -1;
   this._merge_id = -1;
   this._merge_target_ids = [];
@@ -130,6 +136,9 @@ J.controller.prototype.receive = function(data) {
 
       $('#loading_blocker').hide();
 
+    } else if (input.name == 'RESTORE_STATE') {
+
+      this.restore_state(input.value);
     }
 
   }
@@ -138,7 +147,17 @@ J.controller.prototype.receive = function(data) {
 
     this._welcomed = true;
 
-    this.send('WELCOME', {});
+    // check for the config
+    var config = input.value;
+    if (config['neuroblocks'] == true) {
+      this._neuroblocks = true;
+      this._neuroblocks_project_id = config['neuroblocks_project_id'];
+      DOJO.init_save_state_button();
+      this.send('WELCOME', {'neuroblocks_state_id': this._neuroblocks_state_id});
+    }
+    else {
+      this.send('WELCOME', {});
+    }
 
   // } else if (input.name == 'MERGETABLE') {
 
@@ -1517,6 +1536,23 @@ J.controller.prototype.end_draw_merge = function(x, y) {
 
     this._merge_table[id] = this._merge_table_subset[id];
 
+    //TODO Change this to a single merge database insert somehow
+    if (this._neuroblocks) {
+
+    // we want to store some extra information
+    var data = {};
+    data['operation'] = 'merge';
+    data['projectId'] = this._neuroblocks_project_id;
+    data['app'] = 'dojo';
+    data['userId'] = this._neuroblocks_user_id;
+    // data['on'] = new Date(); <-- now on the server
+    data['taskId'] = this._neuroblocks_task_id;
+    data['values'] = [id, this._last_id];
+
+    this.send('SAVE_ACTION', data);
+
+  }
+
   }
 
   this.send_merge_table_subset();
@@ -1587,6 +1623,7 @@ J.controller.prototype.merge = function(id) {
 
 };
 
+
 // J.controller.prototype.undo = function(x, y) {
 
 //   var i_j = this._viewer.xy2ij(x, y);
@@ -1619,6 +1656,95 @@ J.controller.prototype.merge = function(id) {
 //   }.bind(this));
 
 // };
+
+
+J.controller.prototype.save_pick2d = function(id) {
+
+  console.log('Picked segment', id);
+
+  var data = {};
+  data['projectId'] = this._neuroblocks_project_id;
+  data['taskId'] = this._neuroblocks_task_id;
+  data['userId'] = this._neuroblocks_user_id;
+  data['segmentId'] = id;
+
+  this.send('SAVE_PICK2D', data);
+
+};
+
+J.controller.prototype.save_state = function() {
+
+  console.log('Saving state..');
+
+  // we need the merge table and the viewport
+
+  // the merge table
+  var merge_table = this._merge_table;
+
+  // the viewport
+  var camera = this._viewer._camera;
+
+  var viewport = {
+    'x': camera._x,
+    'y': camera._y,
+    'z': camera._z,
+    'w': camera._w,
+    'i_j': camera._i_j,
+    'view': camera._view
+  }
+
+  var screenshot = this._viewer._canvas.toDataURL('image/jpeg');
+  if (this._viewer._width >= this._viewer._height) {
+    var new_width = 200;
+    var new_height = this._viewer._height / (this._viewer._width / new_width);
+  } else {
+    var new_height = 200;
+    var new_width = this._viewer._width / (this._viewer._height / new_height);
+  }
+
+  // resize the screenshot
+  resize_data_uri(screenshot, new_width, new_height, function(screenshot) {
+
+    var data = {};
+    data['projectId'] = this._neuroblocks_project_id;
+    data['mergeTable'] = merge_table;
+    data['viewPort'] = viewport;
+    data['screenshot'] = screenshot;
+    data['app'] = 'dojo';
+    data['userId'] = this._neuroblocks_user_id;
+    // data['on'] = new Date(); <-- now on the server
+    data['taskId'] = this._neuroblocks_task_id;
+
+    this.send('SAVE_STATE', data);
+
+
+    setTimeout(function() {
+
+      DOJO.save_state_done();
+
+    }, 500);
+
+
+  }.bind(this));
+
+};
+
+J.controller.prototype.restore_state = function(state) {
+
+  // the viewport
+  var camera = this._viewer._camera;
+  camera._x = state.viewPort.x;
+  camera._y = state.viewPort.y;
+  camera._z = state.viewPort.z;
+  camera._w = state.viewPort.w;
+  camera._i_j = state.viewPort.i_j;
+  camera._view = state.viewPort.view;
+
+  this.update_merge_table(state.mergeTable)
+
+  this._viewer.redraw();
+
+};
 
 J.controller.prototype.create_gl_merge_table = function(use_subset) {
 

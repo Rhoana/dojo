@@ -12,13 +12,35 @@ DOJO.modes = {
 DOJO.threeD_active = false;
 DOJO.link_active = false;
 DOJO.mousemove_timeout = null;
+DOJO.save_state_active = false;
+DOJO.picking_active = false;
 DOJO.single_segment = false;
+DOJO.neuroblocks_threed_link = false;
+DOJO.initial_threeD_id = null;
 
-DOJO.init = function() {
+DOJO.init = function(threeD) {
+
+  var threeD = threeD || false;
 
   DOJO.viewer = new J.viewer('dojo1');
 
   var args = parse_args();
+  // check for neuroblocks args
+  if (typeof(args['userName']) != 'undefined') {
+    DOJO.viewer._controller._origin = args['userName'];
+  }
+  if (typeof(args['userId']) != 'undefined') {
+    DOJO.viewer._controller._neuroblocks_user_id = args['userId'];
+  }
+  if (typeof(args['taskId']) != 'undefined') {
+    DOJO.viewer._controller._neuroblocks_task_id = args['taskId'];
+  }
+  if (typeof(args['appStateId']) != 'undefined') {
+    DOJO.viewer._controller._neuroblocks_state_id = args['appStateId'];
+  }
+  if (typeof(args['pick2d']) != 'undefined') {
+    DOJO.picking_active = true;
+  }
 
   DOJO.viewer.init(function() {
 
@@ -36,6 +58,25 @@ DOJO.init = function() {
       DOJO.single_segment = true;
 
     };
+
+    //check if 3D mode only
+    if (threeD) {
+
+      if (typeof(args['threeD_id']) != 'undefined') {
+
+        DOJO.initial_threeD_id = args['threeD_id'];
+
+      }
+
+      if (typeof(args['link']) != 'undefined') {
+
+        DOJO.neuroblocks_threed_link = true;
+        DOJO.viewer._websocket_nb = new J.websocketNB();
+      }
+
+
+      DOJO.init_threeD();
+    }
 
 
   });
@@ -208,7 +249,33 @@ DOJO.setup_buttons = function() {
 
   };  
 
+};
 
+DOJO.init_save_state_button = function() {
+
+  var save_state = document.getElementById('save_state');
+  var save_state_selected = document.getElementById('save_state_selected');
+
+  save_state.onclick = save_state_selected.onclick = function() {
+
+      // link.style.border = '1px solid white';
+      save_state.style.display = 'none';
+      save_state_selected.style.display = 'block';
+
+      DOJO.save_state_active = true;
+
+      DOJO.viewer._controller.save_state();
+
+  };
+
+};
+
+DOJO.save_state_done = function() {
+
+  save_state.style.display = 'block';
+  save_state_selected.style.display = 'none';
+
+  DOJO.save_state_active = false;
 
 };
 
@@ -277,7 +344,21 @@ DOJO.onleftclick = function(x, y) {
           DOJO.viewer._controller.remove_3d_label(id);
         }
 
-      }
+      } else if (DOJO.picking_active) {
+
+        // picking of segment in 2d
+        DOJO.viewer._controller.save_pick2d(id);
+
+        // now show only the picked segment
+        DOJO.viewer._controller._adjust_mode = 1;
+        DOJO.viewer._controller._adjust_id = id;
+
+        DOJO.viewer._controller.activate(id);
+        DOJO.viewer._controller.highlight(id);
+
+        DOJO.single_segment = true;
+
+       }
 
     }
     
@@ -532,6 +613,24 @@ DOJO.init_threeD = function() {
 
     // we also need to redraw the problem table
     DOJO.viewer._controller.redraw_exclamationmarks();
+
+    if (DOJO.viewer._controller._neuroblocks && DOJO.neuroblocks_threed_link) {
+      console.log('ThreeD view for neuroblocks is ready.', 'pid:'+DOJO.viewer._controller._neuroblocks_project_id);
+
+      // send the project id
+      DOJO.viewer._websocket_nb.send('pid:'+DOJO.viewer._controller._neuroblocks_project_id);
+
+    }
+
+    if (DOJO.initial_threeD_id) {
+
+      // directly show one segment
+      DOJO.viewer._controller._use_3d_labels = true;
+
+      DOJO.viewer._controller.add_fixed_3d_label(parseInt(DOJO.initial_threeD_id,10));
+      DOJO.viewer._controller.add_3d_label(parseInt(DOJO.initial_threeD_id,10));
+
+    }
 
   }
 

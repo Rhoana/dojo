@@ -1,5 +1,6 @@
 import cv2
 import glob
+import datetime
 import h5py
 import os, errno
 import json
@@ -13,7 +14,7 @@ from skimage import exposure
 
 class Controller(object):
 
-  def __init__(self, mojo_dir, out_dir, tmp_dir, database, dojoserver):
+  def __init__(self, mojo_dir, out_dir, tmp_dir, database, dojoserver, neuroblocks=None, neuroblocks_project_id=None):
     '''
     '''
     self.__websocket = None
@@ -35,6 +36,10 @@ class Controller(object):
     self.__mojo_out_dir = out_dir
     
     self.__database = database
+
+    self.__neuroblocks = neuroblocks
+
+    self.__neuroblocks_project_id = neuroblocks_project_id
 
     if database and self.__database._merge_table:
       print 'Updated merge table from database.. (', len(self.__database._merge_table), 'entries )'
@@ -67,7 +72,23 @@ class Controller(object):
     output = {}
     output['name'] = 'WELCOME'
     output['origin'] = 'SERVER'
-    output['value'] = ''
+
+    config = {}
+    config['neuroblocks'] = self.__neuroblocks != None
+    config['neuroblocks_project_id'] = self.__neuroblocks_project_id
+
+    output['value'] = config
+
+    self.__websocket.send(json.dumps(output))
+
+  def send_restore_state(self, origin, state_id):
+    '''
+    '''
+
+    output = {}
+    output['name'] = 'RESTORE_STATE'
+    output['origin'] = origin
+    output['value'] = self.__neuroblocks.get_state(state_id)
 
     self.__websocket.send(json.dumps(output))
 
@@ -204,6 +225,8 @@ class Controller(object):
 
       self.__users.append(input['origin'])
 
+
+
       # always send the merge table first thing
       self.send_merge_table(input['origin'])
       # then the lock table
@@ -212,6 +235,14 @@ class Controller(object):
       self.send_problem_table(input['origin'])
       # and the orphans
       self.send_orphans()
+
+      #
+      # let's check if we should restore a neuroblocks state
+      #
+      state_id = input['value']['neuroblocks_state_id']
+      if state_id:
+        # we do have a state restore request
+        self.send_restore_state(input['origin'], state_id)
 
       self.send_unblock(input['origin'])
 
@@ -274,6 +305,15 @@ class Controller(object):
       self.__websocket.send(json.dumps(input))
       self.save(input)
 
+    elif input['name'] == 'SAVE_STATE':
+      self.save_state(input)
+
+    elif input['name'] == 'SAVE_PICK2D':
+      self.save_pick2d(input)
+
+    elif input['name'] == 'SAVE_ACTION':
+        self.save_action(input);
+
     elif input['name'] == 'ACTION':
       self.add_action(input)
 
@@ -285,6 +325,36 @@ class Controller(object):
 
     elif input['name'] == 'UPDATE_ORPHAN':
       self.update_orphan(input)
+
+  def save_action(self, input):
+    '''
+    '''
+    values = input['value']
+    values['on'] = datetime.datetime.utcnow()
+
+    self.__neuroblocks.save_action(values)
+
+
+  def save_pick2d(self, input):
+    '''
+    '''
+    values = input['value']
+    values['on'] = datetime.datetime.utcnow()
+
+    self.__neuroblocks.save_pick2d(values)
+
+
+  def save_state(self, input):
+    '''
+    '''
+    values = input['value']
+    values['on'] = datetime.datetime.utcnow()
+
+
+    new_id = self.__neuroblocks.save_state(values)
+
+    print 'Stored state', new_id
+
 
 
   def add_action(self, input):

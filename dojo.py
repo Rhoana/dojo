@@ -42,11 +42,11 @@ class ServerLogic:
     '''
     pass
 
-  def run( self, mojo_dir, out_dir, port, orphan_detection, configured ):
+  def run( self, mojo_dir, out_dir, port, orphan_detection, neuroblocks_server, neuroblocks_project_id,  configured ):
     '''
     '''
 
-    signal.signal(signal.SIGINT, self.close)
+    #signal.signal(signal.SIGINT, self.close) TODO: check if this should be commented or not
 
     #monkey.patch_thread()
 
@@ -68,6 +68,12 @@ class ServerLogic:
     self.__segmentation = _dojo.Segmentation(mojo_dir, tmpdir, out_dir)
     self.__image = _dojo.Image(mojo_dir, tmpdir)
 
+    #
+    # setup neuroblocks link
+    #
+    neuroblocks = _dojo.Neuroblocks(neuroblocks_server)
+
+
     # detect orphans
     if orphan_detection:
       self.__segmentation.detect_orphans()
@@ -78,7 +84,7 @@ class ServerLogic:
 
     else:
       db = None
-    self.__controller = _dojo.Controller(mojo_dir, out_dir, tmpdir, db, self)
+    self.__controller = _dojo.Controller(mojo_dir, out_dir, tmpdir, db, self, neuroblocks, neuroblocks_project_id)
 
     # and the viewer
     self.__viewer = _dojo.Viewer()
@@ -222,6 +228,8 @@ if __name__ == "__main__":
     # and a free port
     port = 1336
     orphan_detection = False
+    neuroblocks_server = None
+    neuroblocks_project_id = -1
     result = 0
     import socket;
     while result==0:
@@ -235,8 +243,10 @@ if __name__ == "__main__":
     input_dir = sys.argv[1]
     output_dir = sys.argv[2]
     port = sys.argv[3]
-    orphan_detection = len(sys.argv) == 4
+    orphan_detection = len(sys.argv) == 4 #TODO: CHECK IF THIS IS CORRECT
+    neuroblocks_server = sys.argv[4] #TODO: CHECK IF THIS IS CORRECT
+    neuroblocks_project_id = sys.argv[5] #TODO: CHECK IF THIS IS CORRECT
     configured = True
 
   logic = ServerLogic()
-  logic.run( input_dir, output_dir, port, orphan_detection, configured )
+  logic.run( input_dir, output_dir, port, orphan_detection, neuroblocks_server, neuroblocks_project_id, configured )
