@@ -31,7 +31,11 @@ class Image(Datasource):
     out = None
     out_is_there = False
 
-    for f in files:
+    for i,f in enumerate(files):
+
+      if i % 4 != 0:
+        continue
+
       input_image = cv2.imread(f,0)#PILImage.open(f)#tif.imread(f)
 
       if out_is_there:

@@ -34,7 +34,11 @@ class Segmentation(Datasource):
     out = None
     out_is_there = False
 
-    for f in files:
+    for i,f in enumerate(files):
+
+      # if i % 4 != 0:
+      #   continue
+
       hdf5_file = h5py.File(f)
       list_of_names = []
       hdf5_file.visit(list_of_names.append)
@@ -49,6 +53,8 @@ class Segmentation(Datasource):
         out = image_data
         out_is_there = True
 
+    print 'Loaded volume data', out.shape
+
     return out
 
 
@@ -61,7 +67,10 @@ class Segmentation(Datasource):
     out = None
     out_is_there = False
 
-    for f in files:
+    for i,f in enumerate(files):
+
+      if i % 4 != 0:
+        continue
       hdf5_file = h5py.File(f)
       list_of_names = []
       hdf5_file.visit(list_of_names.append)
@@ -77,6 +86,8 @@ class Segmentation(Datasource):
         out_is_there = True
 
     c_image_data = zlib.compress(out)
+
+    print 'Loaded volume', out.shape
 
     output = StringIO.StringIO()
     output.write(c_image_data)
