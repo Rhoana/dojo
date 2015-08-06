@@ -540,9 +540,9 @@ J.controller.prototype.update_threeD = function() {
   if (DOJO.threeD) {
     DOJO.threeD.renderer.updateFromDojo(this._viewer._gl_colormap, 
                      this._viewer._max_colors,
-                     this._gl_merge_table_keys, 
-                     this._gl_merge_table_values, 
-                     this._merge_table_length,
+                     this._gl_merge_table, 
+                     // this._gl_merge_table_values, 
+                     // this._merge_table_length,
                      this._gl_3d_labels,
                      this._gl_3d_labels_length,
                      this._use_3d_labels);
