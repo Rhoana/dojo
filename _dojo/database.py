@@ -50,14 +50,17 @@ class Database(object):
 
     result = self.__cursor.fetchone()[0]
 
+    try:
+      self.__cursor.execute('SELECT * FROM relabelMap ORDER BY fromId DESC')
 
-    self.__cursor.execute('SELECT * FROM relabelMap ORDER BY fromId DESC')
+      result2 = self.__cursor.fetchone()
+      if result2:
+        result2 = result2[0]
+      else:
+        result2 = -1
 
-    result2 = self.__cursor.fetchone()
-    if result2:
-      result2 = result2[0]
-    else:
-      result2 = -1
+    except:
+      return result
 
     # output = [None] * (len(result) + 1)
 
