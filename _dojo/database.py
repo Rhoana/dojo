@@ -90,16 +90,20 @@ class Database(object):
   def get_merge_table(self):
     '''
     '''
-    self.__cursor.execute('SELECT * FROM relabelMap')
+    try:
+      self.__cursor.execute('SELECT * FROM relabelMap')
 
-    result = self.__cursor.fetchall()
+      result = self.__cursor.fetchall()
 
-    output = {}
+      output = {}
 
-    for r in result:
-      output[r[0]] = r[1:][0]
+      for r in result:
+        output[r[0]] = r[1:][0]
 
-    # print output
+      # print output
+
+    except:
+      output = {}
 
     return output
 
