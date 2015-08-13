@@ -18,7 +18,7 @@ class Controller(object):
     '''
     self.__websocket = None
 
-    self.__merge_table = {}
+    self.__merge_table = None
 
     self.__new_merge_table = {}
 
@@ -36,13 +36,11 @@ class Controller(object):
     
     self.__database = database
 
-    if database and self.__database._merge_table:
-      print 'Updated merge table from database.. (', len(self.__database._merge_table), 'entries )'
-      self.__merge_table = self.__database._merge_table
+    print 'Updated merge table from database.. (', len(self.__database._merge_table), 'entries )'
+    self.__merge_table = self.__database._merge_table
 
-    if database and self.__database._lock_table:
-      print 'Updated lock table from database.. (', len(self.__database._lock_table), 'entries )'
-      self.__lock_table = self.__database._lock_table
+    print 'Updated lock table from database.. (', len(self.__database._lock_table), 'entries )'
+    self.__lock_table = self.__database._lock_table
 
     self.__dojoserver = dojoserver
 
@@ -106,10 +104,15 @@ class Controller(object):
 
     self.__websocket.send(json.dumps(output))
 
-  def get_merge_table(self):
+  def get_hardened_merge_table(self):
     '''
     '''
     return self.__merge_table
+
+  def get_merge_table(self):
+    '''
+    '''
+    return self.__new_merge_table
 
   def get_lock_table(self):
     '''

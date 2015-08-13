@@ -11,7 +11,7 @@ from datasource import Datasource
 
 class Segmentation(Datasource):
 
-  def __init__(self, mojo_dir, tmp_dir, out_dir):
+  def __init__(self, mojo_dir, tmp_dir, out_dir, dojoserver):
     '''
     @override
     '''
@@ -24,6 +24,8 @@ class Segmentation(Datasource):
 
     self._orphans = None
     self._potential_orphans = None
+
+    self.__dojoserver = dojoserver
 
 
   def get_volume_data(self):
@@ -286,7 +288,17 @@ class Segmentation(Datasource):
     #print file, image_data[0][0], image_data.shape
     # print image_data.dtype
 
-    c_image_data = zlib.compress(image_data)
+    #
+    # NEW: WE NOW APPLY THE MERGE TABLE FROM THE DATABASE HERE
+    #
+    lut = self.__dojoserver.get_controller().get_hardened_merge_table()
+    # print lut
+    hardened_image_data = lut[image_data]
+    # print 'hardened', hardened_image_data.shape
+
+    # mh.imsave('/tmp/hardened.tif', hardened_image_data.astype(np.uint32))
+
+    c_image_data = zlib.compress(hardened_image_data.astype(np.uint32))
 
     output = StringIO.StringIO()
     output.write(c_image_data)

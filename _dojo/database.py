@@ -1,4 +1,8 @@
+import numpy as np
+import time
 import sqlite3
+
+MAX_SEGMENTS = 2147483647
 
 class Database(object):
 
@@ -31,17 +35,20 @@ class Database(object):
   def get_lock_table(self):
     '''
     '''
-    self.__cursor.execute('SELECT * FROM segmentInfo WHERE confidence=100')
+    try:
+      self.__cursor.execute('SELECT * FROM segmentInfo WHERE confidence=100')
 
-    result = self.__cursor.fetchall()
+      result = self.__cursor.fetchall()
 
-    output = {'0':True}
-    # return output
+      output = {'0':True}
 
-    for r in result:
-      output[r[0]] = True
+      for r in result:
+        output[r[0]] = True
+    except:
+      output = {'0':True}
 
     return output
+
 
   def get_largest_id(self):
     '''
@@ -90,25 +97,41 @@ class Database(object):
     # w, z, y, x
     return output
 
+  def lookup_label(self, lut, label):
+    if lut[label] != label:
+      lut[label] = self.lookup_label(lut, lut[label])
+    return lut[label]
+
   def get_merge_table(self):
     '''
     '''
-    try:
-      self.__cursor.execute('SELECT * FROM relabelMap')
+    lut = np.arange(MAX_SEGMENTS)
 
-      result = self.__cursor.fetchall()
+    # try:
+    self.__cursor.execute('SELECT * FROM relabelMap')
 
-      output = {}
+    result = self.__cursor.fetchall()
+    result_list = list(result)
 
-      for r in result:
-        output[r[0]] = r[1:][0]
+    print 'Creating lookup table buffer..'
+
+    lut[[r[0] for r in result]] = [r[1] for r in result]
+
+    print 'Start hardening the lookup table..'
+    percent = 0
+    st = time.time()
+    for i, r in enumerate(result_list):
+      if (i + 1) % (len(result_list) // 10) == 0:
+        percent += 10
+        print "{}% DONE, {} seconds".format(percent, int(time.time() - st))
+      lut[r[0]] = self.lookup_label(lut, r[0])
 
       # print output
 
-    except:
-      output = {}
+    # except:
+    #   return lut
 
-    return output
+    return lut
 
   def insert_lock(self, id):
     '''

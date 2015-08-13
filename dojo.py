@@ -65,7 +65,7 @@ class ServerLogic:
 
 
     # register two data sources
-    self.__segmentation = _dojo.Segmentation(mojo_dir, tmpdir, out_dir)
+    self.__segmentation = _dojo.Segmentation(mojo_dir, tmpdir, out_dir, self)
     self.__image = _dojo.Image(mojo_dir, tmpdir)
 
     # detect orphans
@@ -124,6 +124,11 @@ class ServerLogic:
     '''
     '''
     return self.__segmentation
+
+  def get_controller(self):
+    '''
+    '''
+    return self.__controller
 
   def finish_setup(self):
     '''
