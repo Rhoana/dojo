@@ -344,16 +344,18 @@ class Controller(object):
       #
       if action['type'] == 'MERGE':
 
-        key = str(action['value'][0])
+        print 'DEPRECATED'
 
-        if key in self.__merge_table:
-          del self.__merge_table[key]
-        else:
-          # this was already undo'ed before
-          pass     
+        # key = str(action['value'][0])
 
-        self.send_merge_table('SERVER')
-        self.send_redraw('SERVER')
+        # if key in self.__merge_table:
+        #   del self.__merge_table[key]
+        # else:
+        #   # this was already undo'ed before
+        #   pass     
+
+        # self.send_merge_table('SERVER')
+        # self.send_redraw('SERVER')
 
       elif action['type'] == 'MERGE_GROUP':
 
@@ -363,8 +365,8 @@ class Controller(object):
 
           key = str(i)
 
-          if key in self.__merge_table:
-            del self.__merge_table[key]
+          if key in self.__new_merge_table:
+            # del self.__merge_table[key]
             del self.__new_merge_table[key]
           else:
             # this was already undo'ed before
@@ -668,12 +670,14 @@ class Controller(object):
       #
       if action['type'] == 'MERGE':
 
-        key = str(action['value'][0])
+        # key = str(action['value'][0])
 
-        self.__merge_table[key] = action['value'][1]
+        # self.__merge_table[key] = action['value'][1]
 
-        self.send_merge_table('SERVER')
-        self.send_redraw('SERVER')
+        # self.send_merge_table('SERVER')
+        # self.send_redraw('SERVER')
+
+        print 'DEPRECATED'
 
       elif action['type'] == 'MERGE_GROUP':
 
@@ -688,7 +692,7 @@ class Controller(object):
 
           key = str(i)
 
-          self.__merge_table[key] = action['value'][1]
+          # self.__merge_table[key] = action['value'][1]
           self.__new_merge_table[key] = action['value'][1]
 
         # self.send_merge_table('SERVER')

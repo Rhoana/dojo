@@ -107,29 +107,29 @@ class Database(object):
     '''
     lut = np.arange(MAX_SEGMENTS)
 
-    # try:
-    self.__cursor.execute('SELECT * FROM relabelMap')
+    try:
+      self.__cursor.execute('SELECT * FROM relabelMap')
 
-    result = self.__cursor.fetchall()
-    result_list = list(result)
+      result = self.__cursor.fetchall()
+      result_list = list(result)
 
-    print 'Creating lookup table buffer..'
+      print 'Creating lookup table buffer..'
 
-    lut[[r[0] for r in result]] = [r[1] for r in result]
+      lut[[r[0] for r in result]] = [r[1] for r in result]
 
-    print 'Start hardening the lookup table..'
-    percent = 0
-    st = time.time()
-    for i, r in enumerate(result_list):
-      if (i + 1) % (len(result_list) // 10) == 0:
-        percent += 10
-        print "{}% DONE, {} seconds".format(percent, int(time.time() - st))
-      lut[r[0]] = self.lookup_label(lut, r[0])
+      print 'Start hardening the lookup table..'
+      percent = 0
+      st = time.time()
+      for i, r in enumerate(result_list):
+        if (i + 1) % (len(result_list) // 10) == 0:
+          percent += 10
+          print "{}% DONE, {} seconds".format(percent, int(time.time() - st))
+        lut[r[0]] = self.lookup_label(lut, r[0])
 
-      # print output
+        # print output
 
-    # except:
-    #   return lut
+    except:
+      return lut
 
     return lut
 
