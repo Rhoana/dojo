@@ -237,7 +237,7 @@ class Controller(object):
 
       for m in merge_table_subset:
 
-        self.__merge_table[m] = merge_table_subset[m]
+        self.__merge_table[int(m)] = merge_table_subset[m]
         self.__new_merge_table[m] = merge_table_subset[m]
 
       self.send_merge_table_subset(input)
@@ -1159,6 +1159,12 @@ class Controller(object):
     print 'ALL STORED'
 
 
+    # re-harden updated merge table from database
+    self.__database._merge_table = self.__database.get_merge_table()
+    # clear new merge table
+    self.__new_merge_table = {}
+
+
     # # parse the mojo directory for w=0 (largest images)
     # mojo_dir = (os.path.join(self.__mojo_dir, 'ids','tiles','w='+str(0).zfill(8)))
     # mojo_tmp_dir = (os.path.join(self.__mojo_tmp_dir, 'ids','tiles','w='+str(0).zfill(8)))
@@ -1309,7 +1315,7 @@ class Controller(object):
 
 
     print 'Splits', self.__split_count
-    print 'Merges', len(self.__merge_table.keys())
+    print 'Merges', self.__merge_table.size
     print 'All saved! Yahoo!'
 
     # ping back

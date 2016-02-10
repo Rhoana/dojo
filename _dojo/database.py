@@ -2,7 +2,7 @@ import numpy as np
 import time
 import sqlite3
 
-MAX_SEGMENTS = 2147483647
+MAX_SEGMENTS = 10000000#2147483647
 
 class Database(object):
 
@@ -11,6 +11,8 @@ class Database(object):
     '''
     self.__connection = sqlite3.connect(file)
     self.__cursor = self.__connection.cursor()
+
+    print 'Largest ID', self.get_largest_id()
 
     self._orphans = None
     self._potential_orphans = None

@@ -443,7 +443,7 @@ DOJO.init_threeD = function() {
 
   var vol = new X.volume();
   vol.dimensions = [512,512,Math.floor(DOJO.viewer._image.max_z_tiles/4)];
-  vol.spacing = [1,1,Math.floor(512/DOJO.viewer._image.max_z_tiles)/.5];
+  vol.spacing = [1,1,1];//Math.floor(512/DOJO.viewer._image.max_z_tiles)/.5];
   vol.xySampleRate = 8;
   vol.zSampleRate = 1;
   vol.file = '/image/volume/'+volume_zoomlevel+'/&.RZ';
