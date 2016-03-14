@@ -153,7 +153,6 @@ class Controller(object):
     output['name'] = 'UNDO_MERGE_GROUP'
     output['origin'] = origin
     output['value'] = ids
-
     self.__websocket.send(json.dumps(output))
 
   def send_redo_merge(self, origin, values):
