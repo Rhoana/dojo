@@ -149,6 +149,20 @@ class Database(object):
     except:
       print 'ERROR WHEN LOCKING', id
 
+  def remove_lock(self, id):
+    '''
+    '''
+    try:
+      self.__connection.execute('SELECT * FROM segmentInfo WHERE id='+str(id))
+      result = self.__cursor.fetchone()
+      if result:
+        self.__connection.execute('UPDATE segmentInfo SET confidence=0 WHERE id='+str(id))
+      else:
+        self.__connection.execute('INSERT INTO segmentInfo VALUES (?,?,?,?,?,?)', (id, 'newone', 0, 0, 'None', 'None'))
+    
+    except:
+      print 'ERROR WHEN UNLOCKING', id
+
   def insert_merge(self, id1, id2):
     '''
     '''

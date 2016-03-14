@@ -1,3 +1,4 @@
+import ipdb as pdb
 import cv2
 import glob
 import h5py
@@ -23,6 +24,8 @@ class Controller(object):
     self.__new_merge_table = {}
 
     self.__lock_table = {'0':True}
+
+    self.__old_lock_table = {'0':True}
 
     self.__problem_table = []
 
@@ -233,7 +236,6 @@ class Controller(object):
 
     elif input['name'] == 'MERGETABLE_SUBSET':
       merge_table_subset = input['value']
-
       for m in merge_table_subset:
 
         self.__merge_table[int(m)] = merge_table_subset[m]
@@ -244,6 +246,11 @@ class Controller(object):
       self.send_redraw(input['origin'])      
 
     elif input['name'] == 'LOCKTABLE':
+      new_locks = dict((int(k), v) for k, v in input['value'].iteritems())
+      old_locks = self.__lock_table.viewkeys() - new_locks.viewkeys()
+      old_locks = old_locks | self.__old_lock_table.viewkeys()
+      self.__old_lock_table = dict((k,True) for k in old_locks)
+
       self.__lock_table = input['value']
 
       self.send_lock_table(input['origin'])
@@ -1127,7 +1134,6 @@ class Controller(object):
     '''
     print 'SAVING..'
 
-
     # first, copy the mojo dir to the output dir
     # # shutil.rmtree(self.__mojo_out_dir, True)
     # if os.path.exists(self.__mojo_tmp_dir+'/ids/tiles'):
@@ -1142,16 +1148,18 @@ class Controller(object):
     print 'STORED MERGE TABLE'
 
     # print self.__lock_table
-
     for i in self.__lock_table:
       if i=='0':
         continue
       self.__database.insert_lock(i)
       # self.__database.store()
 
+    for i in self.__old_lock_table:
+      if i=='0':
+        continue
+      self.__database.remove_lock(i)
+
     print 'STORED LOCK TABLE'
-
-
 
     self.__database.store()
 
