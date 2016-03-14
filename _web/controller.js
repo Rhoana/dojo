@@ -176,12 +176,13 @@ J.controller.prototype.receive = function(data) {
 
   } else if (input.name == 'UNDO_MERGE_GROUP') {    
 
+    this._merge_table_subset = {};
+
     for (var i=1; i<input.value.length; i++) {
 
       var id = input.value[i];
 
-      delete this._merge_table[id];
-      delete this._merge_table_subset[id];     
+      delete this._merge_table[id];    
 
     }
 
