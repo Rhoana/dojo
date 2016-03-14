@@ -51,7 +51,7 @@
     uniform int uBorders;
     uniform bool uOnlyLocked;
     uniform int uMergeTableLength;
-    // uniform int uLockTableLength;
+    uniform int uLockTableLength;
     uniform bool uShowOverlay;
 
     const int MAX = 100;
@@ -160,24 +160,24 @@
     //
     bool is_locked(float id) {
 
-      vec2 onePixel = vec2(1.0, 1.0) / 8192.;
+      for (int m=0; m<MAX; m++) {
 
-      float y = floor(id / 8192.);
-      float x = floor(id - (y * 8192.));
+        if (m>uLockTableLength) break;
 
+        vec4 m_key = texture2D(uLockTableSampler, vec2(float(m)/float(uLockTableLength), 0.));
+        float m_id = unpack(m_key)*255.;
 
-      float u = onePixel.x * x;
-      float v = onePixel.y * y;
+        // if m_id is larger than our id, then we are done since all entries are sorted
+        if (larger(m_id, id)) break;
 
-      vec4 m_bytes = texture2D(uLockTableSampler, vec2(u,v));
+        if (equals(id, m_id)) {
+          // found entry -> label is locked
+          return true;
+        }
 
-      // float m_id = unpack(m_bytes)*255.;
-
-      if (equals(m_bytes.r, 0.)) {
-        return false;
       }
 
-      return true;
+      return false;
 
     }
 
