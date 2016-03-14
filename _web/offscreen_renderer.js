@@ -16,6 +16,8 @@ J.offscreen_renderer = function(viewer) {
   this._width = this._canvas.width;
   this._height = this._canvas.height;
 
+  this._merge_table_changed = true;
+
 };
 
 J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
@@ -53,7 +55,7 @@ J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
   }
   gl.useProgram(h);
 
-  // textures
+  // textures Hoffer 2016-03-13
   this.h_uImageSampler = gl.getUniformLocation(h, 'uImageSampler');
   this.h_uTextureSampler = gl.getUniformLocation(h, 'uTextureSampler');
   this.h_uColorMapSampler = gl.getUniformLocation(h, 'uColorMapSampler');
@@ -68,6 +70,7 @@ J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
   this.h_uAdjustMode = gl.getUniformLocation(h, 'uAdjustMode');  
   this.h_uMaxColors = gl.getUniformLocation(h, 'uMaxColors');
   this.h_uBorders = gl.getUniformLocation(h, 'uBorders');
+  this.h_uOnlyLocked = gl.getUniformLocation(h, 'uOnlyLocked');
   this.h_uMergeTableLength = gl.getUniformLocation(h, 'uMergeTableLength');
   this.h_uLockTableLength = gl.getUniformLocation(h, 'uLockTableLength');
   this.h_uShowOverlay = gl.getUniformLocation(h, 'uShowOverlay');
@@ -139,6 +142,7 @@ J.offscreen_renderer.prototype.init_buffers = function() {
   gl.bindTexture(gl.TEXTURE_2D, null);  
 
 
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
   this._merge_table_keys = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, this._merge_table_keys);
 
@@ -150,7 +154,7 @@ J.offscreen_renderer.prototype.init_buffers = function() {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 
   gl.bindTexture(gl.TEXTURE_2D, null);
-
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
   this._merge_table_values = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, this._merge_table_values);
@@ -165,7 +169,7 @@ J.offscreen_renderer.prototype.init_buffers = function() {
   gl.bindTexture(gl.TEXTURE_2D, null);
 
 
-
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
   this._lock_table = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, this._lock_table);
 
@@ -177,6 +181,7 @@ J.offscreen_renderer.prototype.init_buffers = function() {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 
   gl.bindTexture(gl.TEXTURE_2D, null);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
   // u-v
   this._uv_buffer = gl.createBuffer();
@@ -198,9 +203,16 @@ J.offscreen_renderer.prototype.draw = function(i, s, c, x, y) {
   gl.viewport(0, 0, this._width, this._height);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-  // update colormap texture buffer
-  gl.bindTexture(gl.TEXTURE_2D, this._colormap_texture);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, this._viewer._max_colors, 1, 0, gl.RGB, gl.UNSIGNED_BYTE, this._viewer._gl_colormap);
+
+  if (this._controller._gl_colormap_changed) {
+
+    // update colormap texture buffer
+    gl.bindTexture(gl.TEXTURE_2D, this._colormap_texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, this._viewer._max_colors, 1, 0, gl.RGB, gl.UNSIGNED_BYTE, this._viewer._gl_colormap);
+
+    this._controller._gl_colormap_changed = false;
+
+  }
 
 
 
@@ -219,21 +231,40 @@ J.offscreen_renderer.prototype.draw = function(i, s, c, x, y) {
   //
   var merge_table_length = this._controller._merge_table_length;
 
-  gl.bindTexture(gl.TEXTURE_2D, this._merge_table_keys);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, merge_table_length, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, this._controller._gl_merge_table_keys);
+  if (this._controller._gl_merge_table_changed) {
 
-  gl.bindTexture(gl.TEXTURE_2D, this._merge_table_values);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, merge_table_length, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, this._controller._gl_merge_table_values);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+
+    gl.bindTexture(gl.TEXTURE_2D, this._merge_table_keys);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, merge_table_length, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, this._controller._gl_merge_table_keys);
+
+    gl.bindTexture(gl.TEXTURE_2D, this._merge_table_values);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, merge_table_length, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, this._controller._gl_merge_table_values);
   
+    this._controller._gl_merge_table_changed = false;
 
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+
+  }
+  
 
   //
   // LOCK TABLE
   //
   var lock_table_length = this._controller._lock_table_length;
 
-  gl.bindTexture(gl.TEXTURE_2D, this._lock_table);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, lock_table_length, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, this._controller._gl_lock_table);
+  if (this._controller._gl_lock_table_changed) {
+
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+
+    gl.bindTexture(gl.TEXTURE_2D, this._lock_table);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, lock_table_length, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, this._controller._gl_lock_table);
+
+    this._controller._gl_lock_table_changed = false;    
+
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);    
+
+  }
 
 
 
@@ -250,6 +281,7 @@ J.offscreen_renderer.prototype.draw = function(i, s, c, x, y) {
   gl.uniform1f(this.h_uOpacity, this._viewer._overlay_opacity);
   gl.uniform1f(this.h_uMaxColors, this._viewer._max_colors);
   gl.uniform1i(this.h_uBorders, this._viewer._overlay_borders);
+  gl.uniform1i(this.h_uOnlyLocked, this._viewer._only_locked);
 
   gl.uniform1i(this.h_uSplitMode, this._viewer._controller._split_mode);
   gl.uniform1i(this.h_uAdjustMode, this._viewer._controller._adjust_mode);

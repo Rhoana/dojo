@@ -11,6 +11,45 @@ body {
   background-color:black;
 }
 
+#undoredo {
+  width: 60px;
+  margin-left: -4px;
+}
+
+#undo {
+  width: 20px;
+  opacity: 0.3;
+}
+
+#redo {
+  width: 20px;
+  opacity: 0.3;
+}
+
+#blocker {
+  position: absolute;
+  top:0px;
+  left:0px;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  z-index: 500000;
+  color: white;
+  display: none;
+}
+
+#loading_blocker {
+  position: absolute;
+  top:0px;
+  left:0px;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  z-index: 500000;
+  color: white;
+  display: block;
+}
+
 .toolbar {
   width:32px;
   height:200px;
@@ -36,17 +75,141 @@ body {
   overflow: hidden;
 }
 
-.threeDpanel {
+.draggable_panel {
   position: absolute;
-  right: 10px;
-  top: 10px;
-  width:300px;
-  height:300px;
   background-color:black;
   opacity: 1;
   border: solid 1px white;  
-  display: none;
   z-index: 1000;
+  color: white;
+}
+
+.panel_unsure {
+  background-color: #660000;
+}
+
+.panel_correct {
+  background-color: #006600;
+}
+
+#orphan_left_arrow {
+  position: absolute;
+  left: 0%;
+  border-right: solid 1px #666;
+  height: 100%;
+  width: 10%;
+  padding-top: 50px;
+  text-align: center;
+  font-size: 2em;
+}
+
+#orphan_right_arrow {
+  position: absolute;
+  right: 0%;
+  border-left: solid 1px #666;
+  height: 100%;
+  width: 10%;
+  padding-top: 50px;
+  text-align: center;
+  font-size: 2em;
+}
+
+.default_arrow {
+  background-color: black;
+  cursor: pointer;
+}
+
+.pressed_arrow {
+  background-color: #666;
+}
+
+#save {
+  margin-top: 6px;
+  width: 30px;
+  margin-left: 3px;
+}
+
+#orphan_color {
+  position: absolute;
+  left: 15%;
+  transform: translateY(-50%);
+  top: 50%;
+  width: 50px;
+  height: 50px;
+  background-color: white;
+  border: solid 1px #666;
+}
+
+#orphan_id {
+  position: absolute;
+  left: 35%;
+  top: 50%;
+  font-size: 1.5em;
+  transform: translateY(-50%);
+}
+
+#orphan_unsure {
+  position: absolute;
+  left: 60%;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
+  border: solid 1px #666;
+  font-size: 3em;
+  text-align: center;
+}
+
+#orphan_correct {
+  position: absolute;
+  left: 75%;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
+  border: solid 1px #666;
+  font-size: 3em;
+  text-align: center;
+}
+
+.orphan_button_off {
+  background-color: black;
+  color: white;
+  cursor: pointer;
+}
+
+.orphan_button_on {
+  background-color: white;
+  color: black;
+  cursor: pointer;
+}
+
+.noselect {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+
+#threeD {
+  /*right: 10px;*/
+  /*top: 10px;*/
+  width:300px;
+  height:300px;
+  display: none;  
+}
+
+#todo {
+  /*right: 10px;*/
+  /*top: 320px;*/
+  width: 300px;
+  height: 150px;
+  /*bottom: 220px;*/
+  overflow: hidden;
+  display: none;
 }
 
 #slicenumber {
@@ -68,4 +231,56 @@ body {
   color:white;
   width: 100px;
   margin-left: 10px;
+}
+
+.todo_toplevel {
+  color:white;
+  margin: 10px;
+  border: 1px solid white;
+}
+
+.todo_header {
+  border-bottom: 1px solid white; 
+}
+
+.todo_check {
+  float:right;
+}
+
+#orphans_list {
+  height: 300px;
+}
+
+.todo_color {
+  background-color: green;
+  border: 1px solid white;
+  width: 20px;
+  height: 20px;
+  float: left;
+}
+
+.todo_label {
+  margin-left: 6px;
+}
+
+ul {
+  list-style-type: none;
+  -webkit-margin-before: 0px;
+  -webkit-margin-start: 0px;
+  -webkit-padding-start: 10px;
+  margin-before: 0px;
+  margin-start: 0px;
+  padding-start: 10px;
+}
+
+li {
+  line-height: 30px;
+}
+
+li li {
+  border: solid 1px white;
+  padding: 10px;  
+  margin: 1px;
+  line-height: 20px;
+  margin-right: 20px;
 }

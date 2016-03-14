@@ -42,7 +42,7 @@ class ServerLogic:
     '''
     pass
 
-  def run( self, mojo_dir, out_dir, port, configured ):
+  def run( self, mojo_dir, out_dir, port, orphan_detection, configured ):
     '''
     '''
 
@@ -55,15 +55,30 @@ class ServerLogic:
     self.__out_dir = out_dir
 
     # create temp folder
-    tmpdir = tempfile.mkdtemp()
-    self.__tmpdir = tmpdir
+    tmpdir = out_dir#tempfile.mkdtemp()
+    self.__tmpdir = out_dir#tmpdir
+
+    #
+    # since we just have an output dir,
+    # create it now
+    #
+
 
     # register two data sources
-    self.__segmentation = _dojo.Segmentation(mojo_dir, tmpdir)
+    self.__segmentation = _dojo.Segmentation(mojo_dir, tmpdir, out_dir, self)
     self.__image = _dojo.Image(mojo_dir, tmpdir)
 
+    # detect orphans
+    if orphan_detection:
+      self.__segmentation.detect_orphans()
+
     # and the controller
-    self.__controller = _dojo.Controller(mojo_dir, out_dir, tmpdir, self.__segmentation.get_database())
+    if self.__segmentation:
+      db = self.__segmentation.get_database()
+
+    else:
+      db = None
+    self.__controller = _dojo.Controller(mojo_dir, out_dir, tmpdir, db, self)
 
     # and the viewer
     self.__viewer = _dojo.Viewer()
@@ -97,6 +112,23 @@ class ServerLogic:
     print '*'*80
 
     tornado.ioloop.IOLoop.instance().start()
+
+
+  def get_image(self):
+    '''
+    '''
+    return self.__image
+
+
+  def get_segmentation(self):
+    '''
+    '''
+    return self.__segmentation
+
+  def get_controller(self):
+    '''
+    '''
+    return self.__controller
 
   def finish_setup(self):
     '''
@@ -149,7 +181,7 @@ class ServerLogic:
       content = 'Error 404'
       content_type = 'text/html'
 
-    print 'IP',r.request.remote_ip
+    # print 'IP',r.request.remote_ip
 
     r.set_header('Access-Control-Allow-Origin', '*')
     r.set_header('Content-Type', content_type)
@@ -159,10 +191,10 @@ class ServerLogic:
   def close(self, signal, frame):
     '''
     '''
-    print 'Saving..'
+    print 'Sayonara..!!'
     output = {}
     output['origin'] = 'SERVER'
-    self.__controller.save(output)
+    # self.__controller.save(output)
 
     sys.exit(0)
 
@@ -173,6 +205,7 @@ def print_help( scriptName ):
   print description
   print
   print 'Usage: ' + scriptName + ' MOJO_DIRECTORY OUTPUT_DIRECTORY PORT'
+  print '  optional: --skip-orphan-detection'
   print
 
 #
@@ -193,6 +226,7 @@ if __name__ == "__main__":
     output_dir = tempfile.mkdtemp()
     # and a free port
     port = 1336
+    orphan_detection = False
     result = 0
     import socket;
     while result==0:
@@ -206,7 +240,8 @@ if __name__ == "__main__":
     input_dir = sys.argv[1]
     output_dir = sys.argv[2]
     port = sys.argv[3]
+    orphan_detection = len(sys.argv) == 4
     configured = True
 
   logic = ServerLogic()
-  logic.run( input_dir, output_dir, port, configured )
+  logic.run( input_dir, output_dir, port, orphan_detection, configured )

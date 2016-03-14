@@ -67,21 +67,47 @@ J.camera.prototype.jump = function(i, j, k) {
 
   var x_y_z = this._viewer.ijk2xyz(i, j, k);
 
-  if (DOJO.threeD)
+  if (DOJO.threeD) {
+    x_y_z = this._viewer.ijk2xyz3d(i, j, k);
     DOJO.threeD.slice.transform.matrix[14] = x_y_z[2];
+  }
 
-  DOJO.update_slice_number(k+1);
+  DOJO.update_slice_number(parseInt(k,10)+1);
 
   this._loader.load_tiles(i, j, k, this._w, this._w, false);
 
 };
 
+
+
+J.camera.prototype.jumpIJK = function(i, j, k) {
+
+  this._z = k;
+
+  // var x_y_z = this._viewer.ijk2xyz(i, j, k);
+
+  DOJO.update_slice_number(parseInt(k,10)+1);
+
+  this._viewer._camera._i_j = [i,j]; 
+  this._w = 0;
+
+  this._viewer._camera._view[0] = 1;
+  this._viewer._camera._view[4] = 1;
+  this._viewer._camera._view[6] = -i+this._viewer._width/2;
+  this._viewer._camera._view[7] = -j+this._viewer._height/2;
+
+  this._loader.load_tiles(i, j, k, this._w, this._w, false);
+
+};
+
+
+
 ///
 J.camera.prototype.zoom = function(x, y, delta) {
 
   // don't zoom when using adjust or split
-  if (this._viewer._controller._split_mode != -1) return;
-  if (this._viewer._controller._adjust_mode != -1) return;
+  if (this._viewer._controller._split_mode != -1 && this._viewer._controller._split_mode != 666) return;
+  if (this._viewer._controller._adjust_mode != -1 && !DOJO.single_segment) return;
 
   // perform linear zooming until a new image zoom level is reached
   // then reset scale to 1 and show the image
@@ -104,11 +130,18 @@ J.camera.prototype.zoom = function(x, y, delta) {
   var future_zoom_level = Math.round((this._view[0] + wheel_sign * this._linear_zoom_factor)*10)/10;
 
   // clamp the linear pixel zoom
-  if (future_zoom_level < 1.0 || future_zoom_level >= 5.0) return;
+  if (future_zoom_level <= 0.7 || future_zoom_level >= 5.0) return;
+
+  var load = false;
+  var no_draw = false;
+  var fzl = future_zoom_level;
 
   if (future_w >= 0 && future_w < this._viewer._image.zoomlevel_count) {
     // start loading the tiles immediately but set no_draw to true
-    this._loader.load_tiles(x, y, this._z, this._w, future_w, true);
+    // this._loader.load_tiles(x, y, this._z, this._w, future_w, true);
+    // load = true;
+    // no_draw = true;
+    // fzl = future_w;
   }
 
   var old_scale = this._view[0];
@@ -132,9 +165,10 @@ J.camera.prototype.zoom = function(x, y, delta) {
       // this._viewer.loading(true);
 
       // this time we really draw (no_draw = false)
-      this._loader.load_tiles(x, y, this._z, this._w, future_zoom_level, false);
+      load = true;
       
       this._w = future_zoom_level;
+      fzl = future_zoom_level;
 
       if (wheel_sign < 0) {
 
@@ -165,6 +199,10 @@ J.camera.prototype.zoom = function(x, y, delta) {
   this._view[6] -= wheel_sign * Math.abs(u_v[0] - u_new);
   this._view[7] -= wheel_sign * Math.abs(u_v[1] - v_new);  
 
+  if (load) {
+    this._loader.load_tiles(x, y, this._z, this._w, fzl, no_draw);
+  }
+
   this._zoom_end_timeout = setTimeout(this.zoom_end.bind(this), 60);
 
 };
@@ -186,8 +224,8 @@ J.camera.prototype.slice_up = function() {
   if (this._z == this._viewer._image.max_z_tiles-1) return;
 
   // dont slice when using tools
-  if (this._viewer._controller._split_mode != -1) return;
-  if (this._viewer._controller._adjust_mode != -1) return;
+  if (this._viewer._controller._split_mode != -1 && this._viewer._controller._split_mode != 666) return;
+  if (this._viewer._controller._adjust_mode != -1 && !DOJO.single_segment) return;
 
   this._viewer._controller.clear_exclamationmarks();
   this._viewer._controller.reset_cursors();
@@ -207,8 +245,8 @@ J.camera.prototype.slice_down = function() {
   if (this._z == 0) return;
 
   // dont slice when using tile tools
-  if (this._viewer._controller._split_mode != -1) return;
-  if (this._viewer._controller._adjust_mode != -1) return;
+  if (this._viewer._controller._split_mode != -1 && this._viewer._controller._split_mode != 666) return;
+  if (this._viewer._controller._adjust_mode != -1 && !DOJO.single_segment) return;
 
   this._viewer._controller.clear_exclamationmarks();
   this._viewer._controller.reset_cursors();

@@ -35,6 +35,19 @@ J.interactor.prototype.init = function() {
   // keyboard
   window.onkeydown = this.onkeydown.bind(this);
 
+  // resize event
+  window.onresize = this.onresize.bind(this);
+
+};
+
+J.interactor.prototype.onresize = function(e) {
+
+  this._viewer._height = DOJO.viewer._container.clientHeight;
+  this._viewer._width = DOJO.viewer._container.clientWidth;
+  this._viewer._canvas.height = this._viewer._height;
+  this._viewer._canvas.width = this._viewer._width;
+  // this._camera.reset();
+
 };
 
 J.interactor.prototype.onmousemove = function(e) {
@@ -47,6 +60,8 @@ J.interactor.prototype.onmousemove = function(e) {
   this._camera._i_j = this._viewer.xy2ij(x, y);
 
   //var u_v = this._viewer.xy2uv(x, y);
+
+  // console.log('IJ',this._camera._i_j)
 
   DOJO.onmousemove(x, y);
 
@@ -116,6 +131,8 @@ J.interactor.prototype.onmousewheel = function(e) {
 
   this._camera.zoom(x, y, delta);
 
+  this._last_mouse = [x, y];
+
 };
 
 J.interactor.prototype.onkeydown = function(e) {
@@ -124,9 +141,13 @@ J.interactor.prototype.onkeydown = function(e) {
 
   if (this._keypress_callback) return;
   
+  // 80: P TOGGLE LOCKED ONLY MODE
   // 81: Q HIDE/SHOW SEGMENTATION
   // 65: A TOGGLE BORDERS
   // 69: E INCREASE OPACITY
+  // 70: F combined Q and A
+  // 74: J JUMP
+  // 74: K JUMP (SLICE ONLY)
   // 68: D DECREASE OPACITY
   // 87: W SLICE UP
   // 83: S SLICE DOWN
@@ -144,6 +165,7 @@ J.interactor.prototype.onkeydown = function(e) {
   // 53: 5 DE-/ACTIVATE COLLABORATION MODE
   // 9: TAB FINISH ADJUST
   // 90 + CTRL: CTRL+Z UNDO
+  // 89 + CTRL: CTRL+Y REDO
 
   e.preventDefault();
 
@@ -152,7 +174,65 @@ J.interactor.prototype.onkeydown = function(e) {
     this._keypress_callback = setTimeout(function() {
       this._camera.slice_up();
       this._keypress_callback = null;
+    }.bind(this),10); 
+
+  } else if (e.keyCode == 80) {
+    
+    console.log('P')
+
+    this._keypress_callback = setTimeout(function() {
+      this._viewer._only_locked = !this._viewer._only_locked;
+      this._viewer.redraw();
+      this._keypress_callback = null;
     }.bind(this),10);   
+
+  } else if (e.keyCode == 70) {
+  
+    this._keypress_callback = setTimeout(function() {
+      this._viewer.toggle_borders();
+      this._viewer.toggle_segmentation();
+      this._keypress_callback = null;
+    }.bind(this),10);   
+
+  } else if (e.keyCode == 74) {
+  
+    this._keypress_callback = setTimeout(function() {
+      
+      var coords = window.prompt('Where to jump (X,Y,Z) to? e.g. 100,100,100');
+
+      if (coords) {
+
+        coords = coords.replace('(','').replace(')','').split(',');
+
+        if (coords.length != 3) {
+
+          window.alert('Error parsing position.');
+
+        } else {
+
+          DOJO.viewer._camera.jumpIJK(coords[0], coords[1], coords[2]);
+
+        }
+
+      }
+
+      this._keypress_callback = null;
+    }.bind(this),10);   
+
+
+  } else if (e.keyCode == 75) {
+  
+    this._keypress_callback = setTimeout(function() {
+      
+      var coords = window.prompt('Which slice to jump to?');
+
+      if (coords) {
+        DOJO.viewer._camera.jump(coords, coords, coords);  
+      }
+      
+
+      this._keypress_callback = null;
+    }.bind(this),10);       
 
   } else if (e.keyCode == 83) {
   
@@ -192,7 +272,14 @@ J.interactor.prototype.onkeydown = function(e) {
   } else if (e.keyCode == 90 && e.ctrlKey) {
 
     this._keypress_callback = setTimeout(function() {
-      this._viewer._controller.undo(this._camera._x, this._camera._y);
+      this._viewer._controller.undo_action();
+      this._keypress_callback = null;
+    }.bind(this),10); 
+
+  } else if (e.keyCode == 89 && e.ctrlKey) {
+
+    this._keypress_callback = setTimeout(function() {
+      this._viewer._controller.redo_action();
       this._keypress_callback = null;
     }.bind(this),10); 
     

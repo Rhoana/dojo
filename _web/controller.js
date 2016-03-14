@@ -6,16 +6,28 @@ J.controller = function(viewer) {
 
   this._last_id = null;
 
+  this._current_action = 0;
+  this._first_action = true;
+
+  this._current_orphan = 0;
+  this._orphans = null;
+
   this._merge_table = null;
+
+  this._merge_table_subset = {};
 
   this._gl_merge_table_keys = null;
   this._gl_merge_table_values = null;
+  this._gl_merge_table_changed = true;
   this._merge_table_length = -1;
+
+  this._gl_colormap_changed = true;
 
   this._lock_table = null;
 
   this._gl_lock_table = null;
   this._lock_table_length = -1;
+  this._gl_lock_table_changed = true;
 
   this._highlighted_id = null;
 
@@ -45,7 +57,13 @@ J.controller = function(viewer) {
   this._brush_size = 3;
   this._brush_ijs = [];
 
+  this._merge_mode = -1;
+  this._merge_id = -1;
+  this._merge_target_ids = [];
+
   this.create_gl_3d_labels();
+
+  this._welcomed = false;
 
 };
 
@@ -86,21 +104,38 @@ J.controller.prototype.receive = function(data) {
     // we are the sender or the requester
 
     if (input.name == 'SPLITRESULT') {
-      console.log(input)
+      // console.log(input)
       this.show_split_line(input.value);
       return;
     } else if (input.name == 'SPLITDONE') {
       this.finish_split(input.value);
     } else if (input.name == 'ADJUSTDONE') {
       this.finish_adjust(input.value);
-    } else if (input.name == 'SAVED') {
-      console.log('All saved. Yahoo!');
+
+    } else if (input.name == 'CURRENT_ACTION') {
+      this.update_current_action(input.value);
+    } else if (input.name == 'MERGETABLE') {
+
+      // received new merge table
+      this._viewer._controller.update_merge_table(input.value);
+
+    } else if (input.name == 'LOCKTABLE') {
+
+      // received new lock table
+      this._viewer._controller.update_lock_table(input.value);
+
+      return;
+    } else if (input.name == 'UNBLOCK') {
+
+      $('#loading_blocker').hide();
+
     }
 
-    return;
   }
 
-  if (input.name == 'WELCOME') {
+  if (!this._welcomed && input.name == 'WELCOME') {
+
+    this._welcomed = true;
 
     this.send('WELCOME', {});
 
@@ -109,12 +144,66 @@ J.controller.prototype.receive = function(data) {
     // received new merge table
     this._viewer._controller.update_merge_table(input.value);
 
+  } else if (input.name == 'MERGETABLE_SUBSET' && this._origin != input.origin) {
+
+    this._viewer._controller.update_merge_table_subset(input.value)
+
   } else if (input.name == 'LOCKTABLE') {
 
     // received new lock table
     this._viewer._controller.update_lock_table(input.value);
 
+  } else if (input.name == 'REDO_MERGE_GROUP') {
+
+    var value = input.value[1];
+
+    this._merge_table_subset = {};
+
+    for (var i=1; i<input.value[0].length; i++) {
+
+      var id = input.value[0][i];
+
+      this._merge_table[id] = value;
+
+      this._merge_table_subset[id] = value;
+
+    }
+
+    this.create_gl_merge_table(true);
+
+    this._gl_merge_table_changed = true;
+
+
+  } else if (input.name == 'UNDO_MERGE_GROUP') {    
+
+    for (var i=1; i<input.value.length; i++) {
+
+      var id = input.value[i];
+
+      delete this._merge_table[id];
+
+      var key = id*4;
+
+      this._gl_merge_table[key] = 0;
+      this._gl_merge_table[key+1] = 0;
+      this._gl_merge_table[key+2] = 0;
+      this._gl_merge_table[key+3] = 0;      
+
+    }
+
+
+    // we need to pass an empty array to the GPU
+    this._merge_table_length = 2;
+    this._gl_merge_table_keys = new Uint8Array(4 * 2);
+    this._gl_merge_table_values = new Uint8Array(4 * 2);
+    
+    this._gl_merge_table_changed = true;
+    
+
+
   } else if (input.name == 'REDRAW') {
+
+    this._gl_merge_table_changed = true;
 
     this._viewer.redraw();
     this.update_threeD();
@@ -131,9 +220,32 @@ J.controller.prototype.receive = function(data) {
   } else if (input.name == 'RELOAD') {
 
     // force reload
-    console.log('force reload');
     this.reload_tiles(input.value);
 
+  } else if (input.name == 'HARD_RELOAD') {
+
+    // force reload
+    this.hard_reload_tiles(input.value);
+
+
+
+  } else if (input.name == 'ORPHANS') {
+
+    this.update_orphan_list(input.value);
+
+  } else if (input.name == 'POTENTIAL_ORPHANS') {
+
+    this.update_potential_orphan_list(input.value);
+
+  } else if (input.name == 'SAVING') {
+
+    console.log('saving in progress');
+
+    $('#blocker').show();
+
+  } else if (input.name == 'SAVED') {
+      console.log('All saved. Yahoo!');
+      $('#blocker').hide();
 
   }
 
@@ -142,6 +254,154 @@ J.controller.prototype.receive = function(data) {
 J.controller.prototype.save = function() {
 
   this.send('SAVE', null);
+
+};
+
+J.controller.prototype.add_action = function(type, value) {
+
+  this._first_action = false;
+
+  $('#undo').css('opacity', '1.0');
+
+  this.send('ACTION', [this._current_action, {'type': type, 'value': value}]);
+
+};
+
+J.controller.prototype.undo_action = function() {
+
+  $('#redo').css('opacity', '1.0');
+
+  this.send('UNDO', this._current_action);
+
+};
+
+J.controller.prototype.redo_action = function() {
+
+  $('#redo').css('opacity', '0.3');  
+  $('#undo').css('opacity', '1.0');  
+
+  this.send('REDO', this._current_action);
+
+};
+
+J.controller.prototype.update_current_action = function(value) {
+
+  this._current_action = parseInt(value,10);
+  console.log('Current action', this._current_action);
+
+  if (this._first_action && this._current_action == 0) {
+    $('#undo').css('opacity', '0.3');      
+  }
+
+};
+
+J.controller.prototype.update_orphan_list = function(data) {
+
+  console.log('Updating orphan list..');
+  // aaaaaa = data
+
+  if (data=="None") return;
+
+  data = JSON.parse(data);
+
+  this._orphans = data;
+
+  // show first orphan
+  // if (this._current_orphan == -1) {
+    this.show_orphan(this._current_orphan);
+  // }
+
+  $('#todo').show();
+
+};
+
+J.controller.prototype.show_prev_orphan = function() {
+
+  if (this._current_orphan > 0)
+    this.show_orphan(--this._current_orphan);
+
+};
+
+J.controller.prototype.show_next_orphan = function() {
+
+  if (this._current_orphan < (this._orphans.length - 1))
+    this.show_orphan(++this._current_orphan);
+
+};
+
+J.controller.prototype.show_orphan = function(index) {
+
+  var orphan = this._orphans[index];
+  var color = this._viewer.get_color(orphan[0]);
+
+  $('#orphan_id').html('ID: ' + orphan[0]);
+  $('#orphan_color').css('background-color', rgbToHex(color[0], color[1], color[2]));
+
+
+  if (index == 0) {
+    $('#orphan_left_arrow').removeClass('default_arrow').addClass('pressed_arrow');
+  } else {
+    $('#orphan_left_arrow').removeClass('pressed_arrow').addClass('default_arrow');
+  }
+
+
+  if (index == (this._orphans.length - 1)) {
+    $('#orphan_right_arrow').removeClass('default_arrow').addClass('pressed_arrow');
+  } else {
+    $('#orphan_right_arrow').removeClass('pressed_arrow').addClass('default_arrow');
+  }
+
+  this.update_orphan_status_ui(orphan[2]);
+
+  this._current_orphan = index;
+
+};
+
+
+J.controller.prototype.update_orphan_status_ui = function(status) {
+
+  if (this._current_orphan == 0) {
+    $('orphan_left_arrow').removeClass('default_arrow').addClass('pressed_arrow');
+  }
+
+  if (this._current_orphan == (this._orphans.length - 1)) {
+    $('orphan_right_arrow').removeClass('default_arrow').addClass('pressed_arrow');
+  }  
+
+  $('#orphan_correct, #orphan_unsure').removeClass('orphan_button_on').addClass('orphan_button_off');
+  $('#todo').removeClass('panel_correct panel_unsure');
+  switch (status) {
+    case 1:
+          $('#todo').addClass('panel_unsure');
+          $('#orphan_unsure').removeClass('orphan_button_off').addClass('orphan_button_on');
+          break;
+    case 2:
+          $('#todo').addClass('panel_correct');
+          $('#orphan_correct').removeClass('orphan_button_off').addClass('orphan_button_on');
+          break;
+  }
+
+};
+
+
+J.controller.prototype.update_orphan_status = function(status) {
+
+  this._orphans[this._current_orphan][2] = status;
+
+  this.update_orphan_status_ui(status);
+
+  var orphan = {};
+  orphan['current_orphan'] = this._current_orphan;
+  orphan['orphan'] = this._orphans[this._current_orphan];
+
+  this.send('UPDATE_ORPHAN', orphan);
+
+};
+
+
+J.controller.prototype.update_potential_orphan_list = function(data) {
+
+  // console.log('Updating potential orphan list..', data);
 
 };
 
@@ -471,7 +731,7 @@ J.controller.prototype.send_problem_table = function() {
 
 J.controller.prototype.update_merge_table = function(data) {
 
-  // console.log('Received new merge table', data);
+  console.log('Received new merge table');
 
   this._merge_table = data;
 
@@ -479,9 +739,33 @@ J.controller.prototype.update_merge_table = function(data) {
 
 };
 
+J.controller.prototype.update_merge_table_subset = function(data) {
+
+  console.log('Received new merge table subset');
+
+  for (var d in data) {
+
+    var m = data[d];
+
+    this._merge_table[d] = m;
+
+  }
+
+  this._merge_table_subset = data;
+
+  this.create_gl_merge_table(true);
+
+};
+
 J.controller.prototype.send_merge_table = function() {
 
   this.send('MERGETABLE', this._merge_table);
+
+};
+
+J.controller.prototype.send_merge_table_subset = function() {
+
+  this.send('MERGETABLE_SUBSET', this._merge_table_subset);
 
 };
 
@@ -499,11 +783,15 @@ J.controller.prototype.send_mouse_move = function(i_j_k) {
 
 J.controller.prototype.update_lock_table = function(data) {
 
-  // console.log('Received new lock table', data);
+  console.log('Received new lock table');
+
+  this._gl_lock_table = new Uint8Array(8192*8192);
 
   this._lock_table = data;
 
   this.create_gl_lock_table();
+
+  this._gl_lock_table_changed = true
 
 };
 
@@ -549,6 +837,8 @@ J.controller.prototype.lock = function(x, y) {
 
     this.create_gl_lock_table();
 
+    this._gl_lock_table_changed = true;
+
     this.send_lock_table();
 
     this._viewer.redraw();
@@ -559,7 +849,7 @@ J.controller.prototype.lock = function(x, y) {
 
 J.controller.prototype.larger_brush = function() {
 
-  this._brush_size = Math.min(10, this._brush_size+=1);
+  this._brush_size = Math.min(30, this._brush_size+=1);
 
 };
 
@@ -631,54 +921,119 @@ J.controller.prototype.update_3D_textures = function(z, full_bbox, texture) {
   vol.children[2].children[z].labelmap.texture.updateTexture(texture);
   vol.children[2].children[z].labelmap.modified();
 
-  var bytes_start_t = (x1+y1*512)*4;
-  var bytes_end_t = (x1+y2*512)*4;
 
-  var bytes_per_value = 4;
+  console.log('XY for zoomlevel', x1, y1, x2, y2);
 
-  var nb_pix_per_z = 512*512;
+  for (var x=x1; x<=x2; x++) {
 
-  var px = 0;
-  for (var p=bytes_start_t; p<bytes_end_t; p+=bytes_per_value) {
+    for (var y=y1; y<=y2; y++) {
 
-    //var z = Math.floor(px / nb_pix_per_z);
-    var y = Math.floor((px % nb_pix_per_z) / dim_x);
-    var x = Math.floor((px % nb_pix_per_z) % dim_x);
+      var byte_start = (x + y*dim_x)*4;
+      var pixel_value_x_y_0 = texture[byte_start];
+      var pixel_value_x_y_1 = texture[byte_start + 1];
+      var pixel_value_x_y_2 = texture[byte_start + 2];
+      var pixel_value_x_y_3 = texture[byte_start + 3];
 
-    // var z_index = (x + y*dim_y)*bytes_per_value;
-    var y_index = (x + z*dim_x)*bytes_per_value;
-    var x_index = (y + z*dim_y)*bytes_per_value;
+      // now update the slices in y direction
+      var slice_y = vol.children[1].children[y];
+      if (slice_y) {
+        var labelmap_y = slice_y.labelmap;
+        var data = labelmap_y.texture.rawData;
+        var target_byte_start = (x + z*dim_x)*4;
+        data[target_byte_start] = pixel_value_x_y_0;
+        data[target_byte_start+1] = pixel_value_x_y_1;
+        data[target_byte_start+2] = pixel_value_x_y_2;
+        data[target_byte_start+3] = pixel_value_x_y_3;
 
-    var old_data_x = vol.children[0].children[x].labelmap.texture.rawData;
-    var old_data_y = vol.children[1].children[y].labelmap.texture.rawData;
+        labelmap_y.texture.updateTexture(data);
+        labelmap_y.modified();
+      }
 
-    for (var i=0;i<bytes_per_value;i++) {
+      // now update the slices in x direction
+      var slice_x = vol.children[0].children[x];
+      if (slice_x) {
+        var labelmap_x = slice_x.labelmap;
+        var data = labelmap_x.texture.rawData;
+        target_byte_start = (y + z*dim_y)*4;
+        data[target_byte_start] = pixel_value_x_y_0;
+        data[target_byte_start+1] = pixel_value_x_y_1;
+        data[target_byte_start+2] = pixel_value_x_y_2;
+        data[target_byte_start+3] = pixel_value_x_y_3;
 
-      old_data_x[x_index+i] = texture[p+i];
-      old_data_y[y_index+i] = texture[p+i];
-      // slices_z[z][z_index+i] = data[p+i];
+        labelmap_x.texture.updateTexture(data);
+        labelmap_x.modified();
 
-    }
+      }
 
-    px++;
+
+    }  
 
   }
 
-  for (var x=0; x<dim_x; ++x) {
+  
 
-    var old_data_x = vol.children[0].children[x].labelmap.texture.rawData;
-    vol.children[0].children[x].labelmap.texture.updateTexture(old_data_x);
-    vol.children[0].children[x].labelmap.modified();
+  //   console.log('need to update slice[1]', y);
 
-  }
+  // }
 
-  for (var y=0; y<dim_y; ++y) {
 
-    var old_data_y = vol.children[1].children[y].labelmap.texture.rawData;
-    vol.children[1].children[y].labelmap.texture.updateTexture(old_data_y);
-    vol.children[1].children[y].labelmap.modified();
 
-  }
+
+  // var bytes_start_t = (x1+y1*512)*4;
+  // var bytes_end_t = (x2+y2*512)*4;
+
+  // var bytes_per_value = 4;
+
+  // var nb_pix_per_z = 512*512;
+
+  // var px = 0;
+  // for (var p=bytes_start_t; p<bytes_end_t; p+=bytes_per_value) {
+
+  //   //var z = Math.floor(px / nb_pix_per_z);
+  //   var y = Math.floor((px % nb_pix_per_z) / dim_x);
+  //   var x = Math.floor((px % nb_pix_per_z) % dim_x);
+
+  //   // var z_index = (x + y*dim_y)*bytes_per_value;
+  //   var y_index = (x + z*dim_x)*bytes_per_value;
+  //   var x_index = (y + z*dim_y)*bytes_per_value;
+ 
+  //  console.log('XIND',x_index, y_index);
+  //  console.log('XY', x, y, z);
+  //  console.log('DIM', dim_x, dim_y)
+
+  //   var old_data_x = vol.children[0].children[x].labelmap.texture.rawData;
+  //   var old_data_y = vol.children[1].children[y].labelmap.texture.rawData;
+
+  //   for (var i=0;i<bytes_per_value;i++) {
+
+  //     old_data_x[x_index+i] = texture[p+i];
+  //     old_data_y[y_index+i] = texture[p+i];
+  //     // slices_z[z][z_index+i] = data[p+i];
+
+  //   }
+
+  //   px++;
+
+  // }
+
+
+
+  // // propagate all textures in x and y
+  // for (var x=0; x<dim_x; ++x) {
+
+  //   var old_data_x = vol.children[0].children[x].labelmap.texture.rawData;
+  //   vol.children[0].children[x].labelmap.texture.updateTexture(old_data_x);
+  //   vol.children[0].children[x].labelmap.modified();
+
+  // }
+
+  // for (var y=0; y<dim_y; ++y) {
+
+  //   var old_data_y = vol.children[1].children[y].labelmap.texture.rawData;
+  //   vol.children[1].children[y].labelmap.texture.updateTexture(old_data_y);
+  //   vol.children[1].children[y].labelmap.modified();
+
+  // }
 
   // // update pixel data in x
   // for (var x=x1;x<x2;x++) {
@@ -790,6 +1145,16 @@ J.controller.prototype.finish_adjust = function(values) {
 
 };
 
+J.controller.prototype.hard_reload_tiles = function(values) {
+
+  // console.log('Hard reload');
+
+  this.reload_tiles(values);
+
+  this._viewer.clear_overlay_buffer();
+
+};
+
 J.controller.prototype.finish_split = function(values) {
 
   // reload all slices, set to split mode -1
@@ -848,6 +1213,7 @@ J.controller.prototype.start_split = function(id, x, y) {
     data['line'] = this._split_line;
     data['z'] = this._viewer._camera._z;
     data['click'] = i_j;
+    data['current_action'] = this._current_action;
     data['bbox'] = this._brush_bbox;
     this.send('FINALIZESPLIT', data);
 
@@ -947,7 +1313,7 @@ J.controller.prototype.draw_split = function(x, y) {
     // update bounding box
     if (this._brush_bbox.length > 0) {
 
-      var brush = Math.ceil(this._brush_size);
+      var brush = Math.ceil(3);//this._brush_size);
 
       var factor = 1;
 
@@ -972,7 +1338,7 @@ J.controller.prototype.draw_split = function(x, y) {
 
     context.lineTo(u_v[0], u_v[1]);
     context.strokeStyle = 'rgba(0,191,255,0.1)';
-    context.lineWidth = this._brush_size;
+    context.lineWidth = 3;//this._brush_size;
     context.stroke();
     // context.restore();
   }
@@ -999,7 +1365,7 @@ J.controller.prototype.end_draw_split = function(x, y) {
     data['brush_bbox'] = this._brush_bbox;
     data['i_js'] = this._brush_ijs;
     data['z'] = this._viewer._camera._z;
-    data['brush_size'] = this._brush_size;
+    data['brush_size'] = 3;//this._brush_size;
     this.send('SPLIT', data);
 
 
@@ -1011,6 +1377,168 @@ J.controller.prototype.end_draw_split = function(x, y) {
   }
 
 
+
+};
+
+J.controller.prototype.start_merge = function(id, x, y) {
+
+  if (this._merge_mode != -1) return;
+
+  console.log('start merge');
+
+  this._merge_mode = 1;
+  this._merge_id = id;
+  this._merge_target_ids =[];
+  this._brush_ijs = [];
+
+  this._split_mode = 666;
+
+  this._viewer._canvas.style.cursor = 'crosshair';
+
+  this.activate(id);
+
+
+  var i_j = this._viewer.xy2ij(x, y);
+  var u_v = this._viewer.ij2uv_no_zoom(i_j[0],i_j[1]);
+  // var u_v = this._viewer.ij2uv(i_j[0], i_j[1]);
+  // var u_v = [x*this._viewer._camera._view[0],y*this._viewer._camera._view[4]];
+
+  var context = this._viewer._overlay_buffer_context;
+
+  this._brush_ijs = [];
+  this._brush_bbox = [];
+  context.beginPath();
+  context.moveTo(u_v[0], u_v[1]);  
+
+};
+
+J.controller.prototype.draw_merge = function(x, y) {
+
+
+  if (this._merge_mode != 1 && this._merge_mode != 2) return;
+
+  console.log('draw merge')
+
+  this._merge_mode = 2;
+
+
+  var i_j = this._viewer.xy2ij(x, y);
+  if (i_j[0] == -1) return;
+  var u_v = this._viewer.ij2uv_no_zoom(i_j[0],i_j[1]);
+
+  var context = this._viewer._overlay_buffer_context;
+
+  // and store the i_j's for later use
+  this._brush_ijs.push(i_j);
+
+  context.lineTo(u_v[0], u_v[1]);
+  context.strokeStyle = 'rgba(0,191,255,0.1)';
+  context.lineWidth = this._brush_size;
+  context.stroke();
+
+  var left = Math.floor(i_j[0] - this._brush_size/2);
+  var right = Math.floor(i_j[0] + this._brush_size/2);
+
+  console.log(left, right)
+
+  for (var i=left; i<right; i++) {
+
+
+    DOJO.viewer.get_segmentation_id(i, i_j[1], function(id) {
+
+
+
+      if (this._merge_target_ids.indexOf(id) == -1) {
+        this._merge_target_ids.push(id);
+      }
+
+    }.bind(this));
+
+
+  }
+
+
+    // var color = this._viewer.get_color(this._merge_id);
+
+    // var id = this._viewer._overlay_buffer_context.createImageData(this._brush_size, this._brush_size);
+    // var d = id.data;
+    // for(var j=0;j<this._brush_size*this._brush_size;j++) {
+    //   d[j*4+0] = color[0];
+    //   d[j*4+1] = color[1];
+    //   d[j*4+2] = color[2];
+    //   d[j*4+3] = this._viewer._overlay_opacity;
+    // }
+
+    // var brush_ij = [Math.floor(i_js[0]-this._brush_size/2), Math.floor(i_js[1]-this._brush_size/2)];
+    // var u_v = this._viewer.ij2uv_no_zoom(brush_ij[0], brush_ij[1]);
+
+    // this._brush_ijs.push(brush_ij);
+
+    // this._viewer._overlay_buffer_context.putImageData(id, u_v[0], u_v[1]);
+
+  // }.bind(this));
+
+};
+
+J.controller.prototype.end_draw_merge = function(x, y) {
+
+  console.log('end draw merge')
+
+  if (this._merge_mode == -1)
+    return;
+
+  this._last_id = this._merge_id;
+
+  this._merge_table_subset = {};
+
+  // add all to merge table
+  var no_target_ids = this._merge_target_ids.length;
+  for (var i=0; i<no_target_ids; i++) {
+
+    //this._merge_table[this._merge_target_ids[i]] = this._merge_id;
+    this.merge(this._merge_target_ids[i]);
+
+
+  }
+
+  var context = this._viewer._image_buffer_context;    
+  context.closePath();  
+
+  this._viewer._canvas.style.cursor = '';
+  this._viewer.clear_overlay_buffer();
+
+  var color2 = DOJO.viewer.get_color(this._last_id);
+  var color2_hex = rgbToHex(color2[0], color2[1], color2[2]);
+  var log = 'User $USER merged many labels to <font color="'+color2_hex+'">' +this._last_id + '</font>.';
+
+  this.send_log(log);
+
+  // put the subset into the real merge
+
+
+  this.create_gl_merge_table(true); // use only subset
+
+  this._gl_merge_table_changed = true;
+
+  // this._viewer.redraw();
+
+  for (var id in this._merge_table_subset) {
+
+    this._merge_table[id] = this._merge_table_subset[id];
+
+  }
+
+  this.create_gl_merge_table(); // use everything
+
+  this.send_merge_table_subset();
+
+  this.highlight(this._last_id);
+
+
+  // send an action for undo/redo
+  this.add_action('MERGE_GROUP', [this._merge_target_ids, this._last_id]);
+
+  this._merge_mode = -1;
 
 };
 
@@ -1038,70 +1566,81 @@ J.controller.prototype.merge = function(id) {
 
   // this._merge_table[id].push(this._last_id);
 
-  this._merge_table[id] = this._last_id;
+  this._merge_table_subset[id] = this._last_id;
 
-  var color1 = DOJO.viewer.get_color(id);
-  var color1_hex = rgbToHex(color1[0], color1[1], color1[2]);
-  var color2 = DOJO.viewer.get_color(this._last_id);
-  var color2_hex = rgbToHex(color2[0], color2[1], color2[2]);
+  // var color1 = DOJO.viewer.get_color(id);
+  // var color1_hex = rgbToHex(color1[0], color1[1], color1[2]);
+  // var color2 = DOJO.viewer.get_color(this._last_id);
+  // var color2_hex = rgbToHex(color2[0], color2[1], color2[2]);
 
-  var colored_id1 = id;
-  var colored_id2 = this._last_id;
+  // var colored_id1 = id;
+  // var colored_id2 = this._last_id;
 
-  var log = 'User $USER merged labels <font color="'+color1_hex+'">'+colored_id1+'</font> and <font color="'+color2_hex+'">' +colored_id2 + '</font>.';
+  // var log = 'User $USER merged labels <font color="'+color1_hex+'">'+colored_id1+'</font> and <font color="'+color2_hex+'">' +colored_id2 + '</font>.';
 
-  this.send_log(log);
+  // this.send_log(log);
   // shouldn't be required
   // DOJO.update_log(log);
 
-  // this._viewer.redraw();
-
-  this.create_gl_merge_table();
+  // this.create_gl_merge_table();
 
   // this._viewer.redraw();
 
-  this.send_merge_table();
+  // this.send_merge_table();
 
-  this.highlight(this._last_id);
-
-};
-
-J.controller.prototype.undo = function(x, y) {
-
-  var i_j = this._viewer.xy2ij(x, y);
-
-  if (i_j[0] == -1) return;
-
-  this._viewer.get_segmentation_id_before_merge(i_j[0], i_j[1], function(id) {
-
-    delete this._merge_table[id];
+  // this.highlight(this._last_id);
 
 
-    var color1 = DOJO.viewer.get_color(id);
-    var color1_hex = rgbToHex(color1[0], color1[1], color1[2]);
-
-    var colored_id1 = id;
-
-    var log = 'User $USER removed merge for label <font color="'+color1_hex+'">'+colored_id1+'</font>.';
-
-    this.send_log(log);
-
-    this.create_gl_merge_table();
-
-    // this._viewer.redraw();
-
-    this.send_merge_table();  
-
-    this.activate(null);
-
-
-  }.bind(this));
+  // // send an action for undo/redo
+  // this.add_action('MERGE', [id, this._last_id]);
 
 };
 
-J.controller.prototype.create_gl_merge_table = function() {
+// J.controller.prototype.undo = function(x, y) {
 
-  var keys = Object.keys(this._merge_table);
+//   var i_j = this._viewer.xy2ij(x, y);
+
+//   if (i_j[0] == -1) return;
+
+//   this._viewer.get_segmentation_id_before_merge(i_j[0], i_j[1], function(id) {
+
+//     delete this._merge_table[id];
+
+
+//     var color1 = DOJO.viewer.get_color(id);
+//     var color1_hex = rgbToHex(color1[0], color1[1], color1[2]);
+
+//     var colored_id1 = id;
+
+//     var log = 'User $USER removed merge for label <font color="'+color1_hex+'">'+colored_id1+'</font>.';
+
+//     this.send_log(log);
+
+//     this.create_gl_merge_table();
+
+//     // this._viewer.redraw();
+
+//     this.send_merge_table();  
+
+//     this.activate(null);
+
+
+//   }.bind(this));
+
+// };
+
+J.controller.prototype.create_gl_merge_table = function(use_subset) {
+
+  if (typeof use_subset == 'undefined') {
+    var use_subset = false;
+    var mt = this._merge_table;  
+    console.log('using real mt')
+  } else {
+    var mt = this._merge_table_subset;
+    console.log('using mt subset', mt)
+  }
+
+  var keys = Object.keys(mt);
   var no_keys = keys.length;
 
   if (no_keys == 0) {
@@ -1137,7 +1676,7 @@ J.controller.prototype.create_gl_merge_table = function() {
   for (var k=0; k<no_keys; k++) {
     // pack value to 4 bytes (little endian)
     var key = parseInt(keys[k],10);
-    var value = this._merge_table[key];
+    var value = mt[key];
     var b = from32bitTo8bit(value);
     this._gl_merge_table_values[pos++] = b[0];
     this._gl_merge_table_values[pos++] = b[1];
@@ -1147,7 +1686,38 @@ J.controller.prototype.create_gl_merge_table = function() {
 
 };
 
-J.controller.prototype.create_gl_lock_table = function() {
+J.controller.prototype.create_gl_lock_table = function(use_subset) {
+
+  if (typeof use_subset == 'undefined') {
+    var use_subset = false;
+    var lt = this._lock_table;  
+    console.log('using real lt')
+  } else {
+    // var mt = this._merge_table_subset;
+    console.log('using lt subset', mt)
+    return
+  }
+  
+  
+
+
+  var keys = Object.keys(lt);
+  var no_keys = keys.length;
+
+  for (var k=0; k<no_keys; k++) {
+
+    var key = parseInt(keys[k],10);
+    var value = lt[keys[k]];
+    // console.log(key, value)
+    if (value) {
+      this._gl_lock_table[key] = 255;
+      // console.log('set', key, '255')
+    } else {
+      this._gl_lock_table[key] = 0;  
+    }
+    
+  }
+
 
   var keys = Object.keys(this._lock_table);
   var no_keys = keys.length;

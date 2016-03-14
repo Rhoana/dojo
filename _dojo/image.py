@@ -3,11 +3,11 @@ import re
 import StringIO
 from datasource import Datasource
 from PIL import Image as PILImage
+import cv2
 import zlib
 
 import numpy as np
 
-import tifffile as tif
 
 class Image(Datasource):
 
@@ -16,7 +16,7 @@ class Image(Datasource):
     @override
     '''
     query = 'image'
-    input_format = 'tif'
+    input_format = None
     output_format = 'jpg'
     sub_dir = 'images'
 
@@ -31,8 +31,12 @@ class Image(Datasource):
     out = None
     out_is_there = False
 
-    for f in files:
-      input_image = tif.imread(f)
+    for i,f in enumerate(files):
+
+      if i % 4 != 0:
+        continue
+
+      input_image = cv2.imread(f,0)#PILImage.open(f)#tif.imread(f)
 
       if out_is_there:
         #out = np.dstack([out, input_image])

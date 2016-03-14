@@ -4,6 +4,8 @@ J.viewer = function(container) {
 
   var _container = document.getElementById(container);
 
+  this._container = _container;
+
   var _canvas = document.createElement('canvas');
   _canvas.width = _container.clientWidth;
   _canvas.height = _container.clientHeight;
@@ -46,6 +48,7 @@ J.viewer = function(container) {
   this._overlay_show = true;
   this._overlay_opacity = 100;  
   this._overlay_borders = true;
+  this._only_locked = false;
 
   this._loader = new J.loader(this);
   this._camera = new J.camera(this);
@@ -292,7 +295,7 @@ J.viewer.prototype.draw_canvas = function(x,y,z,w,i,s) {
 
 J.viewer.prototype.lookup_id = function(id) {
 
-  if (this._controller._merge_table_length == -1) return;
+  if (!this._controller._merge_table) return;
 
   // check if this has an entry in the merge table
   while(typeof this._controller._merge_table[id] !== 'undefined') {
@@ -455,9 +458,28 @@ J.viewer.prototype.ij2uv_no_zoom = function(i, j) {
 
 J.viewer.prototype.ijk2xyz = function(i, j, k) {
 
-  return [Math.floor((i*512)/this._image.height) - 256, Math.floor((j*512)/this._image.width) - 256, Math.floor(k - (this._image.max_z_tiles-1)/2)*DOJO.threeD.volume.spacing[2]];
+  var spacing = 1;
+
+  // if (DOJO.threeD) {
+  //   spacing = DOJO.threeD.volume.spacing[2];
+  // }
+
+  return [Math.floor((i*512)/this._image.height) - 256, Math.floor((j*512)/this._image.width) - 256, Math.floor(k - (this._image.max_z_tiles-1)/2)*spacing];
 
 };
+
+J.viewer.prototype.ijk2xyz3d = function(i, j, k) {
+
+  var spacing = 1;
+
+  if (DOJO.threeD) {
+    spacing = DOJO.threeD.volume.spacing[2];
+  }
+
+  return [Math.floor((i*512)/this._image.height) - 256, Math.floor((j*512)/this._image.width) - 256, Math.floor(k - (this._image.max_z_tiles-1)/2)*spacing];
+
+};
+
 
 J.viewer.prototype.xyz2ijk = function(x, y, z) {
 

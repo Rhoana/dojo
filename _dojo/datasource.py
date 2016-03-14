@@ -1,6 +1,7 @@
 import math
 import os
 import re
+import shutil
 
 import h5py
 import json
@@ -10,7 +11,7 @@ from database import Database
 
 class Datasource(object):
 
-  def __init__(self, mojo_dir, tmp_dir, query, input_format, output_format, sub_dir):
+  def __init__(self, mojo_dir, tmp_dir, query, input_format, output_format, sub_dir, out_dir=None):
     '''
     '''
 
@@ -21,6 +22,8 @@ class Datasource(object):
     self.__input_format = input_format
     self.__output_format = output_format
     self.__sub_dir = sub_dir
+
+    self.__out_dir = out_dir
 
     # {'numBytesPerVoxel': '4', 'numVoxelsPerTileZ': '1', 'numVoxelsX': '1024', 'numVoxelsPerTileY': '512', 'numVoxelsPerTileX': '512', 'dxgiFormat': 'R32_UInt', 'numTilesX': '2', 'numTilesY': '2', 'numTilesZ': '20', 'fileExtension': 'hdf5', 'numTilesW': '2', 'numVoxelsZ': '20', 'numVoxelsY': '1024', 'isSigned': 'false'}
     self.__info = None
@@ -53,6 +56,23 @@ class Datasource(object):
 
     self.__setup()
 
+  def get_info(self):
+    '''
+    '''
+    return self.__info
+
+
+  def get_input_format(self):
+    '''
+    '''
+    return self.__input_format
+
+
+  def get_max_zoomlevel(self):
+    '''
+    '''
+    return self.__max_mojozoom_level
+
 
   def __setup(self):
     '''
@@ -74,6 +94,11 @@ class Datasource(object):
           self.__max_mojozoom_level = int(math.ceil( math.log(float(self.__info['numVoxelsPerTileX'])/float(self.__info['numVoxelsX']), 0.5) ))
           # get the max number of Z tiles
           self.__max_z_tiles = int(self.__info['numTilesZ'])
+          # get the file format
+          self.__input_format = str(self.__info['fileExtension'])
+          # width and height
+          self._width = int(self.__info['numVoxelsX'])
+          self._height = int(self.__info['numVoxelsY'])
 
         # colormap
         elif self.__colormap_file_regex.match(os.path.join(root,f)):
@@ -85,8 +110,19 @@ class Datasource(object):
 
         # segmentinfo database
         elif self.__segmentinfo_file_regex.match(os.path.join(root,f)):
+
+          old_db_file = os.path.join(root,f)
+          # new_db_file = old_db_file.replace(self.__mojo_dir, self.__out_dir+'/')
+          
+          # os.mkdir(self.__out_dir+'/ids')
+          # print 'Copied DB from', old_db_file, 'to', new_db_file
+          # shutil.copy(old_db_file, new_db_file)
           print 'Connecting to DB'
-          self.__database = Database(os.path.join(root,f))
+          self.__database = Database(old_db_file)
+          # grab existing merge table
+          self.__database._merge_table = self.__database.get_merge_table()
+          self.__database._lock_table = self.__database.get_lock_table()
+
 
 
   def reconfigure(self):
@@ -124,9 +160,16 @@ class Datasource(object):
     tile_files = []
 
     for d in dirs:
+      if d.startswith('.'):
+        continue
+
       files = os.listdir(os.path.join(w_path,d))
 
       for f in files:
+
+        if f.startswith('.'):
+          continue
+
         # check if we have an updated version for this tile
         if os.path.exists(os.path.join(w_path_tmp, d, f)):
           tile_files.append(os.path.join(w_path_tmp, d, f))
