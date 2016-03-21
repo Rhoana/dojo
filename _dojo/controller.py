@@ -1,4 +1,4 @@
-import ipdb as pdb
+#import ipdb as pdb
 import cv2
 import glob
 import h5py
@@ -1184,6 +1184,15 @@ class Controller(object):
     output['value'] = {}
     if self.__websocket:    
       self.__websocket.send(json.dumps(output))  
+
+    # send merge table and merge table subset
+    self.send_merge_table('SERVER')
+
+    output = {}
+    output['name'] = 'MERGETABLE_SUBSET'
+    output['origin'] = 'SERVER'#input['origin']
+    output['value'] = {}    
+    self.send_merge_table_subset(output)
 
 
   def finalize_split(self, input):
