@@ -169,24 +169,23 @@ J.controller.prototype.receive = function(data) {
 
     }
 
-    this.create_gl_merge_table();
+    this.create_gl_merge_table(true);
 
     this._gl_merge_table_changed = true;
 
 
   } else if (input.name == 'UNDO_MERGE_GROUP') {    
 
-    this._merge_table_subset = {};
-
     for (var i=1; i<input.value.length; i++) {
 
       var id = input.value[i];
 
-      delete this._merge_table[id];    
+      delete this._merge_table[id];
+      delete this._merge_table_subset[id];     
 
     }
 
-    this.create_gl_merge_table();
+    this.create_gl_merge_table(true);
 
     this._gl_merge_table_changed = true;
 
