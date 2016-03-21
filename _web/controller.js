@@ -169,36 +169,26 @@ J.controller.prototype.receive = function(data) {
 
     }
 
-    this.create_gl_merge_table(true);
+    this.create_gl_merge_table();
 
     this._gl_merge_table_changed = true;
 
 
   } else if (input.name == 'UNDO_MERGE_GROUP') {    
 
+    this._merge_table_subset = {};
+
     for (var i=1; i<input.value.length; i++) {
 
       var id = input.value[i];
 
-      delete this._merge_table[id];
-
-      var key = id*4;
-
-      this._gl_merge_table[key] = 0;
-      this._gl_merge_table[key+1] = 0;
-      this._gl_merge_table[key+2] = 0;
-      this._gl_merge_table[key+3] = 0;      
+      delete this._merge_table[id];    
 
     }
 
+    this.create_gl_merge_table();
 
-    // we need to pass an empty array to the GPU
-    this._merge_table_length = 2;
-    this._gl_merge_table_keys = new Uint8Array(4 * 2);
-    this._gl_merge_table_values = new Uint8Array(4 * 2);
-    
     this._gl_merge_table_changed = true;
-    
 
 
   } else if (input.name == 'REDRAW') {
