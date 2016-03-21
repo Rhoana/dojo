@@ -61,8 +61,7 @@ J.interactor.prototype.onmousemove = function(e) {
 
   //var u_v = this._viewer.xy2uv(x, y);
 
-  // console.log('IJ',this._camera._i_j)
-
+  
   DOJO.onmousemove(x, y);
 
   if (this._left_down) {

@@ -18,7 +18,6 @@ J.viewer = function(container) {
   this._context = this._canvas.getContext('2d');
 
   this._image_buffer = document.createElement('canvas');
-  //_container.appendChild(this._image_buffer);
   this._image_buffer_context = this._image_buffer.getContext('2d');
   this._image_buffer_ready = false;
 
@@ -361,8 +360,7 @@ J.viewer.prototype.decrease_opacity = function() {
 };
 
 J.viewer.prototype.loading = function(value) {
-  // console.log('loading', value)
-  this._image_buffer_ready = !value;
+    this._image_buffer_ready = !value;
 };
 
 J.viewer.prototype.render = function() {
@@ -391,13 +389,10 @@ J.viewer.prototype.xy2uv = function(x, y) {
 
   var u = x - this._camera._view[6];
   var v = y - this._camera._view[7];
-  // console.log(u, this._camera._view[6], x, this._image.zoom_levels[this._camera._zoom_level][0])
-  //if (u < 0 || u >= this._camera._view[0] * this._zoom_level*512) {
   if (u < 0 || u >= this._camera._view[0] * this._image.zoom_levels[this._camera._w][2] *512) {
     u = -1;
   }
 
-  //if (v < 0 || v >= this._camera._view[4] * this._zoom_level*512) {
   if (v < 0 || v >= this._camera._view[4] * this._image.zoom_levels[this._camera._w][3] *512) {
     v = -1;
   }
@@ -459,11 +454,6 @@ J.viewer.prototype.ij2uv_no_zoom = function(i, j) {
 J.viewer.prototype.ijk2xyz = function(i, j, k) {
 
   var spacing = 1;
-
-  // if (DOJO.threeD) {
-  //   spacing = DOJO.threeD.volume.spacing[2];
-  // }
-
   return [Math.floor((i*512)/this._image.height) - 256, Math.floor((j*512)/this._image.width) - 256, Math.floor(k - (this._image.max_z_tiles-1)/2)*spacing];
 
 };
@@ -485,10 +475,6 @@ J.viewer.prototype.xyz2ijk = function(x, y, z) {
 
   var i = Math.floor((x + 256)*this._image.height/512);
   var j = Math.floor((y + 256)*this._image.width/512);
-  // var adjusted_z_range = Math.floor(this._image.max_z_tiles*DOJO.threeD.volume.spacing[2]);
-  // var k = Math.floor((z/adjusted_z_range)*adjusted_z_range;
-
-  // var k = z + Math.floor(this._image.max_z_tiles/2) * DOJO.threeD.volume.spacing[2];
   var k = z/DOJO.threeD.volume.spacing[2] + Math.floor(this._image.max_z_tiles/2);
 
   return [i, j, k];

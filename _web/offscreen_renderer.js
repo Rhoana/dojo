@@ -30,18 +30,13 @@ J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
   }
 
   gl.viewport(0, 0, this._width, this._height);
-  gl.clearColor(0,0,0,1.);//128./255., 200./255., 255./255., 1.);
+  gl.clearColor(0,0,0,1.);
   gl.clearDepth(0);
-  // gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-  // gl.pixelStorei(gl.PACK_ALIGNMENT, 1);
 
   // enable transparency
   gl.blendEquation(gl.FUNC_ADD);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   gl.enable(gl.BLEND);
-
-  // gl.enable(gl.DEPTH_TEST);
-  // gl.depthFunc(gl.GREATER);
 
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -320,10 +315,6 @@ J.offscreen_renderer.prototype.draw = function(i, s, c, x, y) {
   gl.vertexAttribPointer(this.h_aTexturePosition, 2, gl.FLOAT, false, 0, 0);  
 
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-
-  // var array = new Uint8Array(1048576);
-  // gl.readPixels(0, 0, 512, 512, gl.RGBA, gl.UNSIGNED_BYTE, array);
-  // console.log(array);
 
   c.drawImage(this._canvas,0,0,512,512,x*512,y*512,512,512);
 

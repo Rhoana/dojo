@@ -29,8 +29,6 @@ J.camera.prototype.center = function() {
 
   this._view[6] = this._viewer._width/2 - 512/2;
   this._view[7] = this._viewer._height/2 - 512/2;
-  // this._view[6] = this._viewer._width/2 - this._view[0]*512/2;
-  // this._view[7] = this._viewer._height/2 - this._view[4]*512/2;
 
 };
 
@@ -150,8 +148,7 @@ J.camera.prototype.zoom = function(x, y, delta) {
   this._view[0] = future_zoom_level;
   this._view[4] = future_zoom_level;
 
-  // console.log(future_zoom_level);
-
+  
   var new_scale = future_zoom_level;
 
   // here we check if we pass an image zoom level, if yes we need to draw other tiles

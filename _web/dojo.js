@@ -222,9 +222,6 @@ DOJO.reset_tools = function() {
   split.style.display = 'block';
   split_selected.style.display = 'none';    
 
-  // adjust.style.display = 'block';
-  // adjust_selected.style.display = 'none';    
-
   DOJO.viewer._controller.end();
 
   // reset 3d view
@@ -361,8 +358,7 @@ DOJO.update_label = function(x, y) {
 };
 
 DOJO.update_log = function(input) {
-  // console.log(input);
-  var log = document.getElementById('log');
+    var log = document.getElementById('log');
 
   var m = input.value;
 

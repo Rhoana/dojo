@@ -2,7 +2,7 @@ import numpy as np
 import time
 import sqlite3
 
-MAX_SEGMENTS = 10000000#2147483647
+MAX_SEGMENTS = 10000000
 
 class Database(object):
 
@@ -50,7 +50,6 @@ class Database(object):
       output = {'0':True}
 
     return output
-
 
   def get_largest_id(self):
     '''
@@ -173,14 +172,10 @@ class Database(object):
     except:
       print 'ERROR WHEN MERGING', id1, id2
 
-    # self.get_merge_table()
-
-
   def store(self):
     '''
     '''
     self.__connection.commit()
-    # self.__connection.close()
       
   def get_orphans(self):
     '''
