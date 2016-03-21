@@ -16,9 +16,8 @@ J.controller = function(viewer) {
 
   this._merge_table_subset = {};
 
-  // this._gl_merge_table_keys = null;
-  // this._gl_merge_table_values = null;
-  this._gl_merge_table = new Uint8Array(8192*8192*4);
+  this._gl_merge_table_keys = null;
+  this._gl_merge_table_values = null;
   this._gl_merge_table_changed = true;
   this._merge_table_length = -1;
 
@@ -26,7 +25,7 @@ J.controller = function(viewer) {
 
   this._lock_table = null;
 
-  this._gl_lock_table = new Uint8Array(8192*8192);
+  this._gl_lock_table = null;
   this._lock_table_length = -1;
   this._gl_lock_table_changed = true;
 
@@ -140,10 +139,10 @@ J.controller.prototype.receive = function(data) {
 
     this.send('WELCOME', {});
 
-  // } else if (input.name == 'MERGETABLE') {
+  } else if (input.name == 'MERGETABLE') {
 
-  //   // received new merge table
-  //   this._viewer._controller.update_merge_table(input.value);
+    // received new merge table
+    this._viewer._controller.update_merge_table(input.value);
 
   } else if (input.name == 'MERGETABLE_SUBSET' && this._origin != input.origin) {
 
@@ -192,6 +191,12 @@ J.controller.prototype.receive = function(data) {
 
     }
 
+
+    // we need to pass an empty array to the GPU
+    this._merge_table_length = 2;
+    this._gl_merge_table_keys = new Uint8Array(4 * 2);
+    this._gl_merge_table_values = new Uint8Array(4 * 2);
+    
     this._gl_merge_table_changed = true;
     
 
@@ -540,9 +545,9 @@ J.controller.prototype.update_threeD = function() {
   if (DOJO.threeD) {
     DOJO.threeD.renderer.updateFromDojo(this._viewer._gl_colormap, 
                      this._viewer._max_colors,
-                     this._gl_merge_table, 
-                     // this._gl_merge_table_values, 
-                     // this._merge_table_length,
+                     this._gl_merge_table_keys, 
+                     this._gl_merge_table_values, 
+                     this._merge_table_length,
                      this._gl_3d_labels,
                      this._gl_3d_labels_length,
                      this._use_3d_labels);
@@ -1523,6 +1528,8 @@ J.controller.prototype.end_draw_merge = function(x, y) {
 
   }
 
+  this.create_gl_merge_table(); // use everything
+
   this.send_merge_table_subset();
 
   this.highlight(this._last_id);
@@ -1575,11 +1582,9 @@ J.controller.prototype.merge = function(id) {
   // shouldn't be required
   // DOJO.update_log(log);
 
-  // this._viewer.redraw();
-
   // this.create_gl_merge_table();
 
-  // // this._viewer.redraw();
+  // this._viewer.redraw();
 
   // this.send_merge_table();
 
@@ -1634,65 +1639,50 @@ J.controller.prototype.create_gl_merge_table = function(use_subset) {
     var mt = this._merge_table_subset;
     console.log('using mt subset', mt)
   }
-  
-  
-
 
   var keys = Object.keys(mt);
   var no_keys = keys.length;
 
-  for (var k=0; k<no_keys; k++) {
+  if (no_keys == 0) {
 
-    var key = parseInt(keys[k],10)*4;
-    var value = mt[keys[k]];
-    var b = from32bitTo8bit(value);
-    this._gl_merge_table[key] = b[0];
-    this._gl_merge_table[key+1] = b[1];
-    this._gl_merge_table[key+2] = b[2];
-    this._gl_merge_table[key+3] = b[3];
+    // we need to pass an empty array to the GPU
+    this._merge_table_length = 2;
+    this._gl_merge_table_keys = new Uint8Array(4 * 2);
+    this._gl_merge_table_values = new Uint8Array(4 * 2);
+    return;
 
   }
 
-  // if (no_keys == 0) {
+  var new_length = Math.pow(2,Math.ceil(Math.log(no_keys)/Math.log(2)));
 
-  //   // we need to pass an empty array to the GPU
-  //   this._merge_table_length = 2;
-  //   this._gl_merge_table_keys = new Uint8Array(4 * 2);
-  //   this._gl_merge_table_values = new Uint8Array(4 * 2);
-  //   return;
+  this._merge_table_length = new_length;
 
-  // }
+  this._gl_merge_table_keys = new Uint8Array(4 * new_length);
 
-  // var new_length = Math.pow(2,Math.ceil(Math.log(no_keys)/Math.log(2)));
+  var pos = 0;
+  for (var k=0; k<no_keys; k++) {
+    // pack value to 4 bytes (little endian)
+    var value = parseInt(keys[k],10);
+    var b = from32bitTo8bit(value);
+    this._gl_merge_table_keys[pos++] = b[0];
+    this._gl_merge_table_keys[pos++] = b[1];
+    this._gl_merge_table_keys[pos++] = b[2];
+    this._gl_merge_table_keys[pos++] = b[3];
+  }
 
-  // this._merge_table_length = new_length;
+  this._gl_merge_table_values = new Uint8Array(4 * new_length);
 
-  // this._gl_merge_table_keys = new Uint8Array(4 * new_length);
-
-  // var pos = 0;
-  // for (var k=0; k<no_keys; k++) {
-  //   // pack value to 4 bytes (little endian)
-  //   var value = parseInt(keys[k],10);
-  //   var b = from32bitTo8bit(value);
-  //   this._gl_merge_table_keys[pos++] = b[0];
-  //   this._gl_merge_table_keys[pos++] = b[1];
-  //   this._gl_merge_table_keys[pos++] = b[2];
-  //   this._gl_merge_table_keys[pos++] = b[3];
-  // }
-
-  // this._gl_merge_table_values = new Uint8Array(4 * new_length);
-
-  // pos = 0;
-  // for (var k=0; k<no_keys; k++) {
-  //   // pack value to 4 bytes (little endian)
-  //   var key = parseInt(keys[k],10);
-  //   var value = this._merge_table[key];
-  //   var b = from32bitTo8bit(value);
-  //   this._gl_merge_table_values[pos++] = b[0];
-  //   this._gl_merge_table_values[pos++] = b[1];
-  //   this._gl_merge_table_values[pos++] = b[2];
-  //   this._gl_merge_table_values[pos++] = b[3];
-  // }  
+  pos = 0;
+  for (var k=0; k<no_keys; k++) {
+    // pack value to 4 bytes (little endian)
+    var key = parseInt(keys[k],10);
+    var value = mt[key];
+    var b = from32bitTo8bit(value);
+    this._gl_merge_table_values[pos++] = b[0];
+    this._gl_merge_table_values[pos++] = b[1];
+    this._gl_merge_table_values[pos++] = b[2];
+    this._gl_merge_table_values[pos++] = b[3];
+  }  
 
 };
 
@@ -1729,34 +1719,34 @@ J.controller.prototype.create_gl_lock_table = function(use_subset) {
   }
 
 
-  // var keys = Object.keys(this._lock_table);
-  // var no_keys = keys.length;
+  var keys = Object.keys(this._lock_table);
+  var no_keys = keys.length;
 
-  // if (no_keys == 0) {
+  if (no_keys == 0) {
 
-  //   // we need to pass an empty array to the GPU
-  //   this._lock_table_length = 2;
-  //   this._gl_lock_table = new Uint8Array(4 * 2);
-  //   return;
+    // we need to pass an empty array to the GPU
+    this._lock_table_length = 2;
+    this._gl_lock_table = new Uint8Array(4 * 2);
+    return;
 
-  // }
+  }
 
-  // var new_length = Math.pow(2,Math.ceil(Math.log(no_keys)/Math.log(2)));
+  var new_length = Math.pow(2,Math.ceil(Math.log(no_keys)/Math.log(2)));
 
-  // this._gl_lock_table = new Uint8Array(4 * new_length);
+  this._gl_lock_table = new Uint8Array(4 * new_length);
 
-  // this._lock_table_length = new_length;
+  this._lock_table_length = new_length;
 
-  // var pos = 0;
-  // for (var i=0; i<no_keys; i++) {
+  var pos = 0;
+  for (var i=0; i<no_keys; i++) {
 
-  //   var b = from32bitTo8bit(keys[i]);
-  //   this._gl_lock_table[pos++] = b[0];
-  //   this._gl_lock_table[pos++] = b[1];
-  //   this._gl_lock_table[pos++] = b[2];
-  //   this._gl_lock_table[pos++] = b[3];
+    var b = from32bitTo8bit(keys[i]);
+    this._gl_lock_table[pos++] = b[0];
+    this._gl_lock_table[pos++] = b[1];
+    this._gl_lock_table[pos++] = b[2];
+    this._gl_lock_table[pos++] = b[3];
 
-  // }
+  }
 
 };
 
