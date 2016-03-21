@@ -169,7 +169,7 @@ J.controller.prototype.receive = function(data) {
 
     }
 
-    this.create_gl_merge_table(true);
+    this.create_gl_merge_table();
 
     this._gl_merge_table_changed = true;
 
@@ -185,7 +185,7 @@ J.controller.prototype.receive = function(data) {
 
     }
 
-    this.create_gl_merge_table(true);
+    this.create_gl_merge_table();
 
     this._gl_merge_table_changed = true;
 
@@ -959,94 +959,6 @@ J.controller.prototype.update_3D_textures = function(z, full_bbox, texture) {
 
   }
 
-  
-
-  //   console.log('need to update slice[1]', y);
-
-  // }
-
-
-
-
-  // var bytes_start_t = (x1+y1*512)*4;
-  // var bytes_end_t = (x2+y2*512)*4;
-
-  // var bytes_per_value = 4;
-
-  // var nb_pix_per_z = 512*512;
-
-  // var px = 0;
-  // for (var p=bytes_start_t; p<bytes_end_t; p+=bytes_per_value) {
-
-  //   //var z = Math.floor(px / nb_pix_per_z);
-  //   var y = Math.floor((px % nb_pix_per_z) / dim_x);
-  //   var x = Math.floor((px % nb_pix_per_z) % dim_x);
-
-  //   // var z_index = (x + y*dim_y)*bytes_per_value;
-  //   var y_index = (x + z*dim_x)*bytes_per_value;
-  //   var x_index = (y + z*dim_y)*bytes_per_value;
- 
-  //  console.log('XIND',x_index, y_index);
-  //  console.log('XY', x, y, z);
-  //  console.log('DIM', dim_x, dim_y)
-
-  //   var old_data_x = vol.children[0].children[x].labelmap.texture.rawData;
-  //   var old_data_y = vol.children[1].children[y].labelmap.texture.rawData;
-
-  //   for (var i=0;i<bytes_per_value;i++) {
-
-  //     old_data_x[x_index+i] = texture[p+i];
-  //     old_data_y[y_index+i] = texture[p+i];
-  //     // slices_z[z][z_index+i] = data[p+i];
-
-  //   }
-
-  //   px++;
-
-  // }
-
-
-
-  // // propagate all textures in x and y
-  // for (var x=0; x<dim_x; ++x) {
-
-  //   var old_data_x = vol.children[0].children[x].labelmap.texture.rawData;
-  //   vol.children[0].children[x].labelmap.texture.updateTexture(old_data_x);
-  //   vol.children[0].children[x].labelmap.modified();
-
-  // }
-
-  // for (var y=0; y<dim_y; ++y) {
-
-  //   var old_data_y = vol.children[1].children[y].labelmap.texture.rawData;
-  //   vol.children[1].children[y].labelmap.texture.updateTexture(old_data_y);
-  //   vol.children[1].children[y].labelmap.modified();
-
-  // }
-
-  // // update pixel data in x
-  // for (var x=x1;x<x2;x++) {
-
-  //   var labelmap_x = vol.children[0].children[x].labelmap;
-
-  //   var offset_x = x;
-  //   var old_data = vol.children[0].children[x].labelmap.texture.rawData;
-  //   // replace pixels
-  //   var bytes_start_t = (x1+offset_x+y1*512)*4;
-  //   var bytes_end_t = (x1+offset_x+y2*512)*4+4;
-  //   // var cur_x = (dim[2] - z)*4;
-  //   // var cur_y = (y1)*4;
-  //   // var bytes_start_x = cur_x + cur_y*dim[2];
-  //   var bytes_start_x = (y1+z*dim[1])*4;
-  //   console.log(bytes_start_t, bytes_end_t, bytes_start_x);
-  //   old_data.set(texture.subarray(bytes_start_t, bytes_end_t), bytes_start_x);
-
-  //   labelmap_x.texture.updateTexture(old_data);
-  //   labelmap_x.modified();
-  // }
-
-
-
 };
 
 J.controller.prototype.start_adjust = function(id, x, y) {
@@ -1547,76 +1459,9 @@ J.controller.prototype.merge = function(id) {
 
   if (this._last_id == id) return;
 
-  // console.log('Merging', this._last_id, id);
-
-  // if (!(id in this._merge_table)) {
-  //   this._merge_table[id] = [];
-  // }
-
-  // this._merge_table[id].push(this._last_id);
-
   this._merge_table_subset[id] = this._last_id;
 
-  // var color1 = DOJO.viewer.get_color(id);
-  // var color1_hex = rgbToHex(color1[0], color1[1], color1[2]);
-  // var color2 = DOJO.viewer.get_color(this._last_id);
-  // var color2_hex = rgbToHex(color2[0], color2[1], color2[2]);
-
-  // var colored_id1 = id;
-  // var colored_id2 = this._last_id;
-
-  // var log = 'User $USER merged labels <font color="'+color1_hex+'">'+colored_id1+'</font> and <font color="'+color2_hex+'">' +colored_id2 + '</font>.';
-
-  // this.send_log(log);
-  // shouldn't be required
-  // DOJO.update_log(log);
-
-  // this.create_gl_merge_table();
-
-  // this._viewer.redraw();
-
-  // this.send_merge_table();
-
-  // this.highlight(this._last_id);
-
-
-  // // send an action for undo/redo
-  // this.add_action('MERGE', [id, this._last_id]);
-
 };
-
-// J.controller.prototype.undo = function(x, y) {
-
-//   var i_j = this._viewer.xy2ij(x, y);
-
-//   if (i_j[0] == -1) return;
-
-//   this._viewer.get_segmentation_id_before_merge(i_j[0], i_j[1], function(id) {
-
-//     delete this._merge_table[id];
-
-
-//     var color1 = DOJO.viewer.get_color(id);
-//     var color1_hex = rgbToHex(color1[0], color1[1], color1[2]);
-
-//     var colored_id1 = id;
-
-//     var log = 'User $USER removed merge for label <font color="'+color1_hex+'">'+colored_id1+'</font>.';
-
-//     this.send_log(log);
-
-//     this.create_gl_merge_table();
-
-//     // this._viewer.redraw();
-
-//     this.send_merge_table();  
-
-//     this.activate(null);
-
-
-//   }.bind(this));
-
-// };
 
 J.controller.prototype.create_gl_merge_table = function(use_subset) {
 
