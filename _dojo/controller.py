@@ -39,10 +39,8 @@ class Controller(object):
     
     self.__database = database
 
-    print 'Updated merge table from database.. (', len(self.__database._merge_table), 'entries )'
     self.__merge_table = self.__database._merge_table
 
-    print 'Updated lock table from database.. (', len(self.__database._lock_table), 'entries )'
     self.__lock_table = self.__database._lock_table
 
     self.__dojoserver = dojoserver
@@ -1026,7 +1024,6 @@ class Controller(object):
     self.__new_merge_table = {}
 
     print 'Splits', self.__split_count
-    print 'Merges', self.__merge_table.size
     print 'All saved! Yahoo!'
 
     # ping back

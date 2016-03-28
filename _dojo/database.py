@@ -46,6 +46,7 @@ class Database(object):
 
       for r in result:
         output[r[0]] = True
+      print 'Locks:', len(result)
     except:
       output = {'0':True}
 
@@ -110,11 +111,11 @@ class Database(object):
 
     try:
       self.__cursor.execute('SELECT * FROM relabelMap')
-
       result_list = self.__cursor.fetchall()
 
       print 'Creating lookup table buffer..'
 
+      # All results stored as index:value in lookup table
       lut[[r[0] for r in result_list]] = [r[1] for r in result_list]
 
       print 'Start hardening the lookup table..'
@@ -125,8 +126,7 @@ class Database(object):
           percent += 10
           print "{}% DONE, {} seconds".format(percent, int(time.time() - st))
         lut[r[0]] = self.lookup_label(lut, r[0])
-
-        # print output
+      print 'Merges:', len(result_list)
 
     except:
       return lut
