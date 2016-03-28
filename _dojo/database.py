@@ -111,12 +111,11 @@ class Database(object):
     try:
       self.__cursor.execute('SELECT * FROM relabelMap')
 
-      result = self.__cursor.fetchall()
-      result_list = list(result)
+      result_list = self.__cursor.fetchall()
 
       print 'Creating lookup table buffer..'
 
-      lut[[r[0] for r in result]] = [r[1] for r in result]
+      lut[[r[0] for r in result_list]] = [r[1] for r in result_list]
 
       print 'Start hardening the lookup table..'
       percent = 0
