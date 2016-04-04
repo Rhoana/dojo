@@ -119,12 +119,15 @@ class Database(object):
       lut[[r[0] for r in result_list]] = [r[1] for r in result_list]
 
       print 'Start hardening the lookup table..'
-      percent = 0
+      max_lut = len(result_list)
+      steps = np.arange(0,max(max_lut,1),max(1,max_lut//10))
+      percents = 100*(np.arange(len(steps)) + 1)//len(steps)
+      step_index = 0
       st = time.time()
       for i, r in enumerate(result_list):
-        if (i + 1) % (len(result_list) // 10) == 0:
-          percent += 10
-          print "{}% DONE, {} seconds".format(percent, int(time.time() - st))
+        if i >= steps[step_index]:
+          print "{}% DONE, {} seconds".format(percents[step_index], int(time.time() - st))
+          step_index += 1
         lut[r[0]] = self.lookup_label(lut, r[0])
       print 'Merges:', len(result_list)
 

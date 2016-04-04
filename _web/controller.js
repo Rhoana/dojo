@@ -113,17 +113,6 @@ J.controller.prototype.receive = function(data) {
 
     } else if (input.name == 'CURRENT_ACTION') {
       this.update_current_action(input.value);
-    } else if (input.name == 'MERGETABLE') {
-
-      // received new merge table
-      this._viewer._controller.update_merge_table(input.value);
-
-    } else if (input.name == 'LOCKTABLE') {
-
-      // received new lock table
-      this._viewer._controller.update_lock_table(input.value);
-
-      return;
     } else if (input.name == 'UNBLOCK') {
 
       $('#loading_blocker').hide();
@@ -1307,21 +1296,15 @@ J.controller.prototype.end_draw_merge = function(x, y) {
 
   this.send_log(log);
 
-  // put the subset into the real merge
-
-  this.create_gl_merge_table(true); // use only subset
-
-  this._gl_merge_table_changed = true;
-
-  // this._viewer.redraw();
-
   for (var id in this._merge_table_subset) {
 
     this._merge_table[id] = this._merge_table_subset[id];
 
   }
 
-  this.create_gl_merge_table(); // use everything
+  this.create_gl_merge_table();
+
+  this._gl_merge_table_changed = true;
 
   this.send_merge_table_subset();
 

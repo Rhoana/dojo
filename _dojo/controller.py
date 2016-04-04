@@ -595,13 +595,6 @@ class Controller(object):
       #
       if action['type'] == 'MERGE':
 
-        # key = str(action['value'][0])
-
-        # self.__merge_table[key] = action['value'][1]
-
-        # self.send_merge_table('SERVER')
-        # self.send_redraw('SERVER')
-
         print 'DEPRECATED'
 
       elif action['type'] == 'MERGE_GROUP':
@@ -616,10 +609,8 @@ class Controller(object):
 
           key = str(i)
 
-          # self.__merge_table[key] = action['value'][1]
           self.__new_merge_table[key] = action['value'][1]
 
-        # self.send_merge_table('SERVER')
         self.send_redo_merge('SERVER', action['value'])
         self.send_redraw('SERVER')
 
@@ -1036,12 +1027,6 @@ class Controller(object):
 
     # send merge table and merge table subset
     self.send_merge_table('SERVER')
-
-    output = {}
-    output['name'] = 'MERGETABLE_SUBSET'
-    output['origin'] = 'SERVER'#input['origin']
-    output['value'] = {}    
-    self.send_merge_table_subset(output)
 
   def finalize_split(self, input):
     '''
