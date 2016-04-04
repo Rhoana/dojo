@@ -296,7 +296,8 @@ class Segmentation(Datasource):
     hardened_image_data = lut[image_data]
     # print 'hardened', hardened_image_data.shape
 
-    # mh.imsave('/tmp/hardened.tif', hardened_image_data.astype(np.uint32))
+    # mh.imsave('/tmp/'+os.path.basename(file)+'.tif', hardened_image_data.astype(np.uint32))
+    # print 'TIF saved'
 
     c_image_data = zlib.compress(hardened_image_data.astype(np.uint32))
 

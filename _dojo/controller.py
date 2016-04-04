@@ -229,7 +229,6 @@ class Controller(object):
     elif input['name'] == 'MERGETABLE_SUBSET':
       merge_table_subset = input['value']
       for m in merge_table_subset:
-
         self.__merge_table[int(m)] = merge_table_subset[m]
         self.__new_merge_table[m] = merge_table_subset[m]
 
@@ -1016,6 +1015,16 @@ class Controller(object):
 
     print 'Splits', self.__split_count
     print 'All saved! Yahoo!'
+
+    z = 0
+    bb = [0, 0, 512, 512]
+    # send reload event
+    output = {}
+    output['name'] = 'HARD_RELOAD'
+    output['origin'] = 'SERVER'
+    output['value'] = {'z':z, 'full_bbox':str(bb)}
+    # print output
+    self.__websocket.send(json.dumps(output))
 
     # ping back
     output = {}

@@ -121,6 +121,8 @@ J.loader.prototype.get_segmentation = function(x, y, z, w, callback, no_cache) {
 
   this.load_segmentation(x, y, z, w, function(s) {
 
+    tempA = s.responseURL.split("/").slice(-3);
+    console.log(tempA[2] + " at z=" + tempA[0] + " is " + s.status + " " + s.statusText); 
     // uncompress
     var compressed = new Zlib.Inflate(new Uint8Array(s.response));
     var raw_s = compressed.decompress();

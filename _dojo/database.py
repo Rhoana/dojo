@@ -129,6 +129,7 @@ class Database(object):
           print "{}% DONE, {} seconds".format(percents[step_index], int(time.time() - st))
           step_index += 1
         lut[r[0]] = self.lookup_label(lut, r[0])
+        print 'merging', r[0], self.lookup_label(lut, r[0])
       print 'Merges:', len(result_list)
 
     except:

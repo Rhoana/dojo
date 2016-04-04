@@ -132,7 +132,7 @@ J.controller.prototype.receive = function(data) {
     // received new merge table
     this._viewer._controller.update_merge_table(input.value);
 
-  } else if (input.name == 'MERGETABLE_SUBSET' && this._origin != input.origin) {
+  } else if (input.name == 'MERGETABLE_SUBSET') {
 
     this._viewer._controller.update_merge_table_subset(input.value)
 
@@ -1002,9 +1002,7 @@ J.controller.prototype.hard_reload_tiles = function(values) {
 J.controller.prototype.finish_split = function(values) {
 
   // reload all slices, set to split mode -1
-  this.reload_tiles(values);
-
-  this._viewer.clear_overlay_buffer();
+  this.hard_reload_tiles(values);
 
   this._split_mode = -1;
   this.activate(null);
@@ -1312,6 +1310,9 @@ J.controller.prototype.end_draw_merge = function(x, y) {
 
   // send an action for undo/redo
   this.add_action('MERGE_GROUP', [this._merge_target_ids, this._last_id]);
+
+  // // reload all slices, set to merge mode -1
+  // this.hard_reload_tiles(values);
 
   this._merge_mode = -1;
 
