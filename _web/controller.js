@@ -691,24 +691,6 @@ J.controller.prototype.update_merge_table = function(data) {
 
 };
 
-J.controller.prototype.update_merge_table_subset = function(data) {
-
-  console.log('Received new merge table subset');
-
-  for (var d in data) {
-
-    var m = data[d];
-
-    this._merge_table[d] = m;
-
-  }
-
-  this._merge_table_subset = data;
-
-  this.create_gl_merge_table(true);
-
-};
-
 J.controller.prototype.send_merge_table = function() {
 
   this.send('MERGETABLE', this._merge_table);
