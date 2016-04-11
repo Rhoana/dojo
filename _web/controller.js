@@ -1312,17 +1312,9 @@ J.controller.prototype.merge = function(id) {
 
 };
 
-J.controller.prototype.create_gl_merge_table = function(use_subset) {
+J.controller.prototype.create_gl_merge_table = function() {
 
-  if (typeof use_subset == 'undefined') {
-    var use_subset = false;
-    var mt = this._merge_table;  
-    console.log('using real mt')
-  } else {
-    var mt = this._merge_table_subset;
-    console.log('using mt subset', mt)
-  }
-
+  var mt = this._merge_table;  
   var keys = Object.keys(mt);
   var no_keys = keys.length;
 
@@ -1369,20 +1361,9 @@ J.controller.prototype.create_gl_merge_table = function(use_subset) {
 
 };
 
-J.controller.prototype.create_gl_lock_table = function(use_subset) {
+J.controller.prototype.create_gl_lock_table = function() {
 
-  if (typeof use_subset == 'undefined') {
-    var use_subset = false;
-    var lt = this._lock_table;  
-    console.log('using real lt')
-  } else {
-    // var mt = this._merge_table_subset;
-    console.log('using lt subset', mt)
-    return
-  }
-  
-  
-
+  var lt = this._lock_table;  
   var keys = Object.keys(lt);
   var no_keys = keys.length;
 
