@@ -232,7 +232,8 @@ class Controller(object):
         self.__merge_table[int(m)] = merge_table_subset[m]
         self.__new_merge_table[m] = merge_table_subset[m]
 
-      self.send_merge_table_subset(input)
+      input['value'] = self.__new_merge_table
+      self.send_merge_table(input['origin'])
 
       self.send_redraw(input['origin'])      
 
@@ -1010,8 +1011,6 @@ class Controller(object):
 
     # re-harden updated merge table from database
     self.__database._merge_table = self.__database.get_merge_table()
-    # clear new merge table
-    self.__new_merge_table = {}
 
     print 'Splits', self.__split_count
     print 'All saved! Yahoo!'
