@@ -132,10 +132,6 @@ J.controller.prototype.receive = function(data) {
     // received new merge table
     this._viewer._controller.update_merge_table(input.value);
 
-  } else if (input.name == 'MERGETABLE_SUBSET') {
-
-    this._viewer._controller.update_merge_table_subset(input.value)
-
   } else if (input.name == 'LOCKTABLE') {
 
     // received new lock table
