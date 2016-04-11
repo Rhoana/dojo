@@ -1325,6 +1325,7 @@ J.controller.prototype.create_gl_merge_table = function() {
 
   }
 
+  // Closest power of 2 containing length of array
   var new_length = Math.pow(2,Math.ceil(Math.log(no_keys)/Math.log(2)));
 
   this._merge_table_length = new_length;

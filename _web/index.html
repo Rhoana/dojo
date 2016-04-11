@@ -54,7 +54,7 @@
     uniform int uLockTableLength;
     uniform bool uShowOverlay;
 
-    const int MAX = 100;
+    const int MAX = 10000;
 
     varying vec3 vPosition;
     varying vec2 vTexturePosition;
@@ -107,7 +107,6 @@
     //
     float lookup_id_(float id) {
 
-      // 2016-03-07 Hoffer
       for (int m=0; m<MAX; m++) {
 
         if (m>uMergeTableLength) break;
