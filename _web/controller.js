@@ -101,7 +101,7 @@ J.controller.prototype.receive = function(data) {
   } 
 
   if (input.origin == this._origin) {
-    // we are the sender or the requester
+    // we are the requester
 
     if (input.name == 'SPLITRESULT') {
             this.show_split_line(input.value);
@@ -271,7 +271,6 @@ J.controller.prototype.update_current_action = function(value) {
 J.controller.prototype.update_orphan_list = function(data) {
 
   console.log('Updating orphan list..');
-  // aaaaaa = data
 
   if (data=="None") return;
 
@@ -279,10 +278,7 @@ J.controller.prototype.update_orphan_list = function(data) {
 
   this._orphans = data;
 
-  // show first orphan
-  // if (this._current_orphan == -1) {
-    this.show_orphan(this._current_orphan);
-  // }
+  this.show_orphan(this._current_orphan);
 
   $('#todo').show();
 

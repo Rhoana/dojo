@@ -72,7 +72,6 @@ class ServerLogic:
     # and the controller
     if self.__segmentation:
       db = self.__segmentation.get_database()
-
     else:
       db = None
     self.__controller = _dojo.Controller(mojo_dir, out_dir, tmpdir, db, self)
@@ -91,7 +90,7 @@ class ServerLogic:
       (r'/ws', _dojo.Websockets, dict(controller=self.__controller)),
       # viewer
       (r'/(.*)', DojoHandler, dict(logic=self))
-      
+
     ])
 
     
@@ -149,11 +148,6 @@ class ServerLogic:
     
     content = None
 
-    # if request.find_input_header('upgrade'):
-    #   # special case for websockets
-    #   self.__websockets.handle(request)
-    #   return
-
     # the access to the viewer
     if not self.__configured:
       content, content_type = self.__setup.handle(r.request)
@@ -167,7 +161,6 @@ class ServerLogic:
 
     if not content:
       content, content_type = self.__image.handle(r.request)
-
 
     # invalid request
     if not content:
@@ -187,7 +180,6 @@ class ServerLogic:
     print 'Sayonara..!!'
     output = {}
     output['origin'] = 'SERVER'
-    # self.__controller.save(output)
 
     sys.exit(0)
 

@@ -1,4 +1,3 @@
-#import ipdb as pdb
 import cv2
 import glob
 import h5py
@@ -205,13 +204,6 @@ class Controller(object):
       # then send the redraw command
       self.send_redraw('SERVER')
 
-    elif input['name'] == 'MERGETABLE':
-      self.__hard_merge_table = input['value']
-
-      self.send_merge_table(input['origin'])
-
-      self.send_redraw(input['origin'])
-
     elif input['name'] == 'MERGETABLE_SUBSET':
       merge_table_subset = input['value']
       for m in merge_table_subset:
@@ -317,11 +309,7 @@ class Controller(object):
       #
       # undo merge and split
       #
-      if action['type'] == 'MERGE':
-
-        print 'DEPRECATED'
-
-      elif action['type'] == 'MERGE_GROUP':
+      if action['type'] == 'MERGE_GROUP':
 
         ids = action['value'][0]
 
@@ -353,16 +341,12 @@ class Controller(object):
         print x_tiles, y_tiles, bb
 
         tile = {} # here this is the segmentation
-        # segtile = {}
 
         for x in x_tiles:
           for y in y_tiles:
 
             if not x in tile:
               tile[x] = {}
-
-            # if not x in segtile:
-            #   segtile[x] = {}
 
             i = 'y='+str(y).zfill(8)+',x='+str(x).zfill(8)+'.'+self.__dojoserver.get_image().get_input_format()
 
