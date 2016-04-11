@@ -215,7 +215,7 @@ class Controller(object):
     elif input['name'] == 'MERGETABLE_SUBSET':
       merge_table_subset = input['value']
       for m in merge_table_subset:
-        self.__hard_merge_table[int(m)] = merge_table_subset[m]
+        # self.__hard_merge_table[int(m)] = merge_table_subset[m]
         self.__new_merge_table[m] = merge_table_subset[m]
 
       input['value'] = self.__new_merge_table
@@ -970,6 +970,15 @@ class Controller(object):
     '''
     '''
     print 'SAVING..'
+    self.__actions = {}
+    for username in self.__actions:
+      # empty user actions
+      output = {}
+      output['value'] = 0
+      output['origin'] = username
+      output['name'] = 'CURRENT_ACTION'
+      self.__websocket.send(json.dumps(output))
+
 
     for i in self.__new_merge_table:
       self.__database.insert_merge(i, self.__new_merge_table[i])
