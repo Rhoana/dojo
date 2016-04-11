@@ -15,7 +15,7 @@ Instructions: http://rhoana.org/dojo/
 
 - Client
 	- \_temp\_merge\_table
-		- teporary usage for to draw, redo, and undo merges
+		- teporary usage to draw, redo, and undo merges
 		- sent to Server in send\_temp\_merge\_table()
 	- \_new\_merge\_table
 		- all merges currently sent to the shader
