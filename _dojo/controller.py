@@ -117,17 +117,6 @@ class Controller(object):
 
     self.__websocket.send(json.dumps(output))
 
-  def send_merge_table_subset(self, input):
-    '''
-    '''
-
-    output = {}
-    output['name'] = 'MERGETABLE_SUBSET'
-    output['origin'] = input['origin']
-    output['value'] = input['value']
-
-    self.__websocket.send(json.dumps(output))
-
   def send_undo_merge(self, origin, ids):
     '''
     '''
