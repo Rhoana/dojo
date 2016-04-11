@@ -810,12 +810,12 @@ J.controller.prototype.reload_tiles = function(values) {
     this._viewer._loader.load_tiles(x,y,z,l,l,!draw);
 
   }
-    var lowest_w = this._viewer._image.zoomlevel_count-1;
-    this._viewer._loader.get_segmentation(0, 0, z, lowest_w, function(x, y, z, lowest_w, s) {
+  var lowest_w = this._viewer._image.zoomlevel_count-1;
+  this._viewer._loader.get_segmentation(0, 0, z, lowest_w, function(x, y, z, lowest_w, s) {
       
-      this.update_3D_textures(z, full_bbox, s);
+    this.update_3D_textures(z, full_bbox, s);
 
-    }.bind(this, 0, 0, z, lowest_w));
+  }.bind(this, 0, 0, z, lowest_w));
 
 };
 
