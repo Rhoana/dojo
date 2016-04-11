@@ -196,7 +196,6 @@ class Controller(object):
     elif input['name'] == 'MERGETABLE_SUBSET':
       merge_table_subset = input['value']
       for m in merge_table_subset:
-        # self.__hard_merge_table[int(m)] = merge_table_subset[m]
         self.__new_merge_table[m] = merge_table_subset[m]
 
       input['value'] = self.__new_merge_table
@@ -307,7 +306,6 @@ class Controller(object):
           key = str(i)
 
           if key in self.__new_merge_table:
-            # del self.__hard_merge_table[key]
             del self.__new_merge_table[key]
           else:
             # this was already undo'ed before

@@ -12,9 +12,9 @@ J.controller = function(viewer) {
   this._current_orphan = 0;
   this._orphans = null;
 
-  this._merge_table = null;
+  this._new_merge_table = {};
 
-  this._merge_table_subset = {};
+  this._temp_merge_table = {};
 
   this._gl_merge_table_keys = null;
   this._gl_merge_table_values = null;
@@ -141,15 +141,15 @@ J.controller.prototype.receive = function(data) {
 
     var value = input.value[1];
 
-    this._merge_table_subset = {};
+    this._temp_merge_table = {};
 
     for (var i=1; i<input.value[0].length; i++) {
 
       var id = input.value[0][i];
 
-      this._merge_table[id] = value;
+      this._new_merge_table[id] = value;
 
-      this._merge_table_subset[id] = value;
+      this._temp_merge_table[id] = value;
 
     }
 
@@ -163,8 +163,8 @@ J.controller.prototype.receive = function(data) {
 
       var id = input.value[i];
 
-      delete this._merge_table[id];
-      delete this._merge_table_subset[id];     
+      delete this._new_merge_table[id];
+      delete this._temp_merge_table[id];     
 
     }
 
@@ -685,15 +685,15 @@ J.controller.prototype.update_merge_table = function(data) {
 
   console.log('Received new merge table');
 
-  this._merge_table = data;
+  this._new_merge_table = data;
 
   this.create_gl_merge_table();
 
 };
 
-J.controller.prototype.send_merge_table_subset = function() {
+J.controller.prototype.send_temp_merge_table = function() {
 
-  this.send('MERGETABLE_SUBSET', this._merge_table_subset);
+  this.send('MERGETABLE_SUBSET', this._temp_merge_table);
 
 };
 
@@ -1239,13 +1239,12 @@ J.controller.prototype.end_draw_merge = function(x, y) {
 
   this._last_id = this._merge_id;
 
-  this._merge_table_subset = {};
+  this._temp_merge_table = {};
 
   // add all to merge table
   var no_target_ids = this._merge_target_ids.length;
   for (var i=0; i<no_target_ids; i++) {
 
-    //this._merge_table[this._merge_target_ids[i]] = this._merge_id;
     this.merge(this._merge_target_ids[i]);
 
   }
@@ -1262,9 +1261,9 @@ J.controller.prototype.end_draw_merge = function(x, y) {
 
   this.send_log(log);
 
-  for (var id in this._merge_table_subset) {
+  for (var id in this._temp_merge_table) {
 
-    this._merge_table[id] = this._merge_table_subset[id];
+    this._new_merge_table[id] = this._temp_merge_table[id];
 
   }
 
@@ -1272,23 +1271,21 @@ J.controller.prototype.end_draw_merge = function(x, y) {
 
   this._gl_merge_table_changed = true;
 
-  this.send_merge_table_subset();
+  this.send_temp_merge_table();
 
   this.highlight(this._last_id);
 
   // send an action for undo/redo
   this.add_action('MERGE_GROUP', [this._merge_target_ids, this._last_id]);
 
-  // // reload all slices, set to merge mode -1
-  // this.hard_reload_tiles(values);
-
+  // turn off merge mode
   this._merge_mode = -1;
 
 };
 
 J.controller.prototype.merge = function(id) {
 
-  if (!this._merge_table) {
+  if (!this._new_merge_table) {
     throw new Error('Merge-table does not exist.');
   }
 
@@ -1302,13 +1299,13 @@ J.controller.prototype.merge = function(id) {
 
   if (this._last_id == id) return;
 
-  this._merge_table_subset[id] = this._last_id;
+  this._temp_merge_table[id] = this._last_id;
 
 };
 
 J.controller.prototype.create_gl_merge_table = function() {
 
-  var mt = this._merge_table;  
+  var mt = this._new_merge_table;  
   var keys = Object.keys(mt);
   var no_keys = keys.length;
 
