@@ -222,6 +222,9 @@ J.controller.prototype.receive = function(data) {
 
 J.controller.prototype.save = function() {
 
+  $('#undo').css('opacity', '0.3');
+  $('#redo').css('opacity', '0.3');
+
   this.send('SAVE', null);
 
 };
@@ -246,7 +249,6 @@ J.controller.prototype.undo_action = function() {
 
 J.controller.prototype.redo_action = function() {
 
-  $('#redo').css('opacity', '0.3');  
   $('#undo').css('opacity', '1.0');  
 
   this.send('REDO', this._current_action);
@@ -792,9 +794,13 @@ J.controller.prototype.reload_tiles = function(values) {
 
   var x = this._viewer._camera._x;
   var y = this._viewer._camera._y;
-  var z2 = this._viewer._camera._z; // the actual displayed z
+  var z2 = this._viewer._camera._z;
   var w = this._viewer._camera._w;
-  this._viewer._loader.clear_cache_segmentation(x,y,z,w);
+  
+  // Clear cache for complete depth
+  for (var zi=0; zi<this._viewer._image.max_z_tiles; zi++){
+     this._viewer._loader.clear_cache_segmentation(x,y,zi,w); 
+  }
 
   for (var l=0;l<this._viewer._image.zoomlevel_count;l++) {  
 
