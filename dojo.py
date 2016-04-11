@@ -53,14 +53,14 @@ class ServerLogic:
     self.__out_dir = out_dir
 
     # create temp folder
-    tmpdir = out_dir#tempfile.mkdtemp()
-    self.__tmpdir = out_dir#tmpdir
+    tmpdir = out_dir
+    self.__tmpdir = out_dir
 
     #
     # since we just have an output dir,
     # create it now
     #
-    
+
     # register two data sources
     self.__segmentation = _dojo.Segmentation(mojo_dir, tmpdir, out_dir, self)
     self.__image = _dojo.Image(mojo_dir, tmpdir)
@@ -86,16 +86,12 @@ class ServerLogic:
     ip = socket.gethostbyname(socket.gethostname())
 
     dojo = tornado.web.Application([
-      # viewer
-      # (r'/', web.RedirectHandler, {'url':'/dojo/'}),
-      # (r'/dojo', web.RedirectHandler, {'url':'/dojo/'}),
 
-
-      # # image
-      # (r'/image/(.*)', _dojo.Image(mojo_dir)),
+      # image
       (r'/ws', _dojo.Websockets, dict(controller=self.__controller)),
+      # viewer
       (r'/(.*)', DojoHandler, dict(logic=self))
-  
+      
     ])
 
     
