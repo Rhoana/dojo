@@ -19,27 +19,23 @@ class Controller(object):
     '''
     self.__websocket = None
 
-    self.__merge_table = None
-
-    self.__new_merge_table = {}
-
-    self.__lock_table = {'0':True}
-
-    self.__old_lock_table = {'0':True}
-
-    self.__problem_table = []
-
-    self.__users = []
-
     self.__mojo_dir = mojo_dir
 
     self.__mojo_tmp_dir = tmp_dir
 
     self.__mojo_out_dir = out_dir
-    
+
     self.__database = database
 
-    self.__merge_table = self.__database._merge_table
+    self.__users = []
+
+    self.__problem_table = []
+
+    self.__new_merge_table = {}
+
+    self.__old_lock_table = {'0':True}
+
+    self.__hard_merge_table = self.__database._merge_table
 
     self.__lock_table = self.__database._lock_table
 
@@ -81,15 +77,15 @@ class Controller(object):
     output['name'] = 'ORPHANS'
     output['origin'] = 'SERVER'
     output['value'] = str(self.__database.get_orphans())
-    
-    self.__websocket.send(json.dumps(output))    
+
+    self.__websocket.send(json.dumps(output))
 
     output = {}
     output['name'] = 'POTENTIAL_ORPHANS'
     output['origin'] = 'SERVER'
     output['value'] = str(self.__database.get_potential_orphans())
 
-    self.__websocket.send(json.dumps(output))    
+    self.__websocket.send(json.dumps(output))
 
   def send_redraw(self, origin):
     '''
@@ -101,20 +97,10 @@ class Controller(object):
 
     self.__websocket.send(json.dumps(output))
 
-  def get_hardened_merge_table(self):
+  def get_hard_merge_table(self):
     '''
     '''
-    return self.__merge_table
-
-  def get_merge_table(self):
-    '''
-    '''
-    return self.__new_merge_table
-
-  def get_lock_table(self):
-    '''
-    '''
-    return self.__lock_table
+    return self.__hard_merge_table
 
   def get_problem_table(self):
     '''
@@ -128,7 +114,7 @@ class Controller(object):
     output = {}
     output['name'] = 'MERGETABLE'
     output['origin'] = origin
-    output['value'] = self.get_merge_table()
+    output['value'] = self.__new_merge_table
 
     self.__websocket.send(json.dumps(output))
 
@@ -169,7 +155,7 @@ class Controller(object):
     output = {}
     output['name'] = 'LOCKTABLE'
     output['origin'] = origin
-    output['value'] = self.get_lock_table()
+    output['value'] = self.__lock_table
 
     self.__websocket.send(json.dumps(output))
 
@@ -198,7 +184,7 @@ class Controller(object):
   def on_message(self, message):
     '''
     '''
-    
+
     input = json.loads(message)
 
     if input['name'] == 'WELCOME':
@@ -217,10 +203,10 @@ class Controller(object):
       self.send_unblock(input['origin'])
 
       # then send the redraw command
-      self.send_redraw('SERVER')      
+      self.send_redraw('SERVER')
 
     elif input['name'] == 'MERGETABLE':
-      self.__merge_table = input['value']
+      self.__hard_merge_table = input['value']
 
       self.send_merge_table(input['origin'])
 
@@ -229,13 +215,13 @@ class Controller(object):
     elif input['name'] == 'MERGETABLE_SUBSET':
       merge_table_subset = input['value']
       for m in merge_table_subset:
-        self.__merge_table[int(m)] = merge_table_subset[m]
+        self.__hard_merge_table[int(m)] = merge_table_subset[m]
         self.__new_merge_table[m] = merge_table_subset[m]
 
       input['value'] = self.__new_merge_table
       self.send_merge_table(input['origin'])
 
-      self.send_redraw(input['origin'])      
+      self.send_redraw(input['origin'])
 
     elif input['name'] == 'LOCKTABLE':
       new_locks = dict((int(k), v) for k, v in input['value'].iteritems())
@@ -344,7 +330,7 @@ class Controller(object):
           key = str(i)
 
           if key in self.__new_merge_table:
-            # del self.__merge_table[key]
+            # del self.__hard_merge_table[key]
             del self.__new_merge_table[key]
           else:
             # this was already undo'ed before
@@ -362,7 +348,7 @@ class Controller(object):
         new_area = action['value'][3]
 
         x_tiles = range((bb[0]//512), (((bb[2]-1)//512) + 1))
-        y_tiles = range((bb[1]//512), (((bb[3]-1)//512) + 1))    
+        y_tiles = range((bb[1]//512), (((bb[3]-1)//512) + 1))
 
         print x_tiles, y_tiles, bb
 
@@ -376,7 +362,7 @@ class Controller(object):
               tile[x] = {}
 
             # if not x in segtile:
-            #   segtile[x] = {}        
+            #   segtile[x] = {}
 
             i = 'y='+str(y).zfill(8)+',x='+str(x).zfill(8)+'.'+self.__dojoserver.get_image().get_input_format()
 
@@ -402,7 +388,7 @@ class Controller(object):
 
         # go through rows of each tile and segmentation
         row = None
-        first_row = True    
+        first_row = True
         for r in tile.keys():
           column = None
           first_column = True
@@ -433,7 +419,7 @@ class Controller(object):
         # NOW REPLACE THE PIXEL DATA
         #
         bbox_relative = np.array(bb)
-        
+
         #
         # but take offset of tile into account
         #
@@ -443,7 +429,7 @@ class Controller(object):
         bbox_relative[0] -= offset_x
         bbox_relative[1] -= offset_y
         bbox_relative[2] -= offset_x
-        bbox_relative[3] -= offset_y        
+        bbox_relative[3] -= offset_y
 
         print segmentation.shape
 
@@ -474,32 +460,32 @@ class Controller(object):
 
           print '='*80
           print 'W', w
-          
+
           # find tiles
           x_tiles = range((target_i//512), (((target_i + target_width-1)//512) + 1))
           y_tiles = range((target_j//512), (((target_j + target_height-1)//512) + 1))
-          
-          print 'TILES', x_tiles, y_tiles 
-          
+
+          print 'TILES', x_tiles, y_tiles
+
           tile_width = 0
           tile_height = 0
 
           pixel_written_x = 0
-          
-          
+
+
           for i,x in enumerate(x_tiles):
 
               # let's grab the pixel coordinate of all tiles of this column
               tile_x = x*512
-              
+
               # now the offset in x for this column
               if (i==0):
                   offset_x = target_i - tile_x + i*512
               else:
                   offset_x = 0
 
-              pixel_written_y = 0                
-                  
+              pixel_written_y = 0
+
               for j,y in enumerate(y_tiles):
 
                   #
@@ -524,15 +510,15 @@ class Controller(object):
 
                   # let's grab the pixel coordinate of this tile
                   tile_y = y*512
-                  
+
                   if (j==0):
                       offset_y = target_j - tile_y + j*512
                   else:
                       offset_y = 0
-                  
+
                   tile_width = min(512-offset_x, target_width-pixel_written_x)
                   tile_height = min(512-offset_y, target_height-pixel_written_y)
-                          
+
                   print 'pixel X,Y', tile_x, tile_y
                   print 'copying', pixel_written_y,':',pixel_written_y+tile_height,',',pixel_written_x,':',pixel_written_x+tile_width
                   print '     to', offset_y,':',offset_y+tile_height,',', offset_x,':',offset_x+tile_width
@@ -547,11 +533,11 @@ class Controller(object):
                   print 'written', hdf5filename
 
                   pixel_written_y += tile_height
-                  
+
               pixel_written_x += tile_width
 
-                  
-          
+
+
           # update target values
           target_i /= 2
           target_j /= 2
@@ -605,7 +591,7 @@ class Controller(object):
 
           if i == action['value'][1]:
             # avoid GPU crash
-            continue          
+            continue
 
           key = str(i)
 
@@ -622,7 +608,7 @@ class Controller(object):
         new_area = action['value'][3]
 
         x_tiles = range((bb[0]//512), (((bb[2]-1)//512) + 1))
-        y_tiles = range((bb[1]//512), (((bb[3]-1)//512) + 1))    
+        y_tiles = range((bb[1]//512), (((bb[3]-1)//512) + 1))
 
         print x_tiles, y_tiles, bb
 
@@ -636,7 +622,7 @@ class Controller(object):
               tile[x] = {}
 
             # if not x in segtile:
-            #   segtile[x] = {}        
+            #   segtile[x] = {}
 
             i = 'y='+str(y).zfill(8)+',x='+str(x).zfill(8)+'.'+self.__dojoserver.get_image().get_input_format()
 
@@ -662,7 +648,7 @@ class Controller(object):
 
         # go through rows of each tile and segmentation
         row = None
-        first_row = True    
+        first_row = True
         for r in tile.keys():
           column = None
           first_column = True
@@ -694,7 +680,7 @@ class Controller(object):
         # NOW REPLACE THE PIXEL DATA
         #
         bbox_relative = np.array(bb)
-        
+
         #
         # but take offset of tile into account
         #
@@ -704,7 +690,7 @@ class Controller(object):
         bbox_relative[0] -= offset_x
         bbox_relative[1] -= offset_y
         bbox_relative[2] -= offset_x
-        bbox_relative[3] -= offset_y        
+        bbox_relative[3] -= offset_y
 
         segmentation[bbox_relative[1]:bbox_relative[3],bbox_relative[0]:bbox_relative[2]] = new_area
 
@@ -733,32 +719,32 @@ class Controller(object):
 
           print '='*80
           print 'W', w
-          
+
           # find tiles
           x_tiles = range((target_i//512), (((target_i + target_width-1)//512) + 1))
           y_tiles = range((target_j//512), (((target_j + target_height-1)//512) + 1))
-          
-          print 'TILES', x_tiles, y_tiles 
-          
+
+          print 'TILES', x_tiles, y_tiles
+
           tile_width = 0
           tile_height = 0
 
           pixel_written_x = 0
-          
-          
+
+
           for i,x in enumerate(x_tiles):
 
               # let's grab the pixel coordinate of all tiles of this column
               tile_x = x*512
-              
+
               # now the offset in x for this column
               if (i==0):
                   offset_x = target_i - tile_x + i*512
               else:
                   offset_x = 0
 
-              pixel_written_y = 0                
-                  
+              pixel_written_y = 0
+
               for j,y in enumerate(y_tiles):
 
                   #
@@ -783,15 +769,15 @@ class Controller(object):
 
                   # let's grab the pixel coordinate of this tile
                   tile_y = y*512
-                  
+
                   if (j==0):
                       offset_y = target_j - tile_y + j*512
                   else:
                       offset_y = 0
-                  
+
                   tile_width = min(512-offset_x, target_width-pixel_written_x)
                   tile_height = min(512-offset_y, target_height-pixel_written_y)
-                          
+
                   print 'pixel X,Y', tile_x, tile_y
                   print 'copying', pixel_written_y,':',pixel_written_y+tile_height,',',pixel_written_x,':',pixel_written_x+tile_width
                   print '     to', offset_y,':',offset_y+tile_height,',', offset_x,':',offset_x+tile_width
@@ -806,11 +792,11 @@ class Controller(object):
                   print 'written', hdf5filename
 
                   pixel_written_y += tile_height
-                  
+
               pixel_written_x += tile_width
 
-                  
-          
+
+
           # update target values
           target_i /= 2
           target_j /= 2
@@ -903,7 +889,7 @@ class Controller(object):
 
     tile = row
 
-    # 
+    #
     label_id = values['id']
     i_js = values['i_js']
     brush_size = values['brush_size']
@@ -978,7 +964,7 @@ class Controller(object):
     output['name'] = 'ADJUSTDONE'
     output['origin'] = input['origin']
     output['value'] = {'z':values["z"], 'full_bbox':str(full_bbox)}
-    self.__websocket.send(json.dumps(output))    
+    self.__websocket.send(json.dumps(output))
 
   def save(self, input):
     '''
@@ -1030,8 +1016,8 @@ class Controller(object):
     output['name'] = 'SAVED'
     output['origin'] = 'SERVER'#input['origin']
     output['value'] = {}
-    if self.__websocket:    
-      self.__websocket.send(json.dumps(output))  
+    if self.__websocket:
+      self.__websocket.send(json.dumps(output))
 
     # send merge table and merge table subset
     self.send_merge_table('SERVER')
@@ -1054,7 +1040,7 @@ class Controller(object):
     bb[3] = min(max_height, bb[3])
 
     x_tiles = range((bb[0]//512), (((bb[1]-1)//512) + 1))
-    y_tiles = range((bb[2]//512), (((bb[3]-1)//512) + 1))    
+    y_tiles = range((bb[2]//512), (((bb[3]-1)//512) + 1))
 
     tile = {} # here this is the segmentation
     # segtile = {}
@@ -1066,7 +1052,7 @@ class Controller(object):
           tile[x] = {}
 
         # if not x in segtile:
-        #   segtile[x] = {}        
+        #   segtile[x] = {}
 
         i = 'y='+str(y).zfill(8)+',x='+str(x).zfill(8)+'.'+self.__dojoserver.get_image().get_input_format()
 
@@ -1092,7 +1078,7 @@ class Controller(object):
 
     # go through rows of each tile and segmentation
     row = None
-    first_row = True    
+    first_row = True
     for r in tile.keys():
       column = None
       first_column = True
@@ -1121,7 +1107,7 @@ class Controller(object):
     old_tile = np.array(tile)
     # segmentation = row_seg
 
-    # 
+    #
     label_id = values['id']
 
     label_touches_border = True
@@ -1158,7 +1144,7 @@ class Controller(object):
       if touches_top and y_tiles[0] > 0:
 
         y_tiles = [y_tiles[0]-1] + y_tiles
-        new_data = True        
+        new_data = True
 
       if touches_right and x_tiles[-1] < max_x_tiles-1:
 
@@ -1184,7 +1170,7 @@ class Controller(object):
               # let's check if this is old data
               if y in tile_dict[x]:
                 # yes, old data
-                continue   
+                continue
 
             i = 'y='+str(y).zfill(8)+',x='+str(x).zfill(8)+'.'+self.__dojoserver.get_image().get_input_format()
 
@@ -1210,7 +1196,7 @@ class Controller(object):
 
         # go through rows of each tile and segmentation, AGAIN!
         row = None
-        first_row = True    
+        first_row = True
         for r in tile_dict.keys():
           column = None
           first_column = True
@@ -1234,7 +1220,7 @@ class Controller(object):
 
         tile = row
         segmentation = tile
-        old_tile = np.array(tile)        
+        old_tile = np.array(tile)
         # segmentation = row_seg
 
       else:
@@ -1248,7 +1234,7 @@ class Controller(object):
     click = values['click']
 
     bbox_relative = np.array(bbox)
-    
+
     #
     # but take offset of tile into account
     #
@@ -1385,32 +1371,32 @@ class Controller(object):
 
       print '='*80
       print 'W', w
-      
+
       # find tiles
       x_tiles = range((target_i//512), (((target_i + target_width-1)//512) + 1))
       y_tiles = range((target_j//512), (((target_j + target_height-1)//512) + 1))
-      
-      print 'TILES', x_tiles, y_tiles 
-      
+
+      print 'TILES', x_tiles, y_tiles
+
       tile_width = 0
       tile_height = 0
 
       pixel_written_x = 0
-      
-      
+
+
       for i,x in enumerate(x_tiles):
 
           # let's grab the pixel coordinate of all tiles of this column
           tile_x = x*512
-          
+
           # now the offset in x for this column
           if (i==0):
               offset_x = target_i - tile_x + i*512
           else:
               offset_x = 0
 
-          pixel_written_y = 0                
-              
+          pixel_written_y = 0
+
           for j,y in enumerate(y_tiles):
 
               #
@@ -1435,15 +1421,15 @@ class Controller(object):
 
               # let's grab the pixel coordinate of this tile
               tile_y = y*512
-              
+
               if (j==0):
                   offset_y = target_j - tile_y + j*512
               else:
                   offset_y = 0
-              
+
               tile_width = min(512-offset_x, target_width-pixel_written_x)
               tile_height = min(512-offset_y, target_height-pixel_written_y)
-                      
+
               print 'pixel X,Y', tile_x, tile_y
 
               print 'copying', pixel_written_y,':',pixel_written_y+tile_height,',',pixel_written_x,':',pixel_written_x+tile_width
@@ -1459,9 +1445,9 @@ class Controller(object):
               print 'written', hdf5filename
 
               pixel_written_y += tile_height
-              
+
           pixel_written_x += tile_width
-      
+
       # update target values
       target_i /= 2
       target_j /= 2
@@ -1484,7 +1470,7 @@ class Controller(object):
     output['name'] = 'SPLITDONE'
     output['origin'] = input['origin']
     output['value'] = {'z':values["z"], 'full_bbox':str(full_bbox)}
-    self.__websocket.send(json.dumps(output))    
+    self.__websocket.send(json.dumps(output))
 
     self.__split_count += 1
 
@@ -1508,7 +1494,7 @@ class Controller(object):
 
     # print 'newbb',bb
     x_tiles = range((bb[0]//512), (((bb[1]-1)//512) + 1))
-    y_tiles = range((bb[2]//512), (((bb[3]-1)//512) + 1))    
+    y_tiles = range((bb[2]//512), (((bb[3]-1)//512) + 1))
 
     print x_tiles, y_tiles
 
@@ -1522,7 +1508,7 @@ class Controller(object):
           tile[x] = {}
 
         if not x in segtile:
-          segtile[x] = {}        
+          segtile[x] = {}
 
         i = 'y='+str(y).zfill(8)+',x='+str(x).zfill(8)+'.'+self.__dojoserver.get_image().get_input_format()
 
@@ -1550,7 +1536,7 @@ class Controller(object):
 
     # go through rows of each tile and segmentation
     row = None
-    first_row = True    
+    first_row = True
     for r in tile.keys():
       column = None
       first_column = True
@@ -1618,7 +1604,7 @@ class Controller(object):
       if touches_top and y_tiles[0] > 0:
 
         y_tiles = [y_tiles[0]-1] + y_tiles
-        new_data = True        
+        new_data = True
 
       if touches_right and x_tiles[-1] < max_x_tiles-1:
 
@@ -1648,7 +1634,7 @@ class Controller(object):
                 continue
 
             if not x in segtile:
-              segtile[x] = {}        
+              segtile[x] = {}
 
             i = 'y='+str(y).zfill(8)+',x='+str(x).zfill(8)+'.'+self.__dojoserver.get_image().get_input_format()
 
@@ -1672,7 +1658,7 @@ class Controller(object):
 
         # go through rows of each tile and segmentation, AGAIN!
         row = None
-        first_row = True    
+        first_row = True
         for r in tile_dict.keys():
           column = None
           first_column = True
@@ -1705,7 +1691,7 @@ class Controller(object):
     #
     bbox = values['brush_bbox']
     bbox_relative = np.array(bbox)
-    
+
     #
     # but take offset of tile into account
     #
@@ -1735,7 +1721,7 @@ class Controller(object):
     # make sparse points in i_js a dense line (with linear interpolation)
     dense_brush = []
     print 'starting loop'
-    for i in range(len(i_js)-1):       
+    for i in range(len(i_js)-1):
       # two sparse points
       p0 = i_js[i]
       p1 = i_js[i+1]
@@ -1743,24 +1729,24 @@ class Controller(object):
       # x and y coordinates of sparse points
       xp = [p0[1], p1[1]] if p0[1] < p1[1] else [p1[1], p0[1]]
       yp = [p0[0], p1[0]] if p0[1] < p1[1] else [p1[0], p0[0]]
-      
+
       # linear interpolation between p0 and p1
       xs = [x for x in range(xp[0], xp[1]+1)]
       ys = np.round(np.interp(xs, xp, yp)).astype(np.int32)
-          
+
       # add linear interpolation to brush stroke
       dense_brush += zip(ys,xs)
-      
+
       # make x axis dense
-      
+
       # x and y coordinates of sparse points
       xp = [p0[1], p1[1]] if p0[0] < p1[0] else [p1[1], p0[1]]
       yp = [p0[0], p1[0]] if p0[0] < p1[0] else [p1[0], p0[0]]
-      
+
       # linear interpolation between p0 and p1
       ys = [y for y in range(yp[0], yp[1]+1)]
       xs = np.round(np.interp(ys, yp, xp)).astype(np.int32)
-          
+
       # add linear interpolation to brush stroke
       dense_brush += zip(ys,xs)
 
@@ -1773,7 +1759,7 @@ class Controller(object):
     # for c in i_js:
     for c in dense_brush:
         brush_mask[c[1],c[0]] = True
-        
+
     # crop
     brush_mask = brush_mask[bbox[2]:bbox[3],bbox[0]:bbox[1]]
     brush_mask = mh.morph.dilate(brush_mask, np.ones((2*brush_size, 2*brush_size)))
@@ -1808,8 +1794,8 @@ class Controller(object):
 
     # compute seeds
     seed_mask = np.zeros(brush_mask.shape,dtype=bool)
-    # seed_mask[outside_brush_mask & brush_mask] = True 
-    seed_mask[outside_brush_mask] = True 
+    # seed_mask[outside_brush_mask & brush_mask] = True
+    seed_mask[outside_brush_mask] = True
     seed_mask[frame] = True
     # seed_mask[corners] = False
     seed_mask[end_points] = False
@@ -1846,7 +1832,7 @@ class Controller(object):
         if self.lookup_label(seg_sub_tile[y,x]) != label_id:
           continue
 
-        if ws[y,x] != ws[y,x+1]:  
+        if ws[y,x] != ws[y,x+1]:
           lines_array[y,x] = 1
           lines.append([bbox[0]+x,bbox[2]+y])
         if ws[y,x] != ws[y+1,x]:
@@ -1855,19 +1841,19 @@ class Controller(object):
 
     for y in range(1,ws.shape[0]):
       for x in range(1,ws.shape[1]):
-        
+
         if self.lookup_label(seg_sub_tile[y,x]) != label_id:
           continue
 
-        if ws[y,x] != ws[y,x-1]:  
+        if ws[y,x] != ws[y,x-1]:
           lines_array[y,x] = 1
           lines.append([bbox[0]+x,bbox[2]+y])
         if ws[y,x] != ws[y-1,x]:
           lines_array[y,x] = 1
-          lines.append([bbox[0]+x,bbox[2]+y])          
+          lines.append([bbox[0]+x,bbox[2]+y])
 
     print 'long loop end'
-                
+
     # mh.imsave('/tmp/lines.tif', 50*lines_array.astype(np.uint8))
 
     print 'split done'
@@ -1888,10 +1874,10 @@ class Controller(object):
 
       label_id = self.__new_merge_table[label_id]
 
-    while label_id in self.__merge_table:
+    while label_id in self.__hard_merge_table:
 
       # old_label_id = label_id
-      label_id = self.__merge_table[label_id]      
+      label_id = self.__hard_merge_table[label_id]
 
     return int(label_id)
 
@@ -1901,7 +1887,7 @@ class Controller(object):
 
     labels = [str(label_id)]
 
-    for (k,v) in self.__merge_table.items():
+    for (k,v) in self.__hard_merge_table.items():
 
       if v == int(label_id):
         labels = labels + self.lookup_merge_label(k)

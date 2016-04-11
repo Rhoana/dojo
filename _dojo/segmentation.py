@@ -291,7 +291,7 @@ class Segmentation(Datasource):
     #
     # NEW: WE NOW APPLY THE MERGE TABLE FROM THE DATABASE HERE
     #
-    lut = self.__dojoserver.get_controller().get_hardened_merge_table()
+    lut = self.__dojoserver.get_controller().get_hard_merge_table()
     # print lut
     hardened_image_data = lut[image_data]
     # print 'hardened', hardened_image_data.shape
