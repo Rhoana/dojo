@@ -979,6 +979,7 @@ class Controller(object):
 
     # re-harden updated merge table from database
     self.__database._merge_table = self.__database.get_merge_table()
+    self.__hard_merge_table = self.__database._merge_table
 
     print 'Splits', self.__split_count
     print 'All saved! Yahoo!'
@@ -996,12 +997,13 @@ class Controller(object):
     # ping back
     output = {}
     output['name'] = 'SAVED'
-    output['origin'] = 'SERVER'#input['origin']
+    output['origin'] = 'SERVER'
     output['value'] = {}
     if self.__websocket:
       self.__websocket.send(json.dumps(output))
 
-    # send merge table and merge table subset
+    # send merge table
+    self.__new_merge_table = {}
     self.send_merge_table('SERVER')
 
   def finalize_split(self, input):
