@@ -19,7 +19,7 @@ Instructions: http://rhoana.org/dojo/
 		- sent to Server in send\_temp\_merge\_table()
 	- \_new\_merge\_table
 		- all merges currently sent to the shader
-		- received from Serverside send\_merge\_table()
+		- received from Serverside send\_new\_merge\_table()
 - Server
 	- \_\_new\_merge\_table
 		- accumulates \_temp\_merge\_table of all Clients

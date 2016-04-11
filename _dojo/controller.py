@@ -106,7 +106,7 @@ class Controller(object):
     '''
     return self.__problem_table
 
-  def send_merge_table(self, origin):
+  def send_new_merge_table(self, origin):
     '''
     '''
 
@@ -180,7 +180,7 @@ class Controller(object):
       self.__users.append(input['origin'])
 
       # always send the merge table first thing
-      self.send_merge_table(input['origin'])
+      self.send_new_merge_table(input['origin'])
       # then the lock table
       self.send_lock_table(input['origin'])
       # then the problem table
@@ -199,7 +199,7 @@ class Controller(object):
         self.__new_merge_table[m] = merge_table_subset[m]
 
       input['value'] = self.__new_merge_table
-      self.send_merge_table(input['origin'])
+      self.send_new_merge_table(input['origin'])
 
       self.send_redraw(input['origin'])
 
@@ -311,7 +311,6 @@ class Controller(object):
             # this was already undo'ed before
             pass
 
-        # self.send_merge_table('SERVER')
         self.send_undo_merge('SERVER', ids)
         self.send_redraw('SERVER')
 
@@ -1002,7 +1001,7 @@ class Controller(object):
 
     # send merge table
     self.__new_merge_table = {}
-    self.send_merge_table('SERVER')
+    self.send_new_merge_table('SERVER')
 
   def finalize_split(self, input):
     '''
