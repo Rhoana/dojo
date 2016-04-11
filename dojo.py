@@ -48,8 +48,6 @@ class ServerLogic:
 
     signal.signal(signal.SIGINT, self.close)
 
-    #monkey.patch_thread()
-
     self.__mojo_dir = mojo_dir
     self.__configured = configured
     self.__out_dir = out_dir
@@ -62,8 +60,7 @@ class ServerLogic:
     # since we just have an output dir,
     # create it now
     #
-
-
+    
     # register two data sources
     self.__segmentation = _dojo.Segmentation(mojo_dir, tmpdir, out_dir, self)
     self.__image = _dojo.Image(mojo_dir, tmpdir)
@@ -228,7 +225,7 @@ if __name__ == "__main__":
     port = 1336
     orphan_detection = False
     result = 0
-    import socket;
+    import socket
     while result==0:
       port += 1
       sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
