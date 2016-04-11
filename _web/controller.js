@@ -691,12 +691,6 @@ J.controller.prototype.update_merge_table = function(data) {
 
 };
 
-J.controller.prototype.send_merge_table = function() {
-
-  this.send('MERGETABLE', this._merge_table);
-
-};
-
 J.controller.prototype.send_merge_table_subset = function() {
 
   this.send('MERGETABLE_SUBSET', this._merge_table_subset);
