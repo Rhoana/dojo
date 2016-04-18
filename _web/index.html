@@ -11,7 +11,7 @@
   <script type='text/javascript' src='lib/jquery-ui.min.js'></script>
   <script type='text/javascript' src='lib/jquery.slimscroll.min.js'></script>
   <script type="text/javascript" src='lib/zlib.min.js'></script>
-  <script type="text/javascript" src='lib/xtk.js'></script> 
+  <script type="text/javascript" src='lib/xtk.js'></script>
   <script type="text/javascript" src='lib/opentip-native.min.js'></script>
   <script type="text/javascript" src='lib/dragresize.js'></script>
 
@@ -24,11 +24,11 @@
   <script type='text/javascript' src='websocket.js'></script>
   <script type='text/javascript' src='offscreen_renderer.js'></script>
   <script type='text/javascript' src='util.js'></script>
-  
-  
-<!--   // <script type="text/javascript" src="lib/X/lib/google-closure-library/closure/goog/base.js"></script> 
+
+
+<!--   // <script type="text/javascript" src="lib/X/lib/google-closure-library/closure/goog/base.js"></script>
   // <script type="text/javascript" src="lib/X/xtk-deps.js"></script> -->
-  
+
 
   <!-- SHADERS -->
   <script id="fs1" type="x-shader/x-fragment">
@@ -41,7 +41,6 @@
     uniform sampler2D uMergeTableKeySampler;
     uniform sampler2D uMergeTableValueSampler;
     uniform sampler2D uLockTableSampler;
-    //uniform sampler2D uTextureSampler2;
     uniform float uOpacity;
     uniform float uHighlightedId;
     uniform float uActivatedId;
@@ -55,6 +54,7 @@
     uniform bool uShowOverlay;
 
     const int MAX = 10000;
+    const int bMAX = int(ceil(log2(float(MAX))));
 
     varying vec3 vPosition;
     varying vec2 vTexturePosition;
@@ -66,12 +66,9 @@
     // convert rgba to a 32 bit value
     float unpack (vec4 value) {
       // note: little endian
-      const vec4 bitShifts = vec4( (256.0 * 256.0 * 256.0),
-                                   (256.0 * 256.0),
-                                   256.0,
-                                  1);
+      const vec4 bitShifts = vec4( (256.0 * 256.0 * 256.0), (256.0 * 256.0), 256.0, 1);
       return dot(value.abgr , bitShifts);
-      
+
     }
 
     // convert 32 bit int to rgba
@@ -105,53 +102,67 @@
     //
     // ID LOOKUPS
     //
-    float lookup_id_(float id) {
+    float lookup_key_(float m) {
 
-      for (int m=0; m<MAX; m++) {
+      // Key for given index
+      vec4 m_key = texture2D(uMergeTableKeySampler, vec2(m/float(uMergeTableLength), 0.));
+      return unpack(m_key)*255.;
 
-        if (m>uMergeTableLength) break;
+    }
+    float lookup_value_(float m) {
 
-        vec4 m_key = texture2D(uMergeTableKeySampler, vec2(float(m)/float(uMergeTableLength), 0.));
-        float m_id = unpack(m_key)*255.;
-
-        // if m_id is larger than our id, then we are done since all entries are sorted
-        if (larger(m_id, id)) break;
-
-        if (equals(id, m_id)) {
-          // found entry
-          vec4 m_value = texture2D(uMergeTableValueSampler, vec2(float(m)/float(uMergeTableLength), 0.));
-          id = unpack(m_value)*255.;
-
-          return id;
-        }
-
-      }
-
-      return id;
+      // Value for given index
+      vec4 m_value = texture2D(uMergeTableValueSampler, vec2(m/float(uMergeTableLength), 0.));
+      return unpack(m_value)*255.;
 
     }
 
+    //
+    // Binary Search
+    //
+    float binSearch(float key) {
+      // Array size
+      int last = uMergeTableLength;
+      int first = 0;
+
+      // Search within log(n) runtime
+      for (int i = 0; i <= bMAX; i++) {
+        // Break if list gone
+        if (first > last) break;
+
+        // Evaluate the midpoint
+        int mid = (first + last) / 2;
+        float here = lookup_key_(float(mid));
+
+        // Search below midpoint
+        if (larger(here,key)) last = mid-1;
+
+        // Search above midpoint
+        else if (larger(key,here)) first = mid+1;
+
+        // Return the key at midpoint
+        else return lookup_value_(float(mid));
+      }
+      // Assume unmerged
+      return key;
+    }
+
+    //
+    // MERGE
+    //
     float lookup_id(float id) {
 
-      float new_id = id;
-
-      //
-      // MERGE
-      //
-      for (int m=0; m < MAX; m++) {
-
-        new_id = lookup_id_(id);
-
-        if (equals(new_id, id)) {
+      float new_id = binSearch(id);
+      // One Value per merge group
+      for (int i=0; i <= MAX; i++) {
+        // Check for linked merges
+        new_id = binSearch(id);
+        if (equals(id,new_id)){
           break;
-        } else {
-          id = new_id;
         }
-
+        id = new_id;
       }
-
-      return id;
-
+      return new_id;
     }
 
     //
@@ -190,7 +201,7 @@
       // float normalized_id = mod(id, 1.) + 33.; // <---- TESTCASE
 
       vec2 colormap_pos = vec2(normalized_id / (uMaxColors - 1.), 0.);
-      
+
       vec4 color = texture2D(uColorMapSampler, colormap_pos);
 
       // default opacity
@@ -198,7 +209,7 @@
 
       // locked
       if (is_locked(id)) {
-        
+
         if (mod(vTexturePosition.x, 0.05) < 0.01) {
           color *= 1.5;
           color.a = 0.9;
@@ -277,6 +288,7 @@
 
       // .. lookup its' color
       vec4 color = lookup_color(id);
+
 
       if (show_borders(id)) {
 
@@ -375,11 +387,11 @@
 
   <div id='tools' class='toolbar'>
     <div id='undoredo'>
-      <img src='gfx/undo.png' id='undo' class='tool' data-ot='Undo' data-ot-target='true' data-ot-tip-joint='right'> 
-      <img src='gfx/redo.png' id='redo' class='tool' data-ot='Redo' data-ot-target='true' data-ot-tip-joint='right'> 
+      <img src='gfx/undo.png' id='undo' class='tool' data-ot='Undo' data-ot-target='true' data-ot-tip-joint='right'>
+      <img src='gfx/redo.png' id='redo' class='tool' data-ot='Redo' data-ot-target='true' data-ot-tip-joint='right'>
     </div>
-    <img src='gfx/merge.png' id='merge' class='tool' data-ot='Merge Mode' data-ot-target='true' data-ot-tip-joint='right'> 
-    <img src='gfx/merge_selected.png' id='merge_selected' class='tool' style='display:none' data-ot='Stop Merge Mode' data-ot-target='true' data-ot-tip-joint='right'> 
+    <img src='gfx/merge.png' id='merge' class='tool' data-ot='Merge Mode' data-ot-target='true' data-ot-tip-joint='right'>
+    <img src='gfx/merge_selected.png' id='merge_selected' class='tool' style='display:none' data-ot='Stop Merge Mode' data-ot-target='true' data-ot-tip-joint='right'>
     <img src='gfx/split.png' id='split' class='tool' data-ot='Split Mode' data-ot-target='true' data-ot-tip-joint='right'>
     <img src='gfx/split_selected.png' id='split_selected' class='tool' style='display:none' data-ot='Stop Split Mode' data-ot-target='true' data-ot-tip-joint='right'>
     <img src='gfx/3d.png' id='3d' class='tool' style='margin-top:3px;' data-ot='3D Rendering' data-ot-target='true' data-ot-tip-joint='right'>
@@ -391,15 +403,15 @@
     <div><div id='slicenumber'>0/X</div><div id='label'>Label n/a</div></div>
     <div><strong>W/S</strong>: next/previous slice</div>
     <div><strong>C/X</strong>: zoom in/out</div>
-    <div><strong>L</strong>: lock/unlock segment</div>  
-    <div><strong>Q</strong>: toggle segmentation</div>    
+    <div><strong>L</strong>: lock/unlock segment</div>
+    <div><strong>Q</strong>: toggle segmentation</div>
     <div><strong>A</strong>: toggle borders</div>
     <div><strong>P</strong>: only show locked segments</div>
     <div><strong>F</strong>: toggle borders and segmentation</div>
     <div><strong>E/D</strong>: increase/decrease opacity</div>
-    <div><strong>ESC</strong>: discard split or reset tool</div> 
-    <div><strong>J</strong>: jump to X,Y,Z</div>       
-    <div><strong>K</strong>: jump to Z</div>       
+    <div><strong>ESC</strong>: discard split or reset tool</div>
+    <div><strong>J</strong>: jump to X,Y,Z</div>
+    <div><strong>K</strong>: jump to Z</div>
     <div><strong>1-5</strong>: toggle tool</div>
     <div><strong>- / =</strong>: de-/increase brushsize</div>
   </div>
