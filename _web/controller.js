@@ -1311,9 +1311,15 @@ J.controller.prototype.merge = function(id) {
 
 J.controller.prototype.create_gl_merge_table = function() {
 
-  var mt = this._new_merge_table;  
+  var mt = this._new_merge_table;
   var keys = Object.keys(mt);
   var no_keys = keys.length;
+
+  for (key in mt){
+    while (mt[key] in mt) {
+      mt[key] = mt[mt[key]];
+    }
+  }
 
   if (no_keys == 0) {
 

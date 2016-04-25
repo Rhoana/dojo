@@ -120,7 +120,7 @@
     //
     // Binary Search
     //
-    float binSearch(float key) {
+    float lookup_id(float key) {
       // Array size
       int last = uMergeTableLength;
       int first = 0;
@@ -145,24 +145,6 @@
       }
       // Assume unmerged
       return key;
-    }
-
-    //
-    // MERGE
-    //
-    float lookup_id(float id) {
-
-      float new_id = binSearch(id);
-      // One Value per merge group
-      for (int i=0; i <= MAX; i++) {
-        // Check for linked merges
-        new_id = binSearch(id);
-        if (equals(id,new_id)){
-          break;
-        }
-        id = new_id;
-      }
-      return new_id;
     }
 
     //
