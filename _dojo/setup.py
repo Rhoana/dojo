@@ -7,8 +7,6 @@ import segmentation_tile_calculator
 class Setup(object):
 
   def __init__(self,logic,mojo_dir, tmp_dir):
-    '''
-    '''
 
     self.__logic = logic
 
@@ -21,8 +19,7 @@ class Setup(object):
     self.__web_dir = '_web/'
 
   def content_type(self, extension):
-    '''
-    '''
+
     return {
       '.js': 'text/javascript',
       '.html': 'text/html',
@@ -35,8 +32,7 @@ class Setup(object):
     }[extension]
 
   def handle(self, request):
-    '''
-    '''
+
     if self.__post_data_regex.match(request.uri):
       self.setup_data(request)
       return "OK", 'text/html'
@@ -71,10 +67,7 @@ class Setup(object):
 
 
   def setup_data(self, request):
-    '''
 
-
-    '''
 
     img_dir = os.path.join(self.__tmp_dir,'input_images')
     seg_dir = os.path.join(self.__tmp_dir,'input_labels')

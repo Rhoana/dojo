@@ -24,13 +24,9 @@ class DojoHandler(tornado.web.RequestHandler):
     self.__logic = logic
 
   def get(self, uri):
-    '''
-    '''
     self.__logic.handle(self)
 
   def post(self, uri):
-    '''
-    '''
     self.__logic.handle(self)
 
 
@@ -38,13 +34,11 @@ class DojoHandler(tornado.web.RequestHandler):
 class ServerLogic:
 
   def __init__( self ):
-    '''
-    '''
+
     pass
 
   def run( self, mojo_dir, out_dir, port, orphan_detection, configured ):
-    '''
-    '''
+
 
     signal.signal(signal.SIGINT, self.close)
 
@@ -107,29 +101,19 @@ class ServerLogic:
 
 
   def get_image(self):
-    '''
-    '''
     return self.__image
 
 
   def get_segmentation(self):
-    '''
-    '''
     return self.__segmentation
 
   def get_controller(self):
-    '''
-    '''
     return self.__controller
 
   def finish_setup(self):
-    '''
-    '''
-
     mojo_dir = self.__mojo_dir
     tmpdir = self.__tmpdir
     out_dir = self.__out_dir
-
 
     # register two data sources
     self.__segmentation = _dojo.Segmentation(mojo_dir, tmpdir)
@@ -143,9 +127,7 @@ class ServerLogic:
     print 'Setup finished.'
 
   def handle( self, r ):
-    '''
-    '''
-    
+
     content = None
 
     # the access to the viewer
@@ -175,8 +157,6 @@ class ServerLogic:
     
 
   def close(self, signal, frame):
-    '''
-    '''
     print 'Sayonara..!!'
     output = {}
     output['origin'] = 'SERVER'
@@ -184,8 +164,7 @@ class ServerLogic:
     sys.exit(0)
 
 def print_help( scriptName ):
-  '''
-  '''
+
   description = ''
   print description
   print

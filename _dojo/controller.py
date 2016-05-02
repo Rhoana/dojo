@@ -14,8 +14,8 @@ from skimage import exposure
 class Controller(object):
 
   def __init__(self, mojo_dir, out_dir, tmp_dir, database, dojoserver):
-    '''
-    '''
+
+
     self.__websocket = None
 
     self.__mojo_dir = mojo_dir
@@ -50,15 +50,13 @@ class Controller(object):
     self.__split_count = 0
 
   def handshake(self, websocket):
-    '''
-    '''
+
     self.__websocket = websocket
 
     self.send_welcome()
 
   def send_welcome(self):
-    '''
-    '''
+
     output = {}
     output['name'] = 'WELCOME'
     output['origin'] = 'SERVER'
@@ -67,8 +65,7 @@ class Controller(object):
     self.__websocket.send(json.dumps(output))
 
   def send_orphans(self):
-    '''
-    '''
+
     if not self.__database:
       return
 
@@ -87,8 +84,7 @@ class Controller(object):
     self.__websocket.send(json.dumps(output))
 
   def send_redraw(self, origin):
-    '''
-    '''
+
     output = {}
     output['name'] = 'REDRAW'
     output['origin'] = 'SERVER'
@@ -97,18 +93,15 @@ class Controller(object):
     self.__websocket.send(json.dumps(output))
 
   def get_hard_merge_table(self):
-    '''
-    '''
+
     return self.__hard_merge_table
 
   def get_problem_table(self):
-    '''
-    '''
+
     return self.__problem_table
 
   def send_new_merge_table(self, origin):
-    '''
-    '''
+
 
     output = {}
     output['name'] = 'MERGETABLE'
@@ -118,8 +111,7 @@ class Controller(object):
     self.__websocket.send(json.dumps(output))
 
   def send_undo_merge(self, origin, ids):
-    '''
-    '''
+
     output = {}
     output['name'] = 'UNDO_MERGE_GROUP'
     output['origin'] = origin
@@ -127,8 +119,7 @@ class Controller(object):
     self.__websocket.send(json.dumps(output))
 
   def send_redo_merge(self, origin, values):
-    '''
-    '''
+
     output = {}
     output['name'] = 'REDO_MERGE_GROUP'
     output['origin'] = origin
@@ -137,8 +128,7 @@ class Controller(object):
     self.__websocket.send(json.dumps(output))
 
   def send_lock_table(self, origin):
-    '''
-    '''
+
 
     output = {}
     output['name'] = 'LOCKTABLE'
@@ -148,8 +138,7 @@ class Controller(object):
     self.__websocket.send(json.dumps(output))
 
   def send_problem_table(self, origin):
-    '''
-    '''
+
 
     output = {}
     output['name'] = 'PROBLEMTABLE'
@@ -159,8 +148,7 @@ class Controller(object):
     self.__websocket.send(json.dumps(output))
 
   def send_unblock(self, origin):
-    '''
-    '''
+
 
     output = {}
     output['name'] = 'UNBLOCK'
@@ -170,8 +158,7 @@ class Controller(object):
     self.__websocket.send(json.dumps(output))
 
   def on_message(self, message):
-    '''
-    '''
+
 
     input = json.loads(message)
 
@@ -258,8 +245,7 @@ class Controller(object):
       self.update_orphan(input)
 
   def add_action(self, input):
-    '''
-    '''
+
     values = list(input['value'])
     current_action = values[0]
     value = values[1]
@@ -285,8 +271,7 @@ class Controller(object):
     self.__websocket.send(json.dumps(output))
 
   def undo_action(self, input):
-    '''
-    '''
+
     value = input['value']
     username = input['origin']
 
@@ -535,8 +520,7 @@ class Controller(object):
     self.__websocket.send(json.dumps(output))
 
   def redo_action(self, input):
-    '''
-    '''
+
     value = input['value']
     username = input['origin']
 
@@ -794,8 +778,7 @@ class Controller(object):
     self.__websocket.send(json.dumps(output))
 
   def update_orphan(self, input):
-    '''
-    '''
+
     index = input['value']['current_orphan'];
     orphan = input['value']['orphan'];
 
@@ -804,8 +787,7 @@ class Controller(object):
     self.send_orphans()
 
   def adjust(self, input):
-    '''
-    '''
+
     values = input['value']
 
     print 'adjust'
@@ -937,8 +919,7 @@ class Controller(object):
     self.__websocket.send(json.dumps(output))
 
   def save(self, input):
-    '''
-    '''
+
     print 'SAVING..'
     self.__actions = {}
     for username in self.__actions:
@@ -1004,8 +985,7 @@ class Controller(object):
     self.send_new_merge_table('SERVER')
 
   def finalize_split(self, input):
-    '''
-    '''
+
 
     values = input['value']
 
@@ -1847,8 +1827,7 @@ class Controller(object):
     self.__websocket.send(json.dumps(output))
 
   def lookup_label(self, label_id):
-    '''
-    '''
+
     label_id = str(label_id)
 
     while label_id in self.__new_merge_table:
@@ -1863,8 +1842,7 @@ class Controller(object):
     return int(label_id)
 
   def lookup_merge_label(self,label_id):
-    '''
-    '''
+
 
     labels = [str(label_id)]
 

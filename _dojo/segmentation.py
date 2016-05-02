@@ -29,8 +29,7 @@ class Segmentation(Datasource):
 
 
   def get_volume_data(self):
-    '''
-    '''
+
     files = super(Segmentation, self).get_volume(1)
 
     out = None
@@ -100,8 +99,7 @@ class Segmentation(Datasource):
     return content, content_type
 
   def detect_orphans(self):
-    '''
-    '''
+
     print 'Detecting orphans..'
     
     volume = self.get_volume_data()
@@ -275,8 +273,7 @@ class Segmentation(Datasource):
 
 
   def get_tile(self, file):
-    '''
-    '''
+
     super(Segmentation, self).get_tile(file)
 
     hdf5_file = h5py.File(file)

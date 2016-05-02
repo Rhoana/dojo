@@ -12,8 +12,7 @@ from database import Database
 class Datasource(object):
 
   def __init__(self, mojo_dir, tmp_dir, query, input_format, output_format, sub_dir, out_dir=None):
-    '''
-    '''
+
 
     self.__mojo_dir = mojo_dir
     self.__mojo_tmp_dir = tmp_dir
@@ -57,26 +56,22 @@ class Datasource(object):
     self.__setup()
 
   def get_info(self):
-    '''
-    '''
+
     return self.__info
 
 
   def get_input_format(self):
-    '''
-    '''
+
     return self.__input_format
 
 
   def get_max_zoomlevel(self):
-    '''
-    '''
+
     return self.__max_mojozoom_level
 
 
   def __setup(self):
-    '''
-    '''
+
 
     # parse the mojo directory
     for root, dirs, files in os.walk(self.__mojo_dir):  
@@ -126,31 +121,26 @@ class Datasource(object):
 
 
   def reconfigure(self):
-    '''
-    '''
+
     self.__setup()
 
   def get_info_xml(self):
-    '''
-    '''
+
     xml_info = '<?xml version="1.0" encoding="UTF-8"?>\n'
     xml_info += '<Image xmlns="http://schemas.microsoft.com/deepzoom/2008" TileSize="'+self.__info['numVoxelsPerTileX']+'" Overlap="0" Format="'+self.__output_format+'"><Size Width="'+self.__info['numVoxelsX']+'" Height="'+self.__info['numVoxelsY']+'"/></Image>'
 
     return xml_info
 
   def get_tile(self, file):
-    '''
-    '''
+
     pass
 
   def get_database(self):
-    '''
-    '''
+
     return self.__database
 
   def get_volume(self, zoomlevel):
-    '''
-    '''
+
 
     w_path = os.path.join(self.__mojo_dir, self.__sub_dir, 'tiles', 'w='+str(zoomlevel).zfill(8))
     w_path_tmp = os.path.join(self.__mojo_tmp_dir, self.__sub_dir, 'tiles', 'w='+str(zoomlevel).zfill(8))

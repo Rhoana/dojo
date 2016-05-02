@@ -7,8 +7,7 @@ MAX_SEGMENTS = 10000000
 class Database(object):
 
   def __init__(self, file):
-    '''
-    '''
+
     self.__connection = sqlite3.connect(file)
     self.__cursor = self.__connection.cursor()
 
@@ -21,8 +20,7 @@ class Database(object):
     self._lock_table = None
 
   def get_segment_info(self):
-    '''
-    '''
+
     self.__cursor.execute('SELECT * FROM segmentInfo')
 
     result = self.__cursor.fetchall()
@@ -35,8 +33,7 @@ class Database(object):
     return output
 
   def get_lock_table(self):
-    '''
-    '''
+
     try:
       self.__cursor.execute('SELECT * FROM segmentInfo WHERE confidence=100')
 
@@ -53,8 +50,7 @@ class Database(object):
     return output
 
   def get_largest_id(self):
-    '''
-    '''
+
     self.__cursor.execute('SELECT * FROM segmentInfo ORDER BY id DESC')
 
     result = self.__cursor.fetchone()[0]
@@ -85,8 +81,7 @@ class Database(object):
     return result 
 
   def get_id_tile_index(self,tile_id):
-    '''
-    '''
+
     self.__cursor.execute('SELECT * FROM idTileIndex WHERE id='+tile_id)
 
     result = self.__cursor.fetchall()
@@ -105,8 +100,7 @@ class Database(object):
     return lut[label]
 
   def get_merge_table(self):
-    '''
-    '''
+
     lut = np.arange(MAX_SEGMENTS)
 
     try:
@@ -137,8 +131,7 @@ class Database(object):
     return lut
 
   def insert_lock(self, id):
-    '''
-    '''
+
     try:
       self.__connection.execute('SELECT * FROM segmentInfo WHERE id='+str(id))
       result = self.__cursor.fetchone()
@@ -151,8 +144,7 @@ class Database(object):
       print 'ERROR WHEN LOCKING', id
 
   def remove_lock(self, id):
-    '''
-    '''
+
     try:
       self.__connection.execute('SELECT * FROM segmentInfo WHERE id='+str(id))
       result = self.__cursor.fetchone()
@@ -165,8 +157,7 @@ class Database(object):
       print 'ERROR WHEN UNLOCKING', id
 
   def insert_merge(self, id1, id2):
-    '''
-    '''
+
     try:
       self.__connection.execute('INSERT INTO relabelMap VALUES (?,?)', (id1, id2))
     
@@ -175,17 +166,14 @@ class Database(object):
       print 'ERROR WHEN MERGING', id1, id2
 
   def store(self):
-    '''
-    '''
+
     self.__connection.commit()
       
   def get_orphans(self):
-    '''
-    '''
+
     return self._orphans
 
   def get_potential_orphans(self):
-    '''
-    '''
+
     return self._potential_orphans
     
