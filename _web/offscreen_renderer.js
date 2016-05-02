@@ -51,10 +51,10 @@ J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
   gl.useProgram(h);
 
   // List uniform variables and attributes
-  uniforms = ['uImageSampler','uTextureSampler','uColorMapSampler','uMergeTableKeySampler','uMergeTableValueSampler','uLockTableSampler']
-  uniforms = uniforms.concat(['uOpacity','uHighlightedId','uActivatedId','uSplitMode','uAdjustMode','uMaxColors','uBorders'])
-  uniforms = uniforms.concat(['uOnlyLocked','uMergeTableEnd','uMergeTableLength','uLockTableLength','uShowOverlay'])
-  attributes = ['aPosition','aTexturePosition']
+  uniforms = ['uImageSampler','uTextureSampler','uColorMapSampler','uMergeTableKeySampler','uMergeTableValueSampler','uLockTableSampler'];
+  uniforms = uniforms.concat(['uOpacity','uHighlightedId','uActivatedId','uSplitMode','uAdjustMode','uMaxColors','uBorders']);
+  uniforms = uniforms.concat(['uOnlyLocked','uMergeTableEnd','uMergeTableLength','uLockTableLength','uShowOverlay']);
+  attributes = ['aPosition','aTexturePosition'];
   // Store uniform variables and atributes
   uniforms.map(s => this['h_'+s] = gl.getUniformLocation(h,s) );
   attributes.map(s => this['h_'+s] = gl.getAttribLocation(h,s) );
@@ -78,90 +78,45 @@ J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
 
 };
 
+J.offscreen_renderer.prototype.buffer = function(gl,name,filter,flip) {
+
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, flip || true);
+
+  this[name] = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, this[name]);
+
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl[filter]);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl[filter]);
+
+  gl.bindTexture(gl.TEXTURE_2D, null);
+
+  return gl;
+}
+
 J.offscreen_renderer.prototype.init_buffers = function() {
 
   var gl = this._gl;
 
   // create colormap texture buffer
-  this._colormap_texture = gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D, this._colormap_texture);
-
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-
-  gl.bindTexture(gl.TEXTURE_2D, null);
+  gl = this.buffer(gl,'_colormap_texture','NEAREST');
 
   // create segmentation texture buffer
-  this._segmentation_texture = gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D, this._segmentation_texture);
-
-  // clamp to edge
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-
-  gl.bindTexture(gl.TEXTURE_2D, null);
-
+  gl = this.buffer(gl,'_segmentation_texture','NEAREST');
 
   // create image texture buffer
-  this._image_texture = gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D, this._image_texture);
+  gl = this.buffer(gl,'_image_texture','LINEAR');
 
-  // clamp to edge
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  // create lock table buffer
+  gl = this.buffer(gl,'_lock_table','NEAREST',false);
 
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  // create merge table keys buffer
+  gl = this.buffer(gl,'_merge_table_keys','NEAREST',false);
 
-  gl.bindTexture(gl.TEXTURE_2D, null);  
-
-
-  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-  this._merge_table_keys = gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D, this._merge_table_keys);
-
-  // clamp to edge
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-
-  gl.bindTexture(gl.TEXTURE_2D, null);
-  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-
-  this._merge_table_values = gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D, this._merge_table_values);
-  
-  // clamp to edge
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-
-  gl.bindTexture(gl.TEXTURE_2D, null);
-
-
-  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-  this._lock_table = gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D, this._lock_table);
-
-  // clamp to edge
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-
-  gl.bindTexture(gl.TEXTURE_2D, null);
-  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+  // create merge table values buffer
+  gl = this.buffer(gl,'_merge_table_values','NEAREST');
 
   // u-v
   this._uv_buffer = gl.createBuffer();
@@ -194,8 +149,6 @@ J.offscreen_renderer.prototype.draw = function(i, s, c, x, y) {
 
   }
 
-
-
   // create segmentation texture buffer
   gl.bindTexture(gl.TEXTURE_2D, this._segmentation_texture);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 512, 512, 0, gl.RGBA, gl.UNSIGNED_BYTE, s);
@@ -227,7 +180,6 @@ J.offscreen_renderer.prototype.draw = function(i, s, c, x, y) {
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
   }
-  
 
   //
   // LOCK TABLE
@@ -246,10 +198,6 @@ J.offscreen_renderer.prototype.draw = function(i, s, c, x, y) {
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);    
 
   }
-
-
-
-
 
   // now really draw
   gl.enableVertexAttribArray(this.h_aPosition);
