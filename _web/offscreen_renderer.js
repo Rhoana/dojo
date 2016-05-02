@@ -66,6 +66,7 @@ J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
   this.h_uMaxColors = gl.getUniformLocation(h, 'uMaxColors');
   this.h_uBorders = gl.getUniformLocation(h, 'uBorders');
   this.h_uOnlyLocked = gl.getUniformLocation(h, 'uOnlyLocked');
+  this.h_uMergeTableEnd = gl.getUniformLocation(h, 'uMergeTableEnd');
   this.h_uMergeTableLength = gl.getUniformLocation(h, 'uMergeTableLength');
   this.h_uLockTableLength = gl.getUniformLocation(h, 'uLockTableLength');
   this.h_uShowOverlay = gl.getUniformLocation(h, 'uShowOverlay');
@@ -225,6 +226,7 @@ J.offscreen_renderer.prototype.draw = function(i, s, c, x, y) {
   // MERGE TABLE
   //
   var merge_table_length = this._controller._merge_table_length;
+  var merge_table_end = this._controller._merge_table_end;
 
   if (this._controller._gl_merge_table_changed) {
 
@@ -281,6 +283,7 @@ J.offscreen_renderer.prototype.draw = function(i, s, c, x, y) {
   gl.uniform1i(this.h_uSplitMode, this._viewer._controller._split_mode);
   gl.uniform1i(this.h_uAdjustMode, this._viewer._controller._adjust_mode);
 
+  gl.uniform1i(this.h_uMergeTableEnd, merge_table_end);
   gl.uniform1i(this.h_uMergeTableLength, merge_table_length);
   gl.uniform1i(this.h_uLockTableLength, lock_table_length);
   gl.uniform1i(this.h_uShowOverlay, this._viewer._overlay_show);

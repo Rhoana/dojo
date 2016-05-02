@@ -49,6 +49,7 @@
     uniform float uMaxColors;
     uniform int uBorders;
     uniform bool uOnlyLocked;
+    uniform int uMergeTableEnd;
     uniform int uMergeTableLength;
     uniform int uLockTableLength;
     uniform bool uShowOverlay;
@@ -123,11 +124,11 @@
     float lookup_id(float key) {
       // Array size
       float first = 0.;
-      float last = 1.;
+      float last = float(uMergeTableEnd)/float(uMergeTableLength);
       float delta = 1./float(uMergeTableLength);
 
       // Search within log(n) runtime
-      for (int i = 0; i <= 10*bMAX; i++) {
+      for (int i = 0; i <= bMAX; i++) {
         // Break if list gone
         if (larger(first,last)) break;
 
