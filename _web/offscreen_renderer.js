@@ -9,6 +9,7 @@ J.offscreen_renderer = function(viewer) {
   this._gl = null;
 
   this._program = null;
+  this._tex_order = [];
   this._textures = {};
 
   this._square_buffer = null;
@@ -62,8 +63,8 @@ J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
   attributes.map(s => this['h_'+s] = gl.getAttribLocation(h,s) );
 
   // Specify names of textures with corresponding samplers
-  var textures = ['_segmentation_texture','_colormap_texture','_merge_table_keys','_merge_table_values','_lock_table','_image_texture'];
-  textures.map( (v,i) => this._textures[v] = {sampler: uniforms[i], filter: 'NEAREST', flip :true} );
+  this._tex_order = ['_segmentation_texture','_colormap_texture','_merge_table_keys','_merge_table_values','_lock_table','_image_texture'];
+  this._tex_order.map( (v,i) => this._textures[v] = {sampler: uniforms[i], filter: 'NEAREST', flip :true} );
 
   // create geometry
   this._square_buffer = gl.createBuffer();
@@ -211,29 +212,14 @@ J.offscreen_renderer.prototype.draw = function(i, s, c, x, y) {
   gl.uniform1i(this.h_uLockTableLength, lock_table_length);
   gl.uniform1i(this.h_uShowOverlay, this._viewer._overlay_show);
 
-  gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, this._segmentation_texture);
-  gl.uniform1i(this.h_uTextureSampler, 0);
-
-  gl.activeTexture(gl.TEXTURE1);
-  gl.bindTexture(gl.TEXTURE_2D, this._colormap_texture);
-  gl.uniform1i(this.h_uColorMapSampler, 1);
-
-  gl.activeTexture(gl.TEXTURE2);
-  gl.bindTexture(gl.TEXTURE_2D, this._merge_table_keys);
-  gl.uniform1i(this.h_uMergeTableKeySampler, 2);
-
-  gl.activeTexture(gl.TEXTURE3);
-  gl.bindTexture(gl.TEXTURE_2D, this._merge_table_values);
-  gl.uniform1i(this.h_uMergeTableValueSampler, 3);
-
-  gl.activeTexture(gl.TEXTURE4);
-  gl.bindTexture(gl.TEXTURE_2D, this._lock_table);
-  gl.uniform1i(this.h_uLockTableSampler, 4);
-
-  gl.activeTexture(gl.TEXTURE5);
-  gl.bindTexture(gl.TEXTURE_2D, this._image_texture);
-  gl.uniform1i(this.h_uImageSampler, 5);  
+  // Add all the textures to the shaders
+  for (i = 0; i < this._tex_order.length; i++) {
+    tex = this._tex_order[i]
+    sam = this._textures[tex].sampler
+    gl.activeTexture(gl['TEXTURE'+i.toString()]);
+    gl.bindTexture(gl.TEXTURE_2D, this[tex]);
+    gl.uniform1i(this['h_'+sam], i);
+  }
 
   gl.enableVertexAttribArray(this.h_aTexturePosition);
   gl.bindBuffer(gl.ARRAY_BUFFER, this._uv_buffer);
