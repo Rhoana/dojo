@@ -52,7 +52,7 @@ J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
   gl.useProgram(h);
 
   // List uniform variables and attributes
-  uniforms = ['uTextureSampler','uColorMapSampler','uMergeTableKeySampler','uMergeTableValueSampler','uLockTableSampler','uImageSampler'];
+  var uniforms = ['uTextureSampler','uColorMapSampler','uMergeTableKeySampler','uMergeTableValueSampler','uLockTableSampler','uImageSampler'];
   uniforms = uniforms.concat(['uOpacity','uHighlightedId','uActivatedId','uSplitMode','uAdjustMode','uMaxColors','uBorders']);
   uniforms = uniforms.concat(['uOnlyLocked','uMergeTableEnd','uMergeTableLength','uLockTableLength','uShowOverlay']);
   var attributes = ['aPosition','aTexturePosition'];
