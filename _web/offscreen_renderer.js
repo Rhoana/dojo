@@ -84,24 +84,6 @@ J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
 
 };
 
-J.offscreen_renderer.prototype.buffer = function(gl,name,val) {
-
-  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, val.flip);
-
-  this[name] = gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D, this[name]);
-
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl[val.filter]);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl[val.filter]);
-
-  gl.bindTexture(gl.TEXTURE_2D, null);
-
-  return gl;
-}
-
 J.offscreen_renderer.prototype.init_buffers = function() {
 
   var gl = this._gl;
@@ -110,8 +92,21 @@ J.offscreen_renderer.prototype.init_buffers = function() {
   this._textures['_merge_table_keys'].flip = false;
   this._textures['_image_texture'].filter = 'LINEAR';
 
-  for ( k in this._textures) {
-    gl = this.buffer(gl, k, this._textures[k]);
+  for ( tex in this._textures) {
+
+    var val = this._textures[tex]
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, val.flip);
+
+    this[name] = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, this[name]);
+
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl[val.filter]);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl[val.filter]);
+
+    gl.bindTexture(gl.TEXTURE_2D, null);
   }
 
   // u-v
@@ -124,7 +119,7 @@ J.offscreen_renderer.prototype.init_buffers = function() {
     1., 1.
     ]);
   gl.bufferData(gl.ARRAY_BUFFER, uvs, gl.STATIC_DRAW);  
-
+  
 };
 
 J.offscreen_renderer.prototype.draw = function(i, s, c, x, y) {
