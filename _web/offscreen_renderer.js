@@ -50,30 +50,14 @@ J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
   }
   gl.useProgram(h);
 
-  // textures Hoffer 2016-03-13
-  this.h_uImageSampler = gl.getUniformLocation(h, 'uImageSampler');
-  this.h_uTextureSampler = gl.getUniformLocation(h, 'uTextureSampler');
-  this.h_uColorMapSampler = gl.getUniformLocation(h, 'uColorMapSampler');
-  this.h_uMergeTableKeySampler = gl.getUniformLocation(h, 'uMergeTableKeySampler');
-  this.h_uMergeTableValueSampler = gl.getUniformLocation(h, 'uMergeTableValueSampler');
-  this.h_uLockTableSampler = gl.getUniformLocation(h, 'uLockTableSampler');
-
-  this.h_uOpacity = gl.getUniformLocation(h, 'uOpacity');
-  this.h_uHighlightedId = gl.getUniformLocation(h, 'uHighlightedId');
-  this.h_uActivatedId = gl.getUniformLocation(h, 'uActivatedId');
-  this.h_uSplitMode = gl.getUniformLocation(h, 'uSplitMode');  
-  this.h_uAdjustMode = gl.getUniformLocation(h, 'uAdjustMode');  
-  this.h_uMaxColors = gl.getUniformLocation(h, 'uMaxColors');
-  this.h_uBorders = gl.getUniformLocation(h, 'uBorders');
-  this.h_uOnlyLocked = gl.getUniformLocation(h, 'uOnlyLocked');
-  this.h_uMergeTableEnd = gl.getUniformLocation(h, 'uMergeTableEnd');
-  this.h_uMergeTableLength = gl.getUniformLocation(h, 'uMergeTableLength');
-  this.h_uLockTableLength = gl.getUniformLocation(h, 'uLockTableLength');
-  this.h_uShowOverlay = gl.getUniformLocation(h, 'uShowOverlay');
-  // this.h_uTextureSampler2 = gl.getUniformLocation(h, 'uTextureSampler2');  
-
-  this.h_aPosition = gl.getAttribLocation(h, 'aPosition');
-  this.h_aTexturePosition = gl.getAttribLocation(h, 'aTexturePosition');
+  // List uniform variables and attributes
+  uniforms = ['uImageSampler','uTextureSampler','uColorMapSampler','uMergeTableKeySampler','uMergeTableValueSampler','uLockTableSampler']
+  uniforms = uniforms.concat(['uOpacity','uHighlightedId','uActivatedId','uSplitMode','uAdjustMode','uMaxColors','uBorders'])
+  uniforms = uniforms.concat(['uOnlyLocked','uMergeTableEnd','uMergeTableLength','uLockTableLength','uShowOverlay'])
+  attributes = ['aPosition','aTexturePosition']
+  // Store uniform variables and atributes
+  uniforms.map(s => this['h_'+s] = gl.getUniformLocation(h,s) );
+  attributes.map(s => this['h_'+s] = gl.getAttribLocation(h,s) );
 
   // create geometry
   this._square_buffer = gl.createBuffer();
