@@ -103,17 +103,10 @@
     //
     // ID LOOKUPS
     //
-    float lookup_key_(float m) {
-
-      // Key for given index
-      vec4 m_key = texture2D(uMergeTableKeySampler, vec2(m/float(uMergeTableLength), 0.));
-      return unpack(m_key)*255.;
-
-    }
-    float lookup_value_(float m) {
+    float lookup(float m, sampler2D samp) {
 
       // Value for given index
-      vec4 m_value = texture2D(uMergeTableValueSampler, vec2(m/float(uMergeTableLength), 0.));
+      vec4 m_value = texture2D(samp, vec2(m/float(uMergeTableLength), 0.));
       return unpack(m_value)*255.;
 
     }
@@ -134,7 +127,7 @@
 
         // Evaluate the midpoint
         int mid = (first + last) / 2;
-        int here = int(lookup_key_(float(mid)));
+        int here = int(lookup(float(mid),uMergeTableKeySampler));
 
         // Search below midpoint
         if (here>ikey) last = mid-1;
@@ -143,7 +136,7 @@
         else if (ikey>here) first = mid+1;
 
         // Return the key at midpoint
-        else return lookup_value_(float(mid));
+        else return lookup(float(mid),uMergeTableValueSampler);
       }
       // Assume unmerged
       return key;
