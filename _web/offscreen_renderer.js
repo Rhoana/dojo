@@ -62,7 +62,7 @@ J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
   attributes.map(s => this['h_'+s] = gl.getAttribLocation(h,s) );
 
   // Specify names of textures with corresponding samplers
-  textures = ['_segmentation_texture','_colormap_texture','_merge_table_keys','_merge_table_values','_lock_table','_image_texture'];
+  var textures = ['_segmentation_texture','_colormap_texture','_merge_table_keys','_merge_table_values','_lock_table','_image_texture'];
   textures.map( (v,i) => this._textures[v] = {sampler: uniforms[i], filter: 'NEAREST', flip :true} );
 
   // create geometry
