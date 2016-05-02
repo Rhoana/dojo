@@ -89,7 +89,7 @@
     // FLOAT COMPARE FUNCTIONS WITH DELTA
     //
     bool equals(float id1, float id2) {
-      return (abs(id1-id2) <= 0.1);
+      return (abs(id1-id2) <= 0.2);
     }
 
     bool larger(float id1, float id2) {
@@ -105,14 +105,14 @@
     float lookup_key_(float m) {
 
       // Key for given index
-      vec4 m_key = texture2D(uMergeTableKeySampler, vec2(m/float(uMergeTableLength), 0.));
+      vec4 m_key = texture2D(uMergeTableKeySampler, vec2(m, 0.));
       return unpack(m_key)*255.;
 
     }
     float lookup_value_(float m) {
 
       // Value for given index
-      vec4 m_value = texture2D(uMergeTableValueSampler, vec2(m/float(uMergeTableLength), 0.));
+      vec4 m_value = texture2D(uMergeTableValueSampler, vec2(m, 0.));
       return unpack(m_value)*255.;
 
     }
@@ -122,26 +122,27 @@
     //
     float lookup_id(float key) {
       // Array size
-      int last = uMergeTableLength;
-      int first = 0;
+      float first = 0.;
+      float last = 1.;
+      float delta = 1./float(uMergeTableLength);
 
       // Search within log(n) runtime
-      for (int i = 0; i <= bMAX; i++) {
+      for (int i = 0; i <= 10*bMAX; i++) {
         // Break if list gone
-        if (first > last) break;
+        if (larger(first,last)) break;
 
         // Evaluate the midpoint
-        int mid = (first + last) / 2;
-        float here = lookup_key_(float(mid));
+        float mid = (first + last) / 2.0;
+        float here = lookup_key_(mid);
 
         // Search below midpoint
-        if (larger(here,key)) last = mid-1;
+        if (larger(here,key)) last = mid-delta;
 
         // Search above midpoint
-        else if (larger(key,here)) first = mid+1;
+        else if (larger(key,here)) first = mid+delta;
 
         // Return the key at midpoint
-        else return lookup_value_(float(mid));
+        else return lookup_value_(mid);
       }
       // Assume unmerged
       return key;
