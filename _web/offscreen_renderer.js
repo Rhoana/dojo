@@ -9,6 +9,7 @@ J.offscreen_renderer = function(viewer) {
   this._gl = null;
 
   this._program = null;
+  this._textures = {};
 
   this._square_buffer = null;
   this._uv_buffer = null;
@@ -51,13 +52,18 @@ J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
   gl.useProgram(h);
 
   // List uniform variables and attributes
-  uniforms = ['uImageSampler','uTextureSampler','uColorMapSampler','uMergeTableKeySampler','uMergeTableValueSampler','uLockTableSampler'];
+  uniforms = ['uTextureSampler','uColorMapSampler','uMergeTableKeySampler','uMergeTableValueSampler','uLockTableSampler','uImageSampler'];
   uniforms = uniforms.concat(['uOpacity','uHighlightedId','uActivatedId','uSplitMode','uAdjustMode','uMaxColors','uBorders']);
   uniforms = uniforms.concat(['uOnlyLocked','uMergeTableEnd','uMergeTableLength','uLockTableLength','uShowOverlay']);
-  attributes = ['aPosition','aTexturePosition'];
+  var attributes = ['aPosition','aTexturePosition'];
+
   // Store uniform variables and atributes
   uniforms.map(s => this['h_'+s] = gl.getUniformLocation(h,s) );
   attributes.map(s => this['h_'+s] = gl.getAttribLocation(h,s) );
+
+  // Specify names of textures with corresponding samplers
+  textures = ['_segmentation_texture','_colormap_texture','_merge_table_keys','_merge_table_values','_lock_table','_image_texture'];
+  textures.map( (v,i) => this._textures[v] = {sampler: uniforms[i], filter: 'NEAREST', flip :true} );
 
   // create geometry
   this._square_buffer = gl.createBuffer();
@@ -78,9 +84,9 @@ J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
 
 };
 
-J.offscreen_renderer.prototype.buffer = function(gl,name,filter,flip) {
+J.offscreen_renderer.prototype.buffer = function(gl,name,val) {
 
-  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, flip || true);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, val.flip);
 
   this[name] = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, this[name]);
@@ -88,8 +94,8 @@ J.offscreen_renderer.prototype.buffer = function(gl,name,filter,flip) {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl[filter]);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl[filter]);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl[val.filter]);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl[val.filter]);
 
   gl.bindTexture(gl.TEXTURE_2D, null);
 
@@ -100,23 +106,13 @@ J.offscreen_renderer.prototype.init_buffers = function() {
 
   var gl = this._gl;
 
-  // create colormap texture buffer
-  gl = this.buffer(gl,'_colormap_texture','NEAREST');
+  this._textures['_lock_table'].flip = false;
+  this._textures['_merge_table_keys'].flip = false;
+  this._textures['_image_texture'].filter = 'LINEAR';
 
-  // create segmentation texture buffer
-  gl = this.buffer(gl,'_segmentation_texture','NEAREST');
-
-  // create image texture buffer
-  gl = this.buffer(gl,'_image_texture','LINEAR');
-
-  // create lock table buffer
-  gl = this.buffer(gl,'_lock_table','NEAREST',false);
-
-  // create merge table keys buffer
-  gl = this.buffer(gl,'_merge_table_keys','NEAREST',false);
-
-  // create merge table values buffer
-  gl = this.buffer(gl,'_merge_table_values','NEAREST');
+  for ( k in this._textures) {
+    gl = this.buffer(gl, k, this._textures[k]);
+  }
 
   // u-v
   this._uv_buffer = gl.createBuffer();
@@ -219,7 +215,6 @@ J.offscreen_renderer.prototype.draw = function(i, s, c, x, y) {
   gl.uniform1i(this.h_uMergeTableLength, merge_table_length);
   gl.uniform1i(this.h_uLockTableLength, lock_table_length);
   gl.uniform1i(this.h_uShowOverlay, this._viewer._overlay_show);
-
 
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, this._segmentation_texture);
