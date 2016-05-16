@@ -449,7 +449,7 @@ DOJO.init_threeD = function() {
   vol.labelmap.file = '/segmentation/volume/'+volume_zoomlevel+'/&.RZ';
   vol.labelmap.dimensions = vol.dimensions;
   vol.labelmap.opacity = 0.5;
-  vol.labelmap._dirty = true;
+//  vol.labelmap._dirty = true;
 
 
   DOJO.threeD.volume = vol;
