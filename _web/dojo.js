@@ -524,7 +524,7 @@ DOJO.init_threeD = function() {
 
   r.onShowtime = function() {
 
-    vol.volumeRendering = false;
+    vol.volumeRendering = true;
     vol.opacity = 0.5;
 
     // we also need to redraw the problem table
