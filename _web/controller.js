@@ -12,26 +12,21 @@ J.controller = function(viewer) {
   this._current_orphan = 0;
   this._orphans = null;
 
-  this._new_merge_table = {};
-
-  this._temp_merge_table = {};
-
+  this._lock_table = null;
+  this._gl_lock_table = null;
+  this._gl_lock_table_changed = true;
+  this._gl_merge_table_changed = true;
+  this._gl_colormap_changed = true;
   this._gl_merge_table_keys = null;
   this._gl_merge_table_values = null;
-  this._gl_merge_table_changed = true;
+  this._new_merge_table = {};
+  this._temp_merge_table = {};
+
+  this._lock_table_length = -1;
   this._merge_table_length = -1;
   this._merge_table_end = -1;
 
-  this._gl_colormap_changed = true;
-
-  this._lock_table = null;
-
-  this._gl_lock_table = null;
-  this._lock_table_length = -1;
-  this._gl_lock_table_changed = true;
-
   this._highlighted_id = null;
-
   this._activated_id = null;
 
   this._use_3d_labels = false;
@@ -58,8 +53,8 @@ J.controller = function(viewer) {
   this._brush_size = 3;
   this._brush_ijs = [];
 
-  this._merge_mode = -1;
   this._merge_id = -1;
+  this._merge_mode = -1;
   this._merge_target_ids = [];
 
   this.create_gl_3d_labels();
