@@ -438,8 +438,9 @@ DOJO.init_threeD = function() {
   var volume_zoomlevel = pad(DOJO.viewer._image.zoomlevel_count - 1, 8);
 
   var vol = new X.volume();
-  vol.dimensions = [512,512,Math.floor(DOJO.viewer._image.max_z_tiles/4)];
-  vol.spacing = [1,1,1];//Math.floor(512/DOJO.viewer._image.max_z_tiles)/.5];
+  vol.dimensions = [512,512,Math.floor(DOJO.viewer._image.max_z_tiles)];
+//   vol.spacing = [1,1,Math.floor(512/DOJO.viewer._image.max_z_tiles)*2];
+  vol.spacing = [1,1,1];
   vol.xySampleRate = 8;
   vol.zSampleRate = 1;
   vol.file = '/image/volume/'+volume_zoomlevel+'/&.RZ';
@@ -448,7 +449,7 @@ DOJO.init_threeD = function() {
   vol.labelmap.file = '/segmentation/volume/'+volume_zoomlevel+'/&.RZ';
   vol.labelmap.dimensions = vol.dimensions;
   vol.labelmap.opacity = 0.5;
-  // vol.labelmap._dirty = true;
+  vol.labelmap._dirty = true;
 
 
   DOJO.threeD.volume = vol;
@@ -523,7 +524,7 @@ DOJO.init_threeD = function() {
 
   r.onShowtime = function() {
 
-    vol.volumeRendering = true;
+    vol.volumeRendering = false;
     vol.opacity = 0.5;
 
     // we also need to redraw the problem table
