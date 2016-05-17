@@ -4,7 +4,8 @@ J.camera = function(viewer) {
 
   this._viewer = viewer;
   this._loader = this._viewer._loader;
-
+  // Initialize empty variables
+  this._zStack = 1;
   this._x = 0;
   this._y = 0;
   this._z = 0;
@@ -231,7 +232,7 @@ J.camera.prototype.slice_up = function() {
   this._loader.load_tiles(this._x, this._y, ++this._z, this._w, this._w, false);
 
   if (DOJO.threeD)
-    DOJO.threeD.slice.transform.translateZ(DOJO.threeD.volume.spacing[2]);
+    DOJO.threeD.slice.transform.translateZ(DOJO.threeD.volume.spacing[2]*this._zStack);
 
   DOJO.update_slice_number(this._z+1);
 
@@ -252,7 +253,7 @@ J.camera.prototype.slice_down = function() {
   this._loader.load_tiles(this._x, this._y, --this._z, this._w, this._w, false);
 
   if (DOJO.threeD)
-    DOJO.threeD.slice.transform.translateZ(-DOJO.threeD.volume.spacing[2]);
+    DOJO.threeD.slice.transform.translateZ(-DOJO.threeD.volume.spacing[2]*this._zStack);
 
   DOJO.update_slice_number(this._z+1);
 
