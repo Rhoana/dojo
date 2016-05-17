@@ -69,7 +69,7 @@ class Segmentation(Datasource):
     out_is_there = False
 
     # Sample all slices or a maximum number of z slices from all files
-    for i in np.linspace(0,len(files)-1, num=min(len(files),self._Datasource__zSample_max), dtype=int):
+    for i in np.linspace(0,len(files)-1, num=min(len(files),self._Datasource__zSample_max)).astype('int'):
 
       list_of_names = []
       hdf5_file = h5py.File(files[i])
