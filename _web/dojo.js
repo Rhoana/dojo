@@ -436,8 +436,7 @@ DOJO.init_threeD = function() {
   DOJO.threeD.renderer = r;
 
   var vol = new X.volume();
-  var zSample_max = 50;
-  var zSample_num = Math.min(zSample_max,DOJO.viewer._image.max_z_tiles);
+  var zSample_num = Math.min(DOJO.viewer._image.zSample_max,DOJO.viewer._image.max_z_tiles);
   var volume_zoomlevel = pad(DOJO.viewer._image.zoomlevel_count - 1, 8);
 
   vol.spacing = [1,1,Math.floor(512/zSample_num)];

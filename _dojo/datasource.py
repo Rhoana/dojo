@@ -30,8 +30,10 @@ class Datasource(object):
     # this is required to connect the deepzoom protocol to mojo zoom
     self.__max_deepzoom_level = 0.0
     self.__max_mojozoom_level = 0.0
-    
+
+    # Actual z-stack and max 3D z-stack
     self.__max_z_tiles = 0
+    self.__zSample_max = 50
 
     self.__has_colormap = False
     self.__colormap = None
@@ -177,6 +179,7 @@ class Datasource(object):
     if self.__query_toc_regex.match(request.uri):
       content_type = 'text/html'
       content = {}
+      content['zSample_max'] = self.__zSample_max
       content['max_z_tiles'] = self.__max_z_tiles
       content['colormap'] = str(self.__has_colormap).lower()
       content['width'] = self.__info['numVoxelsX']

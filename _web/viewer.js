@@ -86,6 +86,7 @@ J.viewer.prototype.init = function(callback) {
     // type cast some stuff
     this._image.width = parseInt(this._image.width, 10);
     this._image.height = parseInt(this._image.height, 10);
+    this._image.zSample_max = parseInt(this._image.zSample_max, 10);
     this._image.zoomlevel_count = parseInt(this._image.zoomlevel_count, 10);
     this._image.max_z_tiles = parseInt(this._image.max_z_tiles, 10);
 

@@ -31,10 +31,8 @@ class Image(Datasource):
     out = None
     out_is_there = False
 
-    zSample_max = 50
-
     # Sample all slices or a maximum number of z slices from all files
-    for i in np.linspace(0,len(files)-1,min(len(files),zSample_max), dtype=int):
+    for i in np.linspace(0,len(files)-1, num=min(len(files),self._Datasource__zSample_max), dtype=int):
 
       input_image = cv2.imread(files[i],0)
 
