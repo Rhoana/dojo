@@ -68,12 +68,13 @@ class Segmentation(Datasource):
     out = None
     out_is_there = False
 
-    for i,f in enumerate(files):
+    zSample_max = 50
 
-      if i % 4 != 0:
-        continue
-      hdf5_file = h5py.File(f)
+    # Sample all slices or a maximum number of z slices from all files
+    for i in np.linspace(0,len(files)-1,min(len(files),zSample_max), dtype=int):
+
       list_of_names = []
+      hdf5_file = h5py.File(files[i])
       hdf5_file.visit(list_of_names.append)
       image_data = hdf5_file[list_of_names[0]].value
       hdf5_file.close()

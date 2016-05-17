@@ -435,15 +435,15 @@ DOJO.init_threeD = function() {
 
   DOJO.threeD.renderer = r;
 
+  var vol = new X.volume();
+  var zSample_max = 50;
+  var zSample_num = Math.min(zSample_max,DOJO.viewer._image.max_z_tiles);
   var volume_zoomlevel = pad(DOJO.viewer._image.zoomlevel_count - 1, 8);
 
-  var vol = new X.volume();
-  vol.dimensions = [512,512,Math.floor(DOJO.viewer._image.max_z_tiles)];
-//   vol.spacing = [1,1,Math.floor(512/DOJO.viewer._image.max_z_tiles)*2];
-  vol.spacing = [1,1,1];
-  vol.xySampleRate = 8;
-  vol.zSampleRate = 1;
+  vol.spacing = [1,1,Math.floor(512/zSample_num)];
+  vol.dimensions = [512,512,Math.floor(zSample_num)];
   vol.file = '/image/volume/'+volume_zoomlevel+'/&.RZ';
+  vol.xySampleRate = 1;
 
   vol.labelmap.use32bit = true;
   vol.labelmap.file = '/segmentation/volume/'+volume_zoomlevel+'/&.RZ';

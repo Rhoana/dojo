@@ -31,12 +31,12 @@ class Image(Datasource):
     out = None
     out_is_there = False
 
-    for i,f in enumerate(files):
+    zSample_max = 50
 
-      if i % 4 != 0:
-        continue
+    # Sample all slices or a maximum number of z slices from all files
+    for i in np.linspace(0,len(files)-1,min(len(files),zSample_max), dtype=int):
 
-      input_image = cv2.imread(f,0)#PILImage.open(f)#tif.imread(f)
+      input_image = cv2.imread(files[i],0)
 
       if out_is_there:
         #out = np.dstack([out, input_image])
