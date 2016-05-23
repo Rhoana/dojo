@@ -224,7 +224,7 @@ class Controller(object):
       self.finalize_split(input)
 
     elif input['name'] == 'ADJUST':
-      self.adjust(input)
+      print 'Not Adjusted'
 
     elif input['name'] == 'SAVE':
       input['name'] = 'SAVING'
@@ -342,24 +342,7 @@ class Controller(object):
             tile_dict[x][y] = image_data
 
         # go through rows of each tile and segmentation
-        seg_val = None
-        first_row = True
-        for r in tile_dict.keys():
-          column = None
-          first_column = True
-
-          for c in tile_dict[r]:
-            if first_column:
-              column = tile_dict[r][c]
-              first_column = False
-            else:
-              column = np.concatenate((column, tile_dict[r][c]), axis=0)
-
-          if first_row:
-            seg_val = column
-            first_row = False
-          else:
-            seg_val = np.concatenate((seg_val, column), axis=1)
+        row_val = self.tile_iter(tile_dict)
 
         #
         # NOW REPLACE THE PIXEL DATA
@@ -377,17 +360,17 @@ class Controller(object):
         bbox_relative[2] -= offset_x
         bbox_relative[3] -= offset_y
 
-        print seg_val.shape
+        print row_val.shape
 
-        seg_val[bbox_relative[1]:bbox_relative[3],bbox_relative[0]:bbox_relative[2]] = old_area
+        row_val[bbox_relative[1]:bbox_relative[3],bbox_relative[0]:bbox_relative[2]] = old_area
 
         # now create all zoomlevels
         max_zoomlevel = self.__dojoserver.get_segmentation().get_max_zoomlevel()
 
         target_i = 512*x_tiles[0]
         target_j = 512*y_tiles[0]
-        target_width = seg_val.shape[1]
-        target_height = seg_val.shape[0]
+        target_width = row_val.shape[1]
+        target_height = row_val.shape[0]
 
         for w in range(0, max_zoomlevel+1):
 
@@ -580,24 +563,7 @@ class Controller(object):
             tile_dict[x][y] = image_data
 
         # go through rows of each tile and segmentation
-        seg_val = None
-        first_row = True
-        for r in tile_dict.keys():
-          column = None
-          first_column = True
-
-          for c in tile_dict[r]:
-            if first_column:
-              column = tile_dict[r][c]
-              first_column = False
-            else:
-              column = np.concatenate((column, tile_dict[r][c]), axis=0)
-
-          if first_row:
-            seg_val = column
-            first_row = False
-          else:
-            row = np.concatenate((seg_val, column), axis=1)
+        row_val = self.tile_iter(tile_dict)
 
         #
         # NOW REPLACE THE PIXEL DATA
@@ -615,15 +581,15 @@ class Controller(object):
         bbox_relative[2] -= offset_x
         bbox_relative[3] -= offset_y
 
-        seg_val[bbox_relative[1]:bbox_relative[3],bbox_relative[0]:bbox_relative[2]] = new_area
+        row_val[bbox_relative[1]:bbox_relative[3],bbox_relative[0]:bbox_relative[2]] = new_area
 
         # now create all zoomlevels
         max_zoomlevel = self.__dojoserver.get_segmentation().get_max_zoomlevel()
 
         target_i = 512*x_tiles[0]
         target_j = 512*y_tiles[0]
-        target_width = seg_val.shape[1]
-        target_height = seg_val.shape[0]
+        target_width = row_val.shape[1]
+        target_height = row_val.shape[0]
 
         for w in range(0, max_zoomlevel+1):
 
@@ -752,138 +718,6 @@ class Controller(object):
 
     self.send_orphans()
 
-  def adjust(self, input):
-
-    values = input['value']
-
-    print 'adjust'
-
-    # try the temporary data first
-    data_path = self.__mojo_tmp_dir + '/ids/tiles/w=00000000/z='+str(values["z"]).zfill(8)
-
-    if not os.path.isdir(data_path):
-      data_path = self.__mojo_dir + '/ids/tiles/w=00000000/z='+str(values["z"]).zfill(8)
-
-    images = os.listdir(data_path)
-    tile = {}
-    for i in images:
-
-      location = os.path.splitext(i)[0].split(',')
-      for l in location:
-        l = l.split('=')
-        exec(l[0]+'=int("'+l[1]+'")')
-
-      if not x in tile:
-        tile[x] = {}
-
-      hdf5_file = h5py.File(os.path.join(data_path,i))
-      list_of_names = []
-      hdf5_file.visit(list_of_names.append)
-      image_data = hdf5_file[list_of_names[0]].value
-      hdf5_file.close()
-
-      tile[x][y] = image_data
-
-    row = None
-    first_row = True
-
-    # go through rows of each tile
-    for r in tile.keys():
-      column = None
-      first_column = True
-
-      for c in tile[r]:
-        if first_column:
-          column = tile[r][c]
-          first_column = False
-        else:
-          column = np.concatenate((column, tile[r][c]), axis=0)
-
-      if first_row:
-        row = column
-        first_row = False
-      else:
-        row = np.concatenate((row, column), axis=1)
-
-    tile = row
-
-    #
-    label_id = values['id']
-    i_js = values['i_js']
-    brush_size = values['brush_size']
-
-    for c in i_js:
-
-      x = int(c[0])# - brush_size/2)
-      y = int(c[1])# - brush_size/2)
-
-      for i in range(brush_size):
-        for j in range(brush_size):
-
-          tile[y+j,x+i] = label_id
-
-    full_coords = np.where(tile == label_id)
-    full_bbox = [min(full_coords[1]), min(full_coords[0]), max(full_coords[1]), max(full_coords[0])]
-
-    # split tile and save as hdf5
-    x0y0 = tile[0:512,0:512]
-    x1y0 = tile[0:512,512:1024]
-    x0y1 = tile[512:1024,0:512]
-    x1y1 = tile[512:1024,512:1024]
-
-    output_folder = self.__mojo_tmp_dir + '/ids/tiles/w=00000000/z='+str(values["z"]).zfill(8)+'/'
-
-    try:
-      os.makedirs(output_folder)
-    except OSError as exc: # Python >2.5
-      if exc.errno == errno.EEXIST and os.path.isdir(output_folder):
-        pass
-      else: raise
-
-    h5f = h5py.File(output_folder+'y=00000000,x=00000000.hdf5', 'w')
-    h5f.create_dataset('dataset_1', data=x0y0)
-    h5f.close()
-
-    h5f = h5py.File(output_folder+'y=00000001,x=00000000.hdf5', 'w')
-    h5f.create_dataset('dataset_1', data=x0y1)
-    h5f.close()
-
-    h5f = h5py.File(output_folder+'y=00000000,x=00000001.hdf5', 'w')
-    h5f.create_dataset('dataset_1', data=x1y0)
-    h5f.close()
-
-    h5f = h5py.File(output_folder+'y=00000001,x=00000001.hdf5', 'w')
-    h5f.create_dataset('dataset_1', data=x1y1)
-    h5f.close()
-
-    output_folder = self.__mojo_tmp_dir + '/ids/tiles/w=00000001/z='+str(values["z"]).zfill(8)+'/'
-
-    try:
-      os.makedirs(output_folder)
-    except OSError as exc: # Python >2.5
-      if exc.errno == errno.EEXIST and os.path.isdir(output_folder):
-        pass
-      else: raise
-
-    # zoomed_tile = tile.reshape(512,512)
-    zoomed_tile = ndimage.interpolation.zoom(tile, .5, order=0, mode='nearest')
-    h5f = h5py.File(output_folder+'y=00000000,x=00000000.hdf5', 'w')
-    h5f.create_dataset('dataset_1', data=zoomed_tile)
-    h5f.close()
-
-    output = {}
-    output['name'] = 'RELOAD'
-    output['origin'] = input['origin']
-    output['value'] = {'z':values["z"], 'full_bbox':str(full_bbox)}
-    # print output
-    self.__websocket.send(json.dumps(output))
-
-    output = {}
-    output['name'] = 'ADJUSTDONE'
-    output['origin'] = input['origin']
-    output['value'] = {'z':values["z"], 'full_bbox':str(full_bbox)}
-    self.__websocket.send(json.dumps(output))
-
   def save(self, input):
 
     print 'SAVING..'
@@ -987,8 +821,6 @@ class Controller(object):
         if not os.path.exists(os.path.join(ids_data_path,s)):
           ids_data_path = self.__mojo_dir + '/ids/tiles/w=00000000/z='+str(values["z"]).zfill(8)
 
-        # print os.path.join(ids_data_path,s)
-
         hdf5_file = h5py.File(os.path.join(ids_data_path,s))
         list_of_names = []
         hdf5_file.visit(list_of_names.append)
@@ -998,26 +830,9 @@ class Controller(object):
         tile_dict[x][y] = image_data
 
     # go through rows of each tile and segmentation
-    seg_val = None
-    first_row = True
-    for r in tile_dict.keys():
-      column = None
-      first_column = True
+    row_val = self.tile_iter(tile_dict)
 
-      for c in tile_dict[r]:
-        if first_column:
-          column = tile_dict[r][c]
-          first_column = False
-        else:
-          column = np.concatenate((column, tile_dict[r][c]), axis=0)
-
-      if first_row:
-        seg_val = column
-        first_row = False
-      else:
-        seg_val = np.concatenate((seg_val, column), axis=1)
-
-    old_tile = seg_val
+    old_tile = row_val
 
     #
     label_id = values['id']
@@ -1035,10 +850,10 @@ class Controller(object):
 
     while label_touches_border:
 
-      touches_left = label_id in seg_val[:,0]
-      touches_right = label_id in seg_val[:,seg_val.shape[1]-1]
-      touches_top = label_id in seg_val[0,:]
-      touches_bottom = label_id in seg_val[seg_val.shape[0]-1, :]
+      touches_left = label_id in row_val[:,0]
+      touches_right = label_id in row_val[:,row_val.shape[1]-1]
+      touches_top = label_id in row_val[0,:]
+      touches_bottom = label_id in row_val[row_val.shape[0]-1, :]
 
       label_touches_border = touches_left or touches_right or touches_bottom or touches_top
 
@@ -1105,26 +920,9 @@ class Controller(object):
             tile_dict[x][y] = image_data
 
         # go through rows of each tile and segmentation, AGAIN!
-        seg_val = None
-        first_row = True
-        for r in tile_dict.keys():
-          column = None
-          first_column = True
+        row_val = self.tile_iter(tile_dict)
 
-          for c in tile_dict[r]:
-            if first_column:
-              column = tile_dict[r][c]
-              first_column = False
-            else:
-              column = np.concatenate((column, tile_dict[r][c]), axis=0)
-
-          if first_row:
-            seg_val = column
-            first_row = False
-          else:
-            seg_val = np.concatenate((seg_val, column), axis=1)
-
-        old_tile = seg_val
+        old_tile = row_val
 
       else:
 
@@ -1151,20 +949,20 @@ class Controller(object):
 
     # run through tile
     # lookup each label
-    for i in range(seg_val.shape[0]):
-      for j in range(seg_val.shape[1]):
-        seg_val[i,j] = self.lookup_label(seg_val[i,j])
+    for i in range(row_val.shape[0]):
+      for j in range(row_val.shape[1]):
+        row_val[i,j] = self.lookup_label(row_val[i,j])
 
     print '0'
 
-    s_tile = np.zeros(seg_val.shape)
+    s_tile = np.zeros(row_val.shape)
 
     # for l in self.lookup_merge_label(label_id):
 
     #   s_tile[tile == int(l)] = 1
     #   tile[tile == int(l)] = label_id
 
-    s_tile[seg_val == label_id] = 1
+    s_tile[row_val == label_id] = 1
 
     #mh.imsave('/tmp/seg.tif', s_tile.astype(np.uint8))
     #mh.imsave('/tmp/tile.tif', tile.astype(np.uint8))
@@ -1213,7 +1011,7 @@ class Controller(object):
     label_image[label_image == selected_label] = 0 # should be zero then
     label_image[label_image == unselected_label] = new_id - self.lookup_label(label_id)
 
-    tile = np.add(seg_val, label_image).astype(np.uint32)
+    tile = np.add(row_val, label_image).astype(np.uint32)
 
     print '3'
 
@@ -1400,7 +1198,7 @@ class Controller(object):
     print x_tiles, y_tiles
 
     tile_dict = {}
-    segtile = {}
+    seg_dict = {}
 
     for x in x_tiles:
       for y in y_tiles:
@@ -1408,8 +1206,8 @@ class Controller(object):
         if not x in tile_dict:
           tile_dict[x] = {}
 
-        if not x in segtile:
-          segtile[x] = {}
+        if not x in seg_dict:
+          seg_dict[x] = {}
 
         i = 'y='+str(y).zfill(8)+',x='+str(x).zfill(8)+'.'+self.__dojoserver.get_image().get_input_format()
 
@@ -1431,32 +1229,10 @@ class Controller(object):
         image_data = hdf5_file[list_of_names[0]].value
         hdf5_file.close()
 
-        segtile[x][y] = image_data
+        seg_dict[x][y] = image_data
 
     # go through rows of each tile and segmentation
-    row_val = None
-    row_seg = None
-    first_row = True
-    for r in tile_dict.keys():
-      column_val = None
-      first_column = True
-
-      for c in tile_dict[r]:
-        if first_column:
-          column_val = tile_dict[r][c]
-          column_seg = segtile[r][c]
-          first_column = False
-        else:
-          column_val = np.concatenate((column_val, tile_dict[r][c]), axis=0)
-          column_seg = np.concatenate((column_seg, segtile[r][c]), axis=0)
-
-      if first_row:
-        row_val = column_val
-        row_seg = column_seg
-        first_row = False
-      else:
-        row_val = np.concatenate((row_val, column_val), axis=1)
-        row_seg = np.concatenate((row_seg, column_seg), axis=1)
+    [row_val,row_seg] = self.tile_iter(tile_dict,seg_dict)
 
     label_id = values['id']
 
@@ -1527,8 +1303,8 @@ class Controller(object):
                 # yes, old data
                 continue
 
-            if not x in segtile:
-              segtile[x] = {}
+            if not x in seg_dict:
+              seg_dict[x] = {}
 
             i = 'y='+str(y).zfill(8)+',x='+str(x).zfill(8)+'.'+self.__dojoserver.get_image().get_input_format()
 
@@ -1548,31 +1324,10 @@ class Controller(object):
             image_data = hdf5_file[list_of_names[0]].value
             hdf5_file.close()
 
-            segtile[x][y] = image_data
+            seg_dict[x][y] = image_data
 
         # go through rows of each tile and segmentation, AGAIN!
-        row_val = None
-        first_row = True
-        for r in tile_dict.keys():
-          column = None
-          first_column = True
-
-          for c in tile_dict[r]:
-            if first_column:
-              column = tile_dict[r][c]
-              column_seg = segtile[r][c]
-              first_column = False
-            else:
-              column = np.concatenate((column, tile_dict[r][c]), axis=0)
-              column_seg = np.concatenate((column_seg, segtile[r][c]), axis=0)
-
-          if first_row:
-            row_val = column
-            row_seg = column_seg
-            first_row = False
-          else:
-            row_val = np.concatenate((row_val, column), axis=1)
-            row_seg = np.concatenate((row_seg, column_seg), axis=1)
+        [row_val,row_seg] = self.tile_iter(tile_dict,seg_dict)
 
       else:
 
@@ -1755,6 +1510,30 @@ class Controller(object):
     output['value'] = lines
     # print output
     self.__websocket.send(json.dumps(output))
+
+  def tile_iter(self,*dicts):
+    lend = range(len(dicts))
+    rows = [None]*len(dicts)
+    first_row = True
+    for r in dicts[0].keys():
+      cols = [None]*len(dicts)
+      first_col = True
+
+      for c in dicts[0][r]:
+        if first_col:
+          cols = [dicts[i][r][c] for i in lend]
+          first_col = False
+        else:
+          cols = [np.concatenate((cols[i], dicts[i][r][c]), axis=0) for i in lend]
+
+      if first_row:
+        rows = cols
+        first_row = False
+      else:
+        rows = [np.concatenate((rows[i], cols[i]), axis=1) for i in lend]
+
+    # Return the only tile value or all tile values
+    return rows[0] if len(dicts) == 1 else rows
 
   def lookup_label(self, label_id):
 
