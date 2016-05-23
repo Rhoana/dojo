@@ -338,108 +338,8 @@ class Controller(object):
 
         row_val[bbox_relative[1]:bbox_relative[3],bbox_relative[0]:bbox_relative[2]] = old_area
 
-        # now create all zoomlevels
-        max_zoomlevel = self.__dojoserver.get_segmentation().get_max_zoomlevel()
-
-        target_i = 512*self.x_tiles[0]
-        target_j = 512*self.y_tiles[0]
-        target_width = row_val.shape[1]
-        target_height = row_val.shape[0]
-
-        for w in range(0, max_zoomlevel+1):
-
-          output_folder = self.__mojo_tmp_dir + '/ids/tiles/w='+str(w).zfill(8)+'/z='+str(self.z).zfill(8)+'/'
-
-          try:
-            os.makedirs(output_folder)
-          except OSError as exc: # Python >2.5
-            if exc.errno == errno.EEXIST and os.path.isdir(output_folder):
-              pass
-            else: raise
-
-          if w!=0:
-            row_val = ndimage.interpolation.zoom(row_val, .5, order=0, mode='nearest')
-
-          print '='*80
-          print 'W', w
-
-          # find tiles
-          self.x_tiles = range((target_i//512), (((target_i + target_width-1)//512) + 1))
-          self.y_tiles = range((target_j//512), (((target_j + target_height-1)//512) + 1))
-
-          print 'TILES', self.x_tiles, self.y_tiles
-
-          tile_width = 0
-          pixel_written_x = 0
-
-          for i,x in enumerate(self.x_tiles):
-
-              # let's grab the pixel coordinate of all tiles of this column
-              tile_x = x*512
-
-              # now the offset in x for this column
-              if (i==0):
-                  offset_x = target_i - tile_x + i*512
-              else:
-                  offset_x = 0
-
-              pixel_written_y = 0
-
-              for j,y in enumerate(self.y_tiles):
-
-                  #
-                  # load old tile
-                  #
-
-                  s = 'y='+str(y).zfill(8)+',x='+str(x).zfill(8)+'.hdf5'
-
-                  # try the temporary data first
-                  ids_data_path = self.__mojo_tmp_dir + '/ids/tiles/w='+str(w).zfill(8)+'/z='+str(self.z).zfill(8)
-
-                  if not os.path.exists(os.path.join(ids_data_path,s)):
-                    ids_data_path = self.__mojo_dir + '/ids/tiles/w='+str(w).zfill(8)+'/z='+str(self.z).zfill(8)
-
-                  hdf5_file = h5py.File(os.path.join(ids_data_path,s))
-                  list_of_names = []
-                  hdf5_file.visit(list_of_names.append)
-                  image_data = hdf5_file[list_of_names[0]].value
-                  hdf5_file.close()
-
-                  # let's grab the pixel coordinate of this tile
-                  tile_y = y*512
-
-                  if (j==0):
-                      offset_y = target_j - tile_y + j*512
-                  else:
-                      offset_y = 0
-
-                  tile_width = min(512-offset_x, target_width-pixel_written_x)
-                  tile_height = min(512-offset_y, target_height-pixel_written_y)
-
-                  print 'pixel X,Y', tile_x, tile_y
-                  print 'copying', pixel_written_y,':',pixel_written_y+tile_height,',',pixel_written_x,':',pixel_written_x+tile_width
-                  print '     to', offset_y,':',offset_y+tile_height,',', offset_x,':',offset_x+tile_width
-
-                  image_data[offset_y:offset_y+tile_height,offset_x:offset_x+tile_width] = row_val[pixel_written_y:pixel_written_y+tile_height,pixel_written_x:pixel_written_x+tile_width]
-
-                  hdf5filename = output_folder+s
-                  h5f = h5py.File(hdf5filename, 'w')
-                  h5f.create_dataset('dataset_1', data=image_data)
-                  h5f.close()
-
-                  print 'written', hdf5filename
-
-                  pixel_written_y += tile_height
-
-              pixel_written_x += tile_width
-
-
-
-          # update target values
-          target_i /= 2
-          target_j /= 2
-          target_width /= 2
-          target_height /= 2
+        # Save all the splits
+        self.save_iter(row_val)
 
         # send reload event
         output = {}
@@ -533,111 +433,8 @@ class Controller(object):
 
         row_val[bbox_relative[1]:bbox_relative[3],bbox_relative[0]:bbox_relative[2]] = new_area
 
-        # now create all zoomlevels
-        max_zoomlevel = self.__dojoserver.get_segmentation().get_max_zoomlevel()
-
-        target_i = 512*self.x_tiles[0]
-        target_j = 512*self.y_tiles[0]
-        target_width = row_val.shape[1]
-        target_height = row_val.shape[0]
-
-        for w in range(0, max_zoomlevel+1):
-
-          output_folder = self.__mojo_tmp_dir + '/ids/tiles/w='+str(w).zfill(8)+'/z='+str(self.z).zfill(8)+'/'
-
-          try:
-            os.makedirs(output_folder)
-          except OSError as exc: # Python >2.5
-            if exc.errno == errno.EEXIST and os.path.isdir(output_folder):
-              pass
-            else: raise
-
-          if w!=0:
-            row_val = ndimage.interpolation.zoom(row_val, .5, order=0, mode='nearest')
-
-          print '='*80
-          print 'W', w
-
-          # find tiles
-          self.x_tiles = range((target_i//512), (((target_i + target_width-1)//512) + 1))
-          self.y_tiles = range((target_j//512), (((target_j + target_height-1)//512) + 1))
-
-          print 'TILES', self.x_tiles, self.y_tiles
-
-          tile_width = 0
-          pixel_written_x = 0
-
-
-          for i,x in enumerate(self.x_tiles):
-
-              # let's grab the pixel coordinate of all tiles of this column
-              tile_x = x*512
-
-              # now the offset in x for this column
-              if (i==0):
-                  offset_x = target_i - tile_x + i*512
-              else:
-                  offset_x = 0
-
-              pixel_written_y = 0
-
-              for j,y in enumerate(self.y_tiles):
-
-                  #
-                  # load old tile
-                  #
-
-                  s = 'y='+str(y).zfill(8)+',x='+str(x).zfill(8)+'.hdf5'
-
-                  # try the temporary data first
-                  ids_data_path = self.__mojo_tmp_dir + '/ids/tiles/w='+str(w).zfill(8)+'/z='+str(self.z).zfill(8)
-
-                  if not os.path.exists(os.path.join(ids_data_path,s)):
-                    ids_data_path = self.__mojo_dir + '/ids/tiles/w='+str(w).zfill(8)+'/z='+str(self.z).zfill(8)
-
-                  # print os.path.join(ids_data_path,s)
-
-                  hdf5_file = h5py.File(os.path.join(ids_data_path,s))
-                  list_of_names = []
-                  hdf5_file.visit(list_of_names.append)
-                  image_data = hdf5_file[list_of_names[0]].value
-                  hdf5_file.close()
-
-                  # let's grab the pixel coordinate of this tile
-                  tile_y = y*512
-
-                  if (j==0):
-                      offset_y = target_j - tile_y + j*512
-                  else:
-                      offset_y = 0
-
-                  tile_width = min(512-offset_x, target_width-pixel_written_x)
-                  tile_height = min(512-offset_y, target_height-pixel_written_y)
-
-                  print 'pixel X,Y', tile_x, tile_y
-                  print 'copying', pixel_written_y,':',pixel_written_y+tile_height,',',pixel_written_x,':',pixel_written_x+tile_width
-                  print '     to', offset_y,':',offset_y+tile_height,',', offset_x,':',offset_x+tile_width
-
-                  image_data[offset_y:offset_y+tile_height,offset_x:offset_x+tile_width] = row_val[pixel_written_y:pixel_written_y+tile_height,pixel_written_x:pixel_written_x+tile_width]
-
-                  hdf5filename = output_folder+s
-                  h5f = h5py.File(hdf5filename, 'w')
-                  h5f.create_dataset('dataset_1', data=image_data)
-                  h5f.close()
-
-                  print 'written', hdf5filename
-
-                  pixel_written_y += tile_height
-
-              pixel_written_x += tile_width
-
-
-
-          # update target values
-          target_i /= 2
-          target_j /= 2
-          target_width /= 2
-          target_height /= 2
+        # Save all the splits
+        self.save_iter(row_val)
 
         # send reload event
         output = {}
@@ -735,7 +532,6 @@ class Controller(object):
     self.send_new_merge_table('SERVER')
 
   def finalize_split(self, input):
-
 
     values = input['value']
     self.z = values['z']
@@ -928,113 +724,13 @@ class Controller(object):
 
     self.add_action(action)
 
-    # now create all zoomlevels
-    max_zoomlevel = self.__dojoserver.get_segmentation().get_max_zoomlevel()
+    # Save all the splits, yielding offsets
+    offsets = self.save_iter(tile)
 
-    target_i = 512*self.x_tiles[0]
-    target_j = 512*self.y_tiles[0]
-    target_width = tile.shape[1]
-    target_height = tile.shape[0]
-
-    for w in range(0, max_zoomlevel+1):
-
-      output_folder = self.__mojo_tmp_dir + '/ids/tiles/w='+str(w).zfill(8)+'/z='+str(values["z"]).zfill(8)+'/'
-
-      try:
-        os.makedirs(output_folder)
-      except OSError as exc: # Python >2.5
-        if exc.errno == errno.EEXIST and os.path.isdir(output_folder):
-          pass
-        else: raise
-
-      if w!=0:
-        tile = ndimage.interpolation.zoom(tile, .5, order=0, mode='nearest')
-
-      print '='*80
-      print 'W', w
-
-      # find tiles
-      self.x_tiles = range((target_i//512), (((target_i + target_width-1)//512) + 1))
-      self.y_tiles = range((target_j//512), (((target_j + target_height-1)//512) + 1))
-
-      print 'TILES', self.x_tiles, self.y_tiles
-
-      tile_width = 0
-      pixel_written_x = 0
-
-
-      for i,x in enumerate(self.x_tiles):
-
-          # let's grab the pixel coordinate of all tiles of this column
-          tile_x = x*512
-
-          # now the offset in x for this column
-          if (i==0):
-              offset_x = target_i - tile_x + i*512
-          else:
-              offset_x = 0
-
-          pixel_written_y = 0
-
-          for j,y in enumerate(self.y_tiles):
-
-              #
-              # load old tile
-              #
-
-              s = 'y='+str(y).zfill(8)+',x='+str(x).zfill(8)+'.hdf5'
-
-              # try the temporary data first
-              ids_data_path = self.__mojo_tmp_dir + '/ids/tiles/w='+str(w).zfill(8)+'/z='+str(values["z"]).zfill(8)
-
-              if not os.path.exists(os.path.join(ids_data_path,s)):
-                ids_data_path = self.__mojo_dir + '/ids/tiles/w='+str(w).zfill(8)+'/z='+str(values["z"]).zfill(8)
-
-              hdf5_file = h5py.File(os.path.join(ids_data_path,s))
-              list_of_names = []
-              hdf5_file.visit(list_of_names.append)
-              image_data = hdf5_file[list_of_names[0]].value
-              hdf5_file.close()
-
-              # let's grab the pixel coordinate of this tile
-              tile_y = y*512
-
-              if (j==0):
-                  offset_y = target_j - tile_y + j*512
-              else:
-                  offset_y = 0
-
-              tile_width = min(512-offset_x, target_width-pixel_written_x)
-              tile_height = min(512-offset_y, target_height-pixel_written_y)
-
-              print 'pixel X,Y', tile_x, tile_y
-
-              print 'copying', pixel_written_y,':',pixel_written_y+tile_height,',',pixel_written_x,':',pixel_written_x+tile_width
-              print '     to', offset_y,':',offset_y+tile_height,',', offset_x,':',offset_x+tile_width
-
-              image_data[offset_y:offset_y+tile_height,offset_x:offset_x+tile_width] = tile[pixel_written_y:pixel_written_y+tile_height,pixel_written_x:pixel_written_x+tile_width]
-
-              hdf5filename = output_folder+s
-              h5f = h5py.File(hdf5filename, 'w')
-              h5f.create_dataset('dataset_1', data=image_data)
-              h5f.close()
-
-              print 'written', hdf5filename
-
-              pixel_written_y += tile_height
-
-          pixel_written_x += tile_width
-
-      # update target values
-      target_i /= 2
-      target_j /= 2
-      target_width /= 2
-      target_height /= 2
-
-    full_bbox[0] += offset_x
-    full_bbox[1] += offset_y
-    full_bbox[2] += offset_x
-    full_bbox[3] += offset_y
+    full_bbox[0] += offsets[0]
+    full_bbox[1] += offsets[1]
+    full_bbox[2] += offsets[0]
+    full_bbox[3] += offsets[1]
 
     output = {}
     output['name'] = 'RELOAD'
@@ -1321,6 +1017,113 @@ class Controller(object):
     # print output
     self.__websocket.send(json.dumps(output))
 
+  def save_iter(self,tile):
+    # now create all zoomlevels
+    max_zoomlevel = self.__dojoserver.get_segmentation().get_max_zoomlevel()
+
+    target_i = 512*self.x_tiles[0]
+    target_j = 512*self.y_tiles[0]
+    target_width = tile.shape[1]
+    target_height = tile.shape[0]
+
+    for w in range(0, max_zoomlevel+1):
+
+      output_folder = self.__mojo_tmp_dir + '/ids/tiles/w='+str(w).zfill(8)+'/z='+str(self.z).zfill(8)+'/'
+
+      try:
+        os.makedirs(output_folder)
+      except OSError as exc: # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(output_folder):
+          pass
+        else: raise
+
+      if w!=0:
+        tile = ndimage.interpolation.zoom(tile, .5, order=0, mode='nearest')
+
+      print '='*80
+      print 'W', w
+
+      # find tiles
+      self.x_tiles = range((target_i//512), (((target_i + target_width-1)//512) + 1))
+      self.y_tiles = range((target_j//512), (((target_j + target_height-1)//512) + 1))
+
+      print 'TILES', self.x_tiles, self.y_tiles
+
+      tile_width = 0
+      pixel_written_x = 0
+
+
+      for i,x in enumerate(self.x_tiles):
+
+          # let's grab the pixel coordinate of all tiles of this column
+          tile_x = x*512
+
+          # now the offset in x for this column
+          if (i==0):
+              offset_x = target_i - tile_x + i*512
+          else:
+              offset_x = 0
+
+          pixel_written_y = 0
+
+          for j,y in enumerate(self.y_tiles):
+
+              #
+              # load old tile
+              #
+
+              s = 'y='+str(y).zfill(8)+',x='+str(x).zfill(8)+'.hdf5'
+
+              # try the temporary data first
+              ids_data_path = self.__mojo_tmp_dir + '/ids/tiles/w='+str(w).zfill(8)+'/z='+str(self.z).zfill(8)
+
+              if not os.path.exists(os.path.join(ids_data_path,s)):
+                ids_data_path = self.__mojo_dir + '/ids/tiles/w='+str(w).zfill(8)+'/z='+str(self.z).zfill(8)
+
+              hdf5_file = h5py.File(os.path.join(ids_data_path,s))
+              list_of_names = []
+              hdf5_file.visit(list_of_names.append)
+              image_data = hdf5_file[list_of_names[0]].value
+              hdf5_file.close()
+
+              # let's grab the pixel coordinate of this tile
+              tile_y = y*512
+
+              if (j==0):
+                  offset_y = target_j - tile_y + j*512
+              else:
+                  offset_y = 0
+
+              tile_width = min(512-offset_x, target_width-pixel_written_x)
+              tile_height = min(512-offset_y, target_height-pixel_written_y)
+
+              print 'pixel X,Y', tile_x, tile_y
+
+              print 'copying', pixel_written_y,':',pixel_written_y+tile_height,',',pixel_written_x,':',pixel_written_x+tile_width
+              print '     to', offset_y,':',offset_y+tile_height,',', offset_x,':',offset_x+tile_width
+
+              image_data[offset_y:offset_y+tile_height,offset_x:offset_x+tile_width] = tile[pixel_written_y:pixel_written_y+tile_height,pixel_written_x:pixel_written_x+tile_width]
+
+              hdf5filename = output_folder+s
+              h5f = h5py.File(hdf5filename, 'w')
+              h5f.create_dataset('dataset_1', data=image_data)
+              h5f.close()
+
+              print 'written', hdf5filename
+
+              pixel_written_y += tile_height
+
+          pixel_written_x += tile_width
+
+      # update target values
+      target_i /= 2
+      target_j /= 2
+      target_width /= 2
+      target_height /= 2
+
+    # Return offsets
+    return [offset_x,offset_y]
+
   def file_iter(self,*dicts,**kwargs):
     lend = range(len(dicts))
     for x in self.x_tiles:
@@ -1405,4 +1208,3 @@ class Controller(object):
         labels = labels + self.lookup_merge_label(k)
 
     return labels
-
