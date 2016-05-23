@@ -23,7 +23,8 @@ DOJO.init = function() {
   DOJO.viewer.init(function() {
 
     DOJO.update_slice_number(1);
-
+    // Allows for highlighintg of searched segment
+    // Allowing for compatability with Neuroblocks
     if (typeof(args['activeId']) != 'undefined') {
       console.log('sdsd')
       var id = args['activeId'];
