@@ -359,9 +359,7 @@ class Controller(object):
             seg_val = column
             first_row = False
           else:
-            row = np.concatenate((seg_val, column), axis=1)
-
-        segmentation = seg_val
+            seg_val = np.concatenate((seg_val, column), axis=1)
 
         #
         # NOW REPLACE THE PIXEL DATA
