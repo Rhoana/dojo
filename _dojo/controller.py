@@ -983,8 +983,6 @@ class Controller(object):
 
         s = 'y='+str(y).zfill(8)+',x='+str(x).zfill(8)+'.'+self.__dojoserver.get_segmentation().get_input_format()
 
-        # tile_dict[x][y] = cv2.imread(os.path.join(data_path,i),0)
-
         # try the temporary data first
         ids_data_path = self.__mojo_tmp_dir + '/ids/tiles/w=00000000/z='+str(values["z"]).zfill(8)
 
