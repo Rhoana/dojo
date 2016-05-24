@@ -40,6 +40,9 @@ class Controller(object):
 
     self.__dojoserver = dojoserver
 
+    # Attributes for the split operation
+    [self.data_path,self.label_id,self.x_tiles,self.y_tiles,self.z] = [0,0,0,0,0]
+
     self.__actions = {}
 
     if self.__database:
@@ -534,6 +537,7 @@ class Controller(object):
   def finalize_split(self, input):
 
     values = input['value']
+    self.label_id = values['id']
     self.z = values['z']
 
     # find tiles we need for this split on highest res
@@ -556,10 +560,6 @@ class Controller(object):
     tile_dict = self.file_iter(tile_dict)[0]
     # go through rows of each segmentation
     row_val = self.tile_iter(tile_dict)[0]
-
-    #
-    label_id = values['id']
-    self.label_id = label_id
 
     ##
     #
@@ -598,7 +598,7 @@ class Controller(object):
     print '0'
 
     s_tile = np.zeros(row_val.shape)
-    s_tile[row_val == label_id] = 1
+    s_tile[row_val == self.label_id] = 1
 
     for c in i_js:
       s_tile[c[1]-offset_y, c[0]-offset_x] = 0
@@ -623,7 +623,7 @@ class Controller(object):
 
     self.__largest_id += 1
     new_id = self.__largest_id
-    print 'new largest id', new_id - self.lookup_label(label_id)
+    print 'new largest id', new_id - self.lookup_label(self.label_id)
 
     # unselected_label = selected_label==1 ? unselected_label=2 : unselected_label:1
 
@@ -636,7 +636,7 @@ class Controller(object):
     full_bbox = [min(full_coords[1]), min(full_coords[0]), max(full_coords[1]), max(full_coords[0])]
 
     label_image[label_image == selected_label] = 0 # should be zero then
-    label_image[label_image == unselected_label] = new_id - self.lookup_label(label_id)
+    label_image[label_image == unselected_label] = new_id - self.lookup_label(self.label_id)
 
     tile = np.add(row_val, label_image).astype(np.uint32)
 
@@ -698,6 +698,7 @@ class Controller(object):
     '''
     values = input['value']
     self.z = values['z']
+    self.label_id = values['id']
     self.data_path = self.__mojo_dir + '/images/tiles/w=00000000/z='+str(values['z']).zfill(8)
 
     # find tiles we need for this split on highest res
@@ -724,9 +725,6 @@ class Controller(object):
     [seg_dict,img_dict] = self.file_iter(seg_dict,img_dict)
     # go through rows of each tile and segmentation, AGAIN!
     [row_seg,row_img] = self.tile_iter(seg_dict,img_dict)
-
-    label_id = values['id']
-    self.label_id = label_id
 
     ##
     #
@@ -862,7 +860,7 @@ class Controller(object):
     lines = []
 
     print 'long loop start'
-    print 'Looking for ', label_id
+    print 'Looking for ', self.label_id
     print 'new mt', self.__new_merge_table
 
     for y in range(ws.shape[0]-1):
@@ -870,7 +868,7 @@ class Controller(object):
 
         # print 'looking for', seg_sub_tile[y,x]
 
-        if self.lookup_label(seg_sub_tile[y,x]) != label_id:
+        if self.lookup_label(seg_sub_tile[y,x]) != self.label_id:
           continue
 
         if ws[y,x] != ws[y,x+1]:
@@ -883,7 +881,7 @@ class Controller(object):
     for y in range(1,ws.shape[0]):
       for x in range(1,ws.shape[1]):
 
-        if self.lookup_label(seg_sub_tile[y,x]) != label_id:
+        if self.lookup_label(seg_sub_tile[y,x]) != self.label_id:
           continue
 
         if ws[y,x] != ws[y,x-1]:
