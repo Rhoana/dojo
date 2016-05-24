@@ -638,21 +638,19 @@ class Controller(object):
     bbox_relative[2] -= offset_y
     bbox_relative[3] -= offset_y
 
-    # run through tile
-    # lookup each label
-    for i in range(row_val.shape[0]):
-      for j in range(row_val.shape[1]):
-        row_val[i,j] = self.lookup_label(row_val[i,j])
+    # Apply saved hardened merges
+    lut = self.get_hard_merge_table()
+    row_val = lut[row_val]
+
+    # Temporarily harden new merges
+    new_merges = self.__new_merge_table
+    for k,v in new_merges.iteritems():
+      while str(v) in new_merges: v = new_merges[str(v)]
+      row_val[np.where(row_val==k)] = v
 
     print '0'
 
     s_tile = np.zeros(row_val.shape)
-
-    # for l in self.lookup_merge_label(label_id):
-
-    #   s_tile[tile == int(l)] = 1
-    #   tile[tile == int(l)] = label_id
-
     s_tile[row_val == label_id] = 1
 
     for c in i_js:
@@ -1184,18 +1182,13 @@ class Controller(object):
 
   def lookup_label(self, label_id):
 
-    label_id = str(label_id)
+    label_id = self.__hard_merge_table[label_id]
 
-    while label_id in self.__new_merge_table:
+    while str(label_id) in self.__new_merge_table:
 
-      label_id = self.__new_merge_table[label_id]
+      label_id = self.__new_merge_table[str(label_id)]
 
-    while label_id in self.__hard_merge_table:
-
-      # old_label_id = label_id
-      label_id = self.__hard_merge_table[label_id]
-
-    return int(label_id)
+    return label_id
 
   def lookup_merge_label(self,label_id):
 
