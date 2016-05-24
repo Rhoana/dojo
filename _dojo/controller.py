@@ -1189,15 +1189,3 @@ class Controller(object):
       label_id = self.__new_merge_table[str(label_id)]
 
     return label_id
-
-  def lookup_merge_label(self,label_id):
-
-
-    labels = [str(label_id)]
-
-    for (k,v) in self.__hard_merge_table.items():
-
-      if v == int(label_id):
-        labels = labels + self.lookup_merge_label(k)
-
-    return labels
