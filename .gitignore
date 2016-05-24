@@ -1,4 +1,5 @@
 *.pyc
+*.png
 *.ipynb
 .DS_Store
 nonsense.js

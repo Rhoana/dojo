@@ -314,9 +314,9 @@ class Controller(object):
         tile_dict = {} # here this is the segmentation
 
         # Load segmentation data
-        tile_dict = self.file_iter(tile_dict)
+        tile_dict = self.file_iter(tile_dict)[0]
         # go through rows of each segmentation
-        row_val = self.tile_iter(tile_dict)
+        row_val = self.tile_iter(tile_dict)[0]
 
         #
         # NOW REPLACE THE PIXEL DATA
@@ -411,9 +411,9 @@ class Controller(object):
         tile_dict = {} # here this is the segmentation
 
         # Load segmentation data
-        tile_dict = self.file_iter(tile_dict)
+        tile_dict = self.file_iter(tile_dict)[0]
         # go through rows of each tile and segmentation
-        row_val = self.tile_iter(tile_dict)
+        row_val = self.tile_iter(tile_dict)[0]
 
         #
         # NOW REPLACE THE PIXEL DATA
@@ -553,73 +553,20 @@ class Controller(object):
     tile_dict = {} # here this is the segmentation
 
     # Load segmentation data
-    tile_dict = self.file_iter(tile_dict)
+    tile_dict = self.file_iter(tile_dict)[0]
     # go through rows of each segmentation
-    row_val = self.tile_iter(tile_dict)
-
-    old_tile = row_val
+    row_val = self.tile_iter(tile_dict)[0]
 
     #
     label_id = values['id']
-
-    label_touches_border = True
+    self.label_id = label_id
 
     ##
     #
     # important: we need to detect if the label_id touches one of the borders of our segmentation
     # we need to load additional tiles until this is not the case anymore
     #
-
-    max_x_tiles = self.__dojoserver.get_image()._width / 512
-    max_y_tiles = self.__dojoserver.get_image()._height / 512
-
-    while label_touches_border:
-
-      touches_left = label_id in row_val[:,0]
-      touches_right = label_id in row_val[:,row_val.shape[1]-1]
-      touches_top = label_id in row_val[0,:]
-      touches_bottom = label_id in row_val[row_val.shape[0]-1, :]
-
-      label_touches_border = touches_left or touches_right or touches_bottom or touches_top
-
-      if not label_touches_border:
-        break
-
-      new_data = False
-
-      if touches_left and self.x_tiles[0] > 0:
-
-        # alright, we need to include more tiles in left x direction
-        self.x_tiles = [self.x_tiles[0]-1] + self.x_tiles
-        new_data = True
-
-      if touches_top and self.y_tiles[0] > 0:
-
-        self.y_tiles = [self.y_tiles[0]-1] + self.y_tiles
-        new_data = True
-
-      if touches_right and self.x_tiles[-1] < max_x_tiles-1:
-
-        self.x_tiles = self.x_tiles + [self.x_tiles[-1] + 1]
-        new_data = True
-
-      if touches_bottom and self.y_tiles[-1] < max_y_tiles-1:
-
-        self.y_tiles = self.y_tiles + [self.y_tiles[-1] + 1]
-        new_data = True
-
-      if new_data:
-
-        # Load new segmentation data
-        tile_dict = self.file_iter(tile_dict, up='date')
-        # go through rows of each tile and segmentation, AGAIN!
-        row_val = self.tile_iter(tile_dict)
-
-        old_tile = row_val
-
-      else:
-
-        label_touches_border = False
+    [row_val,old_tile] = self.edge_iter(tile_dict,row_val)
 
     i_js = values['line']
     bbox = values['bbox']
@@ -779,71 +726,15 @@ class Controller(object):
     [row_seg,row_img] = self.tile_iter(seg_dict,img_dict)
 
     label_id = values['id']
-
-    label_touches_border = True
+    self.label_id = label_id
 
     ##
     #
     # important: we need to detect if the label_id touches one of the borders of our segmentation
     # we need to load additional tiles until this is not the case anymore
     #
+    [row_seg,row_img] = self.edge_iter(seg_dict,img_dict,row_seg,row_img)
 
-    max_x_tiles = self.__dojoserver.get_image()._width / 512
-    max_y_tiles = self.__dojoserver.get_image()._height / 512
-
-    while label_touches_border:
-
-      touches_left = label_id in row_seg[:,0]
-      touches_right = label_id in row_seg[:,row_seg.shape[1]-1]
-      touches_top = label_id in row_seg[0,:]
-      touches_bottom = label_id in row_seg[row_seg.shape[0]-1, :]
-
-      label_touches_border = touches_left or touches_right or touches_bottom or touches_top
-
-      if not label_touches_border:
-        break
-
-      new_data = False
-
-      print touches_left, touches_right, touches_top, touches_bottom, self.x_tiles[0]
-
-      if touches_left and self.x_tiles[0] > 0:
-
-        # alright, we need to include more tiles in left x direction
-        self.x_tiles = [self.x_tiles[0]-1] + self.x_tiles
-        new_data = True
-
-      if touches_top and self.y_tiles[0] > 0:
-
-        self.y_tiles = [self.y_tiles[0]-1] + self.y_tiles
-        new_data = True
-
-      if touches_right and self.x_tiles[-1] < max_x_tiles-1:
-
-        self.x_tiles = self.x_tiles + [self.x_tiles[-1] + 1]
-        new_data = True
-
-      if touches_bottom and self.y_tiles[-1] < max_y_tiles-1:
-
-        # print 'bottom', max_y_tiles-1
-        self.y_tiles = self.y_tiles + [self.y_tiles[-1] + 1]
-        new_data = True
-
-      print new_data
-
-      if new_data:
-
-        # Load segmentation and image data through file
-        [seg_dict,img_dict] = self.file_iter(seg_dict,img_dict,up='date')
-        # go through rows of each tile and segmentation, AGAIN!
-        [row_seg,row_img] = self.tile_iter(seg_dict,img_dict)
-
-      else:
-
-        label_touches_border = False
-    #
-    # crop according to bounding box
-    #
     bbox = values['brush_bbox']
     bbox_relative = np.array(bbox)
 
@@ -888,8 +779,6 @@ class Controller(object):
 
       # add linear interpolation to brush stroke
       dense_brush += zip(ys,xs)
-
-      # make x axis dense
 
       # x and y coordinates of sparse points
       xp = [p0[1], p1[1]] if p0[0] < p1[0] else [p1[1], p0[1]]
@@ -1015,6 +904,122 @@ class Controller(object):
     # print output
     self.__websocket.send(json.dumps(output))
 
+  def file_iter(self,*dicts,**kwargs):
+    lend = range(len(dicts))
+    for x in self.x_tiles:
+      for y in self.y_tiles:
+        for i in lend:
+          if not x in dicts[i]:
+            dicts[i][x] = {}
+          # If updating data for last dictionary
+          elif 'up' in kwargs and i is len(dicts)-1:
+            # check for old data
+            if y in dicts[i][x]:
+              continue
+
+        # If extra dictionary for image data
+        if len(dicts) > 1:
+          img = 'y='+str(y).zfill(8)+',x='+str(x).zfill(8)+'.'+self.__dojoserver.get_image().get_input_format()
+          dicts[-1][x][y] = cv2.imread(os.path.join(self.data_path,img),0)
+        # Always get segmentation data
+        seg = 'y='+str(y).zfill(8)+',x='+str(x).zfill(8)+'.'+self.__dojoserver.get_segmentation().get_input_format()
+
+        # try the temporary data first
+        ids_data_path = self.__mojo_tmp_dir + '/ids/tiles/w=00000000/z='+str(self.z).zfill(8)
+        if not os.path.exists(os.path.join(ids_data_path,seg)):
+          ids_data_path = self.__mojo_dir + '/ids/tiles/w=00000000/z='+str(self.z).zfill(8)
+
+        hdf5_file = h5py.File(os.path.join(ids_data_path,seg))
+        list_of_names = []
+        hdf5_file.visit(list_of_names.append)
+        dicts[0][x][y] = hdf5_file[list_of_names[0]].value
+        hdf5_file.close()
+
+    # Return the only dictionary or all dictionaries
+    return dicts
+
+  def tile_iter(self,*dicts):
+    lend = range(len(dicts))
+    rows = [None]*len(dicts)
+    first_row = True
+    for r in dicts[0].keys():
+      cols = [None]*len(dicts)
+      first_col = True
+
+      for c in dicts[0][r]:
+        if first_col:
+          cols = [dicts[i][r][c] for i in lend]
+          first_col = False
+        else:
+          cols = [np.concatenate((cols[i], dicts[i][r][c]), axis=0) for i in lend]
+
+      if first_row:
+        rows = cols
+        first_row = False
+      else:
+        rows = [np.concatenate((rows[i], cols[i]), axis=1) for i in lend]
+
+    # Return the only tile value or all tile values
+    return rows
+
+  def edge_iter(self,*dicts_rows):
+    # Takes 2 or 4 arguments
+    lend = len(dicts_rows)//2
+    rows = dicts_rows[-lend:]
+    dicts = dicts_rows[:-lend]
+
+    label_touches_border = True
+    max_x_tiles = self.__dojoserver.get_image()._width / 512
+    max_y_tiles = self.__dojoserver.get_image()._height / 512
+
+    while label_touches_border:
+
+      touches_top = self.label_id in rows[0][0,:]
+      touches_left = self.label_id in rows[0][:,0]
+      touches_right = self.label_id in rows[0][:,rows[0].shape[1]-1]
+      touches_bottom = self.label_id in rows[0][rows[0].shape[0]-1, :]
+
+      label_touches_border = touches_left or touches_right or touches_bottom or touches_top
+
+      if not label_touches_border:
+        break
+
+      new_data = False
+
+      if touches_left and self.x_tiles[0] > 0:
+
+        # alright, we need to include more tiles in left x direction
+        self.x_tiles = [self.x_tiles[0]-1] + self.x_tiles
+        new_data = True
+
+      if touches_top and self.y_tiles[0] > 0:
+
+        self.y_tiles = [self.y_tiles[0]-1] + self.y_tiles
+        new_data = True
+
+      if touches_right and self.x_tiles[-1] < max_x_tiles-1:
+
+        self.x_tiles = self.x_tiles + [self.x_tiles[-1] + 1]
+        new_data = True
+
+      if touches_bottom and self.y_tiles[-1] < max_y_tiles-1:
+
+        self.y_tiles = self.y_tiles + [self.y_tiles[-1] + 1]
+        new_data = True
+
+      if new_data:
+
+        # go through rows of each tile and segmentation
+        rows = self.tile_iter(*self.file_iter(*dicts, up='date'))
+        # if only one dict, second row is copy of first row
+        if len(rows) == 1: rows.append(rows[0])
+
+      else:
+
+        label_touches_border = False
+
+    return rows
+
   def save_iter(self,tile):
     # now create all zoomlevels
     max_zoomlevel = self.__dojoserver.get_segmentation().get_max_zoomlevel()
@@ -1121,64 +1126,6 @@ class Controller(object):
 
     # Return offsets
     return [offset_x,offset_y]
-
-  def file_iter(self,*dicts,**kwargs):
-    lend = range(len(dicts))
-    for x in self.x_tiles:
-      for y in self.y_tiles:
-        for i in lend:
-          if not x in dicts[i]:
-            dicts[i][x] = {}
-          # If updating data for last dictionary
-          elif 'up' in kwargs and i is len(dicts)-1:
-            # check for old data
-            if y in dicts[i][x]:
-              continue
-
-        # If extra dictionary for image data
-        if len(dicts) > 1:
-          img = 'y='+str(y).zfill(8)+',x='+str(x).zfill(8)+'.'+self.__dojoserver.get_image().get_input_format()
-          dicts[-1][x][y] = cv2.imread(os.path.join(self.data_path,img),0)
-        # Always get segmentation data
-        seg = 'y='+str(y).zfill(8)+',x='+str(x).zfill(8)+'.'+self.__dojoserver.get_segmentation().get_input_format()
-
-        # try the temporary data first
-        ids_data_path = self.__mojo_tmp_dir + '/ids/tiles/w=00000000/z='+str(self.z).zfill(8)
-        if not os.path.exists(os.path.join(ids_data_path,seg)):
-          ids_data_path = self.__mojo_dir + '/ids/tiles/w=00000000/z='+str(self.z).zfill(8)
-
-        hdf5_file = h5py.File(os.path.join(ids_data_path,seg))
-        list_of_names = []
-        hdf5_file.visit(list_of_names.append)
-        dicts[0][x][y] = hdf5_file[list_of_names[0]].value
-        hdf5_file.close()
-
-    # Return the only dictionary or all dictionaries
-    return dicts[0] if len(dicts) == 1 else dicts
-
-  def tile_iter(self,*dicts):
-    lend = range(len(dicts))
-    rows = [None]*len(dicts)
-    first_row = True
-    for r in dicts[0].keys():
-      cols = [None]*len(dicts)
-      first_col = True
-
-      for c in dicts[0][r]:
-        if first_col:
-          cols = [dicts[i][r][c] for i in lend]
-          first_col = False
-        else:
-          cols = [np.concatenate((cols[i], dicts[i][r][c]), axis=0) for i in lend]
-
-      if first_row:
-        rows = cols
-        first_row = False
-      else:
-        rows = [np.concatenate((rows[i], cols[i]), axis=1) for i in lend]
-
-    # Return the only tile value or all tile values
-    return rows[0] if len(dicts) == 1 else rows
 
   def lookup_label(self, label_id):
 
