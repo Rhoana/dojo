@@ -566,7 +566,7 @@ class Controller(object):
     # important: we need to detect if the label_id touches one of the borders of our segmentation
     # we need to load additional tiles until this is not the case anymore
     #
-    [row_val,old_tile] = self.edge_iter(tile_dict,row_val)
+    [row_val, old_tile] = self.edge_iter(tile_dict, row_val)
 
     i_js = values['line']
     bbox = values['bbox']
@@ -1009,14 +1009,13 @@ class Controller(object):
 
         # go through rows of each tile and segmentation
         rows = self.tile_iter(*self.file_iter(*dicts, up='date'))
-        # if only one dict, second row is copy of first row
-        if len(rows) == 1: rows.append(rows[0])
 
       else:
 
         label_touches_border = False
 
-    return rows
+    # if only one dict, copy first row to second row
+    return rows*2 if lend == 1 else rows
 
   def save_iter(self,tile):
     # now create all zoomlevels
