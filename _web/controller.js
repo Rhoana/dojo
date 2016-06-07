@@ -7,7 +7,6 @@ J.controller = function(viewer) {
   this._last_id = null;
 
   this._current_action = 0;
-  this._first_action = true;
 
   this._current_orphan = 0;
   this._orphans = null;
@@ -100,19 +99,20 @@ J.controller.prototype.receive = function(data) {
     // we are the requester
 
     if (input.name == 'SPLITRESULT') {
-            this.show_split_line(input.value);
+      this.show_split_line(input.value);
       return;
-    } else if (input.name == 'SPLITDONE') {
+    } 
+    else if (input.name == 'SPLITDONE') {
       this.finish_split(input.value);
-    } else if (input.name == 'ADJUSTDONE') {
+    } 
+    else if (input.name == 'ADJUSTDONE') {
       this.finish_adjust(input.value);
-
-    } else if (input.name == 'CURRENT_ACTION') {
+    } 
+    else if (input.name == 'CURRENT_ACTION') {
       this.update_current_action(input.value);
-    } else if (input.name == 'UNBLOCK') {
-
+    } 
+    else if (input.name == 'UNBLOCK') {
       $('#loading_blocker').hide();
-
     }
 
   }
@@ -211,15 +211,11 @@ J.controller.prototype.receive = function(data) {
   } else if (input.name == 'SAVED') {
       console.log('All saved. Yahoo!');
       $('#blocker').hide();
-
   }
 
 };
 
 J.controller.prototype.save = function() {
-
-  $('#undo').css('opacity', '0.3');
-  $('#redo').css('opacity', '0.3');
 
   this.send('SAVE', null);
 
@@ -227,17 +223,11 @@ J.controller.prototype.save = function() {
 
 J.controller.prototype.add_action = function(type, value) {
 
-  this._first_action = false;
-
-  $('#undo').css('opacity', '1.0');
-
   this.send('ACTION', [this._current_action, {'type': type, 'value': value}]);
 
 };
 
-J.controller.prototype.undo_action = function() {
-
-  $('#redo').css('opacity', '1.0');
+J.controller.prototype.undo_action = function() {2
 
   this.send('UNDO', this._current_action);
 
@@ -245,19 +235,24 @@ J.controller.prototype.undo_action = function() {
 
 J.controller.prototype.redo_action = function() {
 
-  $('#undo').css('opacity', '1.0');  
-
   this.send('REDO', this._current_action);
 
 };
 
 J.controller.prototype.update_current_action = function(value) {
 
-  this._current_action = parseInt(value,10);
-  console.log('Current action', this._current_action);
+  this._current_action = parseInt(value[0],10);
+  la = parseInt(value[1],10);
 
-  if (this._first_action && this._current_action == 0) {
+console.log(this._current_action +' / '+ la);
+
+  $('#undo').css('opacity', '1.0'); 
+  $('#redo').css('opacity', '1.0'); 
+  if ( this._current_action == 0 ){
     $('#undo').css('opacity', '0.3');      
+  }
+  if ( this._current_action == la ){
+    $('#redo').css('opacity', '0.3'); 
   }
 
 };

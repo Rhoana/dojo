@@ -270,7 +270,7 @@ class Controller(object):
     output = {}
     output['name'] = 'CURRENT_ACTION'
     output['origin'] = username
-    output['value'] = len(self.__actions[username]) - 1
+    output['value'] = [len(self.__actions[username]) - 1]*2
     self.__websocket.send(json.dumps(output))
 
   def undo_action(self, input):
@@ -361,7 +361,7 @@ class Controller(object):
     output = {}
     output['name'] = 'CURRENT_ACTION'
     output['origin'] = username
-    output['value'] = value
+    output['value'] = [value, len(self.__actions[username]) - 1]
     self.__websocket.send(json.dumps(output))
 
   def redo_action(self, input):
@@ -373,16 +373,11 @@ class Controller(object):
 
       # actions available
       action = self.__actions[username][value]
-      # print 'Redoing', action
 
       #
       # redo merge
       #
-      if action['type'] == 'MERGE':
-
-        print 'DEPRECATED'
-
-      elif action['type'] == 'MERGE_GROUP':
+      if action['type'] == 'MERGE_GROUP':
 
         ids = action['value'][0]
 
@@ -456,7 +451,7 @@ class Controller(object):
     output = {}
     output['name'] = 'CURRENT_ACTION'
     output['origin'] = username
-    output['value'] = value
+    output['value'] = [value, len(self.__actions[username]) - 1]
     self.__websocket.send(json.dumps(output))
 
   def update_orphan(self, input):
@@ -475,7 +470,7 @@ class Controller(object):
     for username in self.__actions:
       # empty user actions
       output = {}
-      output['value'] = 0
+      output['value'] = [0,0]
       output['origin'] = username
       output['name'] = 'CURRENT_ACTION'
       self.__websocket.send(json.dumps(output))
