@@ -562,6 +562,18 @@ class Controller(object):
     #
     [row_val, old_tile] = self.edge_iter(tile_dict, row_val)
 
+    # Apply saved hardened merges
+    lut = self.get_hard_merge_table()
+    row_val = lut[row_val]
+
+    # Temporarily harden new merges
+    new_merges = self.__new_merge_table
+    for k,v in new_merges.iteritems():
+      while str(v) in new_merges: v = new_merges[str(v)]
+      row_val[np.where(row_val==float(k))] = v
+
+    print '0'
+
     i_js = values['line']
     bbox = values['bbox']
     click = values['click']
@@ -578,18 +590,6 @@ class Controller(object):
     bbox_relative[1] -= offset_x
     bbox_relative[2] -= offset_y
     bbox_relative[3] -= offset_y
-
-    # Apply saved hardened merges
-    lut = self.get_hard_merge_table()
-    row_val = lut[row_val]
-
-    # Temporarily harden new merges
-    new_merges = self.__new_merge_table
-    for k,v in new_merges.iteritems():
-      while str(v) in new_merges: v = new_merges[str(v)]
-      row_val[np.where(row_val==k)] = v
-
-    print '0'
 
     s_tile = np.zeros(row_val.shape)
     s_tile[row_val == self.label_id] = 1
