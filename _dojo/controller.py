@@ -368,11 +368,13 @@ class Controller(object):
 
     value = input['value']
     username = input['origin']
+    # increase value
+    value = min(len(self.__actions[username]), value+1)
 
     if username in self.__actions:
 
       # actions available
-      action = self.__actions[username][value]
+      action = self.__actions[username][value-1]
 
       #
       # redo merge
@@ -441,9 +443,6 @@ class Controller(object):
         output['value'] = {'z':self.z, 'full_bbox':str(bb)}
         # print output
         self.__websocket.send(json.dumps(output))
-
-      # increase value
-      value = min(len(self.__actions[username]), value+1)
 
     #
     # send the action index
@@ -594,6 +593,8 @@ class Controller(object):
 
     s_tile = np.zeros(row_val.shape)
     s_tile[row_val == self.label_id] = 1
+
+    # mh.imsave('../t_val.jpg', row_val.astype(np.uint8))
 
     for c in i_js:
       s_tile[c[1]-offset_y, c[0]-offset_x] = 0
