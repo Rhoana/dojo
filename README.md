@@ -11,6 +11,15 @@ Instructions: http://rhoana.org/dojo/
 ./dojo.py ../path/to/mojo/ ../path/to/temp/ [<<Port Number>>] [no-orphans]
 
 
+## Notes 2016-06-08
+
+TODO: 
+
+- Fix interesting bug where blue split line continues even after split made
+- Add save warning when approaching new_merge_table limit
+- Add percentage feedback while saving
+- **Add multi-layer depth cutting**
+
 ## Merge table objects
 
 - Client
