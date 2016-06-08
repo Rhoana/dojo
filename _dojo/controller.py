@@ -258,9 +258,9 @@ class Controller(object):
     if not username in self.__actions:
       self.__actions[username] = []
 
-    if current_action < len(self.__actions[username]) - 1:
+    if current_action < len(self.__actions[username]):
       # remove all actions from the last undo'ed one to the current
-      self.__actions[username] = self.__actions[username][0:current_action+1]
+      self.__actions[username] = self.__actions[username][0:current_action]
 
     self.__actions[username].append(value)
 
@@ -270,7 +270,7 @@ class Controller(object):
     output = {}
     output['name'] = 'CURRENT_ACTION'
     output['origin'] = username
-    output['value'] = [len(self.__actions[username]) - 1]*2
+    output['value'] = [len(self.__actions[username])]*2
     self.__websocket.send(json.dumps(output))
 
   def undo_action(self, input):
@@ -280,7 +280,7 @@ class Controller(object):
 
     if username in self.__actions:
       # actions available
-      action = self.__actions[username][value]
+      action = self.__actions[username][value-1]
 
       #
       # undo merge and split
@@ -361,7 +361,7 @@ class Controller(object):
     output = {}
     output['name'] = 'CURRENT_ACTION'
     output['origin'] = username
-    output['value'] = [value, len(self.__actions[username]) - 1]
+    output['value'] = [value, len(self.__actions[username])]
     self.__websocket.send(json.dumps(output))
 
   def redo_action(self, input):
@@ -443,7 +443,7 @@ class Controller(object):
         self.__websocket.send(json.dumps(output))
 
       # increase value
-      value = min(len(self.__actions[username])-1, value+1)
+      value = min(len(self.__actions[username]), value+1)
 
     #
     # send the action index
@@ -451,7 +451,7 @@ class Controller(object):
     output = {}
     output['name'] = 'CURRENT_ACTION'
     output['origin'] = username
-    output['value'] = [value, len(self.__actions[username]) - 1]
+    output['value'] = [value, len(self.__actions[username])]
     self.__websocket.send(json.dumps(output))
 
   def update_orphan(self, input):
