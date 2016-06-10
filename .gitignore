@@ -1,6 +1,5 @@
 *.pyc
 *.png
+*.idea
 *.ipynb
-.DS_Store
-nonsense.js
-.idea
+_web/over

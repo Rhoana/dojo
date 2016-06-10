@@ -8,9 +8,6 @@ J.controller = function(viewer) {
 
   this._current_action = 0;
 
-  this._current_orphan = 0;
-  this._orphans = null;
-
   this._lock_table = null;
   this._gl_lock_table = null;
   this._gl_lock_table_changed = true;
@@ -194,14 +191,6 @@ J.controller.prototype.receive = function(data) {
     // force reload
     this.hard_reload_tiles(input.value);
 
-  } else if (input.name == 'ORPHANS') {
-
-    this.update_orphan_list(input.value);
-
-  } else if (input.name == 'POTENTIAL_ORPHANS') {
-
-    this.update_potential_orphan_list(input.value);
-
   } else if (input.name == 'SAVING') {
 
     console.log('saving in progress');
@@ -254,105 +243,6 @@ console.log(this._current_action +' / '+ la);
   if ( this._current_action == la ){
     $('#redo').css('opacity', '0.3'); 
   }
-
-};
-
-J.controller.prototype.update_orphan_list = function(data) {
-
-  console.log('Updating orphan list..');
-
-  if (data=="None") return;
-
-  data = JSON.parse(data);
-
-  this._orphans = data;
-
-  this.show_orphan(this._current_orphan);
-
-  $('#todo').show();
-
-};
-
-J.controller.prototype.show_prev_orphan = function() {
-
-  if (this._current_orphan > 0)
-    this.show_orphan(--this._current_orphan);
-
-};
-
-J.controller.prototype.show_next_orphan = function() {
-
-  if (this._current_orphan < (this._orphans.length - 1))
-    this.show_orphan(++this._current_orphan);
-
-};
-
-J.controller.prototype.show_orphan = function(index) {
-
-  var orphan = this._orphans[index];
-  var color = this._viewer.get_color(orphan[0]);
-
-  $('#orphan_id').html('ID: ' + orphan[0]);
-  $('#orphan_color').css('background-color', rgbToHex(color[0], color[1], color[2]));
-
-  if (index == 0) {
-    $('#orphan_left_arrow').removeClass('default_arrow').addClass('pressed_arrow');
-  } else {
-    $('#orphan_left_arrow').removeClass('pressed_arrow').addClass('default_arrow');
-  }
-
-  if (index == (this._orphans.length - 1)) {
-    $('#orphan_right_arrow').removeClass('default_arrow').addClass('pressed_arrow');
-  } else {
-    $('#orphan_right_arrow').removeClass('pressed_arrow').addClass('default_arrow');
-  }
-
-  this.update_orphan_status_ui(orphan[2]);
-
-  this._current_orphan = index;
-
-};
-
-J.controller.prototype.update_orphan_status_ui = function(status) {
-
-  if (this._current_orphan == 0) {
-    $('orphan_left_arrow').removeClass('default_arrow').addClass('pressed_arrow');
-  }
-
-  if (this._current_orphan == (this._orphans.length - 1)) {
-    $('orphan_right_arrow').removeClass('default_arrow').addClass('pressed_arrow');
-  }  
-
-  $('#orphan_correct, #orphan_unsure').removeClass('orphan_button_on').addClass('orphan_button_off');
-  $('#todo').removeClass('panel_correct panel_unsure');
-  switch (status) {
-    case 1:
-          $('#todo').addClass('panel_unsure');
-          $('#orphan_unsure').removeClass('orphan_button_off').addClass('orphan_button_on');
-          break;
-    case 2:
-          $('#todo').addClass('panel_correct');
-          $('#orphan_correct').removeClass('orphan_button_off').addClass('orphan_button_on');
-          break;
-  }
-
-};
-
-J.controller.prototype.update_orphan_status = function(status) {
-
-  this._orphans[this._current_orphan][2] = status;
-
-  this.update_orphan_status_ui(status);
-
-  var orphan = {};
-  orphan['current_orphan'] = this._current_orphan;
-  orphan['orphan'] = this._orphans[this._current_orphan];
-
-  this.send('UPDATE_ORPHAN', orphan);
-
-};
-
-J.controller.prototype.update_potential_orphan_list = function(data) {
 
 };
 

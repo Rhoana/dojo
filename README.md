@@ -8,7 +8,7 @@ Instructions: http://rhoana.org/dojo/
 
 ## USAGE:
 
-./dojo.py ../path/to/mojo/ ../path/to/temp/ [<<Port Number>>] [no-orphans]
+./dojo.py ../path/to/mojo/ ../path/to/temp/ [<<Port Number>>]
 
 
 ## Notes 2016-06-08

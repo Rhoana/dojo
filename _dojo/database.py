@@ -13,9 +13,6 @@ class Database(object):
 
     print 'Largest ID', self.get_largest_id()
 
-    self._orphans = None
-    self._potential_orphans = None
-
     self._merge_table = None
     self._lock_table = None
 
@@ -168,12 +165,3 @@ class Database(object):
   def store(self):
 
     self.__connection.commit()
-      
-  def get_orphans(self):
-
-    return self._orphans
-
-  def get_potential_orphans(self):
-
-    return self._potential_orphans
-    

@@ -67,25 +67,6 @@ class Controller(object):
 
     self.__websocket.send(json.dumps(output))
 
-  def send_orphans(self):
-
-    if not self.__database:
-      return
-
-    output = {}
-    output['name'] = 'ORPHANS'
-    output['origin'] = 'SERVER'
-    output['value'] = str(self.__database.get_orphans())
-
-    self.__websocket.send(json.dumps(output))
-
-    output = {}
-    output['name'] = 'POTENTIAL_ORPHANS'
-    output['origin'] = 'SERVER'
-    output['value'] = str(self.__database.get_potential_orphans())
-
-    self.__websocket.send(json.dumps(output))
-
   def send_redraw(self, origin):
 
     output = {}
@@ -175,8 +156,6 @@ class Controller(object):
       self.send_lock_table(input['origin'])
       # then the problem table
       self.send_problem_table(input['origin'])
-      # and the orphans
-      self.send_orphans()
 
       self.send_unblock(input['origin'])
 
@@ -243,9 +222,6 @@ class Controller(object):
 
     elif input['name'] == 'REDO':
       self.redo_action(input)
-
-    elif input['name'] == 'UPDATE_ORPHAN':
-      self.update_orphan(input)
 
   def add_action(self, input):
 
@@ -452,15 +428,6 @@ class Controller(object):
     output['origin'] = username
     output['value'] = [value, len(self.__actions[username])]
     self.__websocket.send(json.dumps(output))
-
-  def update_orphan(self, input):
-
-    index = input['value']['current_orphan'];
-    orphan = input['value']['orphan'];
-
-    self.__database.get_orphans()[index] = orphan;
-
-    self.send_orphans()
 
   def save(self, input):
 

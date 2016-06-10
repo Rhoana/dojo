@@ -46,50 +46,10 @@ DOJO.init = function() {
 };
 
 DOJO.setup_buttons = function() {
-  $('#orphan_left_arrow').on('click', function() {
 
-    DOJO.viewer._controller.show_prev_orphan();
-
-  });
-
-  $('#orphan_right_arrow').on('click', function() {
-
-    DOJO.viewer._controller.show_next_orphan();
-
-  });
-
-  $('#orphan_unsure').on('click', function() {
-    if (DOJO.viewer._controller._orphans[DOJO.viewer._controller._current_orphan][2] == 1) {
-      DOJO.viewer._controller.update_orphan_status(0);
-    } else {
-      DOJO.viewer._controller.update_orphan_status(1);
-    }
-  });
-
-  $('#orphan_correct').on('click', function() {
-    if (DOJO.viewer._controller._orphans[DOJO.viewer._controller._current_orphan][2] == 2) {
-      DOJO.viewer._controller.update_orphan_status(0);
-    } else {
-      DOJO.viewer._controller.update_orphan_status(2);
-    }
-  });
-
-  var todo = document.getElementById('todo');
-  todo.style.left = (document.body.clientWidth - 310) + 'px';
   var threeD = document.getElementById('threeD');
   threeD.style.left = (document.body.clientWidth - 310) + 'px';  
   DOJO.make_resizable();
-
-
-  $('#orphans_content').slimScroll({
-    height: '288px',
-    color: 'deepskyblue'
-  });
-
-  $('#potential_orphans_content').slimScroll({
-    height: '288px',
-    color: 'deepskyblue'
-  });
 
   var merge = document.getElementById('merge');
   var merge_selected = document.getElementById('merge_selected');
