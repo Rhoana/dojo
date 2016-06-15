@@ -75,8 +75,4 @@ class Image(Datasource):
     '''
     @override
     '''
-    content_type = 'text/html'
-    content = None
-
-    return super(Image, self).handle(request, content, content_type)
-
+    return super(Image, self).handle(request)

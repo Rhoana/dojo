@@ -170,14 +170,15 @@ class Datasource(object):
 
     return tile_files
 
-  def handle(self, request, content, content_type):
+  def handle(self, request):
     '''
     React to a HTTP request.
     '''
+    content_type = 'text/html'
+    content = None
 
     # table of contents
     if self.__query_toc_regex.match(request.uri):
-      content_type = 'text/html'
       content = {}
       content['zSample_max'] = self.__zSample_max
       content['max_z_tiles'] = self.__max_z_tiles
@@ -188,62 +189,54 @@ class Datasource(object):
 
       content = json.dumps(content)
 
-    # tilesource info
-    elif self.__query_tilesource_regex.match(request.uri):
-      content_type = 'text/html'
-      content = self.get_info_xml()
-
-    # colormap
-    elif self.__query_colormap_regex.match(request.uri) and self.__has_colormap:
-      content_type = 'text/html'
-      content = json.dumps(self.__colormap.tolist())
-
-    # segmentinfo
-    elif self.__query_segmentinfo_regex.match(request.uri):
-      content_type = 'text/html'
-      content = json.dumps(self.__database.get_segment_info())
-
-    elif self.__query_id_tile_index_regex.match(request.uri):
-      content_type = 'text/html'
-      request_splitted = request.uri.split('/')
-      tile_id = request_splitted[-1]
-      content = json.dumps(self.__database.get_id_tile_index(tile_id))
-
-    # volume
-    elif self.__query_volume_regex.match(request.uri):
-      
-      request_splitted = request.uri.split('/')
-      zoomlevel = int(request_splitted[-2])
-
-      content, content_type = self.get_volume(zoomlevel)
-
     # tile
     elif self.__query_tile_regex.match(request.uri):
 
       request_splitted = request.uri.split('/')
       tile_x_y = request_splitted[-1].split('.')[0]
-      tile_x = tile_x_y.split('_')[0]
-      tile_y = tile_x_y.split('_')[1]
+      tile_x, tile_y = tile_x_y.split('_')
 
       zoomlevel = int(request_splitted[-2])
-      # re-map zoomlevel
-      #zoomlevel = min(self.__max_mojozoom_level, self.__max_deepzoom_level - zoomlevel)
-
       slice_number = request_splitted[-3]
 
       updated_tile_file = os.path.join(self.__mojo_tmp_dir, self.__sub_dir, 'tiles', 'w='+str(zoomlevel).zfill(8), 'z='+slice_number.zfill(8), 'y='+tile_y.zfill(8)+','+'x='+tile_x.zfill(8)+'.'+self.__input_format)
-      # print updated_tile_file
+
       if os.path.exists(updated_tile_file):
 
         content, content_type = self.get_tile(updated_tile_file)
         return content, content_type
 
       tile_file = os.path.join(self.__mojo_dir, self.__sub_dir, 'tiles', 'w='+str(zoomlevel).zfill(8), 'z='+slice_number.zfill(8), 'y='+tile_y.zfill(8)+','+'x='+tile_x.zfill(8)+'.'+self.__input_format)
-      #print 'Requested', tile_file
+
       if os.path.exists(tile_file):
 
         content, content_type = self.get_tile(tile_file)
 
+    # volume
+    elif self.__query_volume_regex.match(request.uri):
+
+      request_splitted = request.uri.split('/')
+      zoomlevel = int(request_splitted[-2])
+
+      content, content_type = self.get_volume(zoomlevel)
+
+    # # tile source info
+    # elif self.__query_tilesource_regex.match(request.uri):
+    #   content = self.get_info_xml()
+    #
+    # # segment info
+    # elif self.__query_segmentinfo_regex.match(request.uri):
+    #   content = json.dumps(self.__database.get_segment_info())
+    #
+    # # tile index
+    # elif self.__query_id_tile_index_regex.match(request.uri):
+    #   request_splitted = request.uri.split('/')
+    #   tile_id = request_splitted[-1]
+    #   content = json.dumps(self.__database.get_id_tile_index(tile_id))
+
+    # Only colormap for segmentation
+    elif self.__has_colormap and self.__query_colormap_regex.match(request.uri):
+      content = json.dumps(self.__colormap.tolist())
 
     return content, content_type
 

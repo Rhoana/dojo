@@ -24,7 +24,6 @@ class Segmentation(Datasource):
 
     self.__dojoserver = dojoserver
 
-
   def get_volume_data(self):
 
     files = super(Segmentation, self).get_volume(1)
@@ -34,9 +33,6 @@ class Segmentation(Datasource):
 
     for i,f in enumerate(files):
 
-      # if i % 4 != 0:
-      #   continue
-
       hdf5_file = h5py.File(f)
       list_of_names = []
       hdf5_file.visit(list_of_names.append)
@@ -45,16 +41,13 @@ class Segmentation(Datasource):
 
       if out_is_there:
         out = np.dstack([out, image_data])
-        # out = np.concatenate([out, image_data])
       else:
-        #out = input_image
         out = image_data
         out_is_there = True
 
     print 'Loaded volume data', out.shape
 
     return out
-
 
   def get_volume(self, zoomlevel):
     '''
@@ -132,9 +125,4 @@ class Segmentation(Datasource):
     '''
     @override
     '''
-    content_type = 'text/html'
-    content = None
-
-    # any possible other request like persist can go here
-
-    return super(Segmentation, self).handle(request, content, content_type)
+    return super(Segmentation, self).handle(request)

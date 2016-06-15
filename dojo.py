@@ -50,6 +50,8 @@ class ServerLogic:
     tmpdir = out_dir
     self.__tmpdir = out_dir
 
+    self.log = -1
+
     #
     # since we just have an output dir,
     # create it now
@@ -137,8 +139,20 @@ class ServerLogic:
     if not content:
       content, content_type = self.__segmentation.handle(r.request)
 
+      if content:
+        if self.log is not 0:
+          print '\n Data source:'
+          self.log = 0
+        print r.request.uri
+
     if not content:
       content, content_type = self.__image.handle(r.request)
+
+      if content:
+        if self.log is not 1:
+          print '\n Image source:'
+          self.log = 1
+        print r.request.uri
 
     # invalid request
     if not content:
