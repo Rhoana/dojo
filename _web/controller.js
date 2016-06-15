@@ -178,7 +178,6 @@ J.controller.prototype.receive = function(data) {
       this.on_mouse_move(input.origin, input.id, input.value);
 
   } else if (input.name == 'PROBLEMTABLE') {
-forcform
     this.update_problem_table(input.value);
 
   } else if (input.name == 'RELOAD') {
