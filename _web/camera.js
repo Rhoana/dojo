@@ -81,21 +81,25 @@ J.camera.prototype.jump = function(i, j, k) {
 
 J.camera.prototype.jumpIJK = function(i, j, k) {
 
-  this._z = k;
+  var shape = [[this._viewer._image.width, i],
+          [this._viewer._image.height, j],
+          [this._viewer._image.max_z_tiles-1, k]],
+  ijk_int = [],
+  ijk_str = [];
 
-  // var x_y_z = this._viewer.ijk2xyz(i, j, k);
+  shape.forEach( (s) => { ijk_int.push(Math.min(s[0], Math.abs(parseInt(s[1],10)))) });
+  ijk_int.forEach( (s) => { ijk_str.push(s.toString()) });
 
-  DOJO.update_slice_number(parseInt(k,10)+1);
-
-  this._viewer._camera._i_j = [i,j]; 
-  this._w = 0;
+  this._z = ijk_str[2];
+  DOJO.update_slice_number(ijk_int[2]+1);
+  this._viewer._camera._i_j = ijk_str.slice(0,2);
 
   this._viewer._camera._view[0] = 1;
   this._viewer._camera._view[4] = 1;
-  this._viewer._camera._view[6] = -i+this._viewer._width/2;
-  this._viewer._camera._view[7] = -j+this._viewer._height/2;
+  this._viewer._camera._view[6] = -ijk_int[0]+this._viewer._width/2;
+  this._viewer._camera._view[7] = -ijk_int[1]+this._viewer._height/2;
+  this._loader.load_tiles(ijk_str[0], ijk_str[1], ijk_str[2], this._w, this._w, false);
 
-  this._loader.load_tiles(i, j, k, this._w, this._w, false);
 
 };
 
