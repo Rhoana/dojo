@@ -81,25 +81,23 @@ J.camera.prototype.jump = function(i, j, k) {
 
 J.camera.prototype.jumpIJK = function(i, j, k) {
 
-  var shape = [[this._viewer._image.width, i],
-          [this._viewer._image.height, j],
-          [this._viewer._image.max_z_tiles-1, k]],
-  ijk_int = [],
-  ijk_str = [];
+  var shape = [['width', i, 0], ['height', j, 0], ['max_z_tiles', k, 1]],
+  ijk_int = [], ijk_str = [], image = this._viewer._image, view = this._view;
 
-  shape.forEach( (s) => { ijk_int.push(Math.min(s[0], Math.abs(parseInt(s[1],10)))) });
-  ijk_int.forEach( (s) => { ijk_str.push(s.toString()) });
+  shape.forEach( function(s) { 
+    ijk_int.push( Math.min(this[s[0]]-s[2], Math.max(0, parseInt(s[1],10))) );
+    ijk_str.push( ijk_int.slice(-1)[0].toString() );
+    }, image);
 
   this._z = ijk_str[2];
   DOJO.update_slice_number(ijk_int[2]+1);
   this._viewer._camera._i_j = ijk_str.slice(0,2);
 
-  this._viewer._camera._view[0] = 1;
-  this._viewer._camera._view[4] = 1;
-  this._viewer._camera._view[6] = -ijk_int[0]+this._viewer._width/2;
-  this._viewer._camera._view[7] = -ijk_int[1]+this._viewer._height/2;
+  
+  // Moves the camera to the appropriate horizontal coordinate
+  this._view[6] = this._viewer._width/2 - view[0]*(image.zoomlevel_count-this._w)*ijk_int[0]/2
+  this._view[7] = this._viewer._height/2 - view[4]*(image.zoomlevel_count-this._w)*ijk_int[1]/2
   this._loader.load_tiles(ijk_str[0], ijk_str[1], ijk_str[2], this._w, this._w, false);
-
 
 };
 
@@ -153,7 +151,6 @@ J.camera.prototype.zoom = function(x, y, delta) {
   this._view[0] = future_zoom_level;
   this._view[4] = future_zoom_level;
 
-  
   var new_scale = future_zoom_level;
 
   // here we check if we pass an image zoom level, if yes we need to draw other tiles
