@@ -260,6 +260,9 @@ DOJO.onmousemove = function(x, y) {
 
   }
 
+  // control mouse pointer
+  DOJO.viewer.curse(x,y);
+  
 };
 
 DOJO.onmouseup = function(x, y) {

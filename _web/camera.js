@@ -82,7 +82,7 @@ J.camera.prototype.jump = function(i, j, k) {
 J.camera.prototype.jumpIJK = function(i, j, k) {
 
   var shape = [['width', i, 0], ['height', j, 0], ['max_z_tiles', k, 1]],
-  ijk_int = [], ijk_str = [], image = this._viewer._image, view = this._view;
+  ijk_int = [], ijk_str = [], w = this._w, image = this._viewer._image, view = this._view;
 
   shape.forEach( function(s) { 
     ijk_int.push( Math.min(this[s[0]]-s[2], Math.max(0, parseInt(s[1],10))) );
@@ -93,11 +93,16 @@ J.camera.prototype.jumpIJK = function(i, j, k) {
   DOJO.update_slice_number(ijk_int[2]+1);
   this._viewer._camera._i_j = ijk_str.slice(0,2);
 
-  
   // Moves the camera to the appropriate horizontal coordinate
-  this._view[6] = this._viewer._width/2 - view[0]*(image.zoomlevel_count-this._w)*ijk_int[0]/2
-  this._view[7] = this._viewer._height/2 - view[4]*(image.zoomlevel_count-this._w)*ijk_int[1]/2
-  this._loader.load_tiles(ijk_str[0], ijk_str[1], ijk_str[2], this._w, this._w, false);
+  ijk_int = ijk_int.slice(0,2).map((e) => { return (image.zoomlevel_count-w)*e/2; });
+  this._loader.load_tiles.apply(this._loader,ijk_str.concat([w, w, false]));
+  this._view[6] = this._viewer._width/2 - view[0]*ijk_int[0]
+  this._view[7] = this._viewer._height/2 - view[4]*ijk_int[1]
+
+  console.log(ijk_int)
+
+  // control mouse pointer
+  DOJO.viewer.curse(ijk_int[0],ijk_int[1],false);
 
 };
 
@@ -165,7 +170,8 @@ J.camera.prototype.zoom = function(x, y, delta) {
 
       // this time we really draw (no_draw = false)
       load = true;
-      
+
+      // Change zoom level
       this._w = future_zoom_level;
       fzl = future_zoom_level;
 
@@ -186,9 +192,7 @@ J.camera.prototype.zoom = function(x, y, delta) {
 
       this._view[0] = new_scale;
       this._view[4] = new_scale;
-
-    }    
-    
+    }
   }
 
   u_new = u_v[0]/old_scale * new_scale;
@@ -200,6 +204,8 @@ J.camera.prototype.zoom = function(x, y, delta) {
 
   if (load) {
     this._loader.load_tiles(x, y, this._z, this._w, fzl, no_draw);
+    // Also move the cursor!
+    this._viewer.curse(x,y);
   }
 
   this._zoom_end_timeout = setTimeout(this.zoom_end.bind(this), 60);

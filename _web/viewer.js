@@ -35,6 +35,13 @@ J.viewer = function(container) {
   this._offscreen_buffer.width = 512;
   this._offscreen_buffer.height = 512;
 
+  // Buffer for the mouse pointer
+  this._pt_g_cols = [[0,0],[.5,0],[.6,.1],[.7,.2],[.8,1],[1,0]];
+  this._pt_buff = document.createElement('canvas');
+  this._container.appendChild(this._pt_buff);
+  this._pt_ctx = this._pt_buff.getContext('2d');
+  this._pt_ctx.rad = 200;
+
   this._force_rerender = false;
 
   this._image = null;
@@ -99,8 +106,8 @@ J.viewer.prototype.init = function(callback) {
 
     this._interactor = new J.interactor(this);
 
-    this._image_buffer.width = this._overlay_buffer.width = this._image.width;
-    this._image_buffer.height = this._overlay_buffer.height = this._image.height;
+    this._image_buffer.width = this._overlay_buffer.width = this._pt_buff.width = this._image.width;
+    this._image_buffer.height = this._overlay_buffer.height = this._pt_buff.height = this._image.height;
 
     this._loader.load_json('/segmentation/contents', function(res) {
 
@@ -314,6 +321,40 @@ J.viewer.prototype.get_color = function(id) {
 
 };
 
+J.viewer.prototype.curse = function(x,y,win = true) {
+
+  // Get zoom level and radius
+  var level = 1/(1+this._camera._w);
+  var rad = this._pt_ctx.rad*level;
+  this.clear_pointer_buffer();
+
+  // If screen coordinates
+  if (win) {
+    var i_j = this.xy2ij(x,y);
+    if (i_j.some((e) => {return e < 0})) { return; };
+    i_j = i_j.map((e) => {return e*level});
+  }
+  else {
+    var i_j = [x,y];
+  }
+
+  var pt =rad*(1-this._pt_g_cols[4][0]);
+  var grad = this._pt_ctx.createRadialGradient(i_j[0], i_j[1], 0, i_j[0], i_j[1],rad);
+
+  this._pt_g_cols.forEach((c)=>{grad.addColorStop(c[0], 'rgba(1,1,1,'+c[1]+')');});
+  this._pt_ctx.arc(i_j[0], i_j[1],rad, 0, 2*Math.PI);
+  this._pt_ctx.fillStyle = grad;
+  this._pt_ctx.fill();
+
+  this._pt_ctx.beginPath();
+  this._pt_ctx.fillStyle = 'rgb(1,1,1)';
+  this._pt_ctx.moveTo(i_j[0]-pt/2,i_j[1]+pt-rad);
+  this._pt_ctx.lineTo(i_j[0]+pt/2,i_j[1]+pt-rad);
+  this._pt_ctx.lineTo(i_j[0],i_j[1]);
+  this._pt_ctx.closePath();
+  this._pt_ctx.fill();
+};
+
 J.viewer.prototype.clear_buffer = function(width, height) {
 
   this._image_buffer_context.clearRect(0, 0, width, height);
@@ -323,6 +364,12 @@ J.viewer.prototype.clear_buffer = function(width, height) {
 J.viewer.prototype.clear_overlay_buffer = function() {
 
   this._overlay_buffer_context.clearRect(0,0,this._image.width, this._image.height);
+
+};
+
+J.viewer.prototype.clear_pointer_buffer = function() {
+
+  this._pt_ctx.clearRect(0,0,this._image.width, this._image.height);
 
 };
 
@@ -380,6 +427,9 @@ J.viewer.prototype.render = function() {
     
     // draw overlays
     this._context.drawImage(this._overlay_buffer,0,0);
+
+    // draw mouse pointer
+    this._context.drawImage(this._pt_buff,0,0);
 
     this._force_rerender = false;
   }
