@@ -324,20 +324,15 @@ J.viewer.prototype.get_color = function(id) {
 J.viewer.prototype.curse = function(x,y,win = true) {
 
   // Get zoom level and radius
-  var level = 1/(1+this._camera._w);
+  var level = 1/(Math.pow(2,this._camera._w));
   var rad = this._pt_ctx.rad*level;
   this.clear_pointer_buffer();
 
   // If screen coordinates
   if (win) {
     var i_j = this.xy2ij(x,y);
-    console.log(this._camera._w)
-    console.log('old: ' + i_j + ' x ' + level)
-
     if (i_j.some((e) => {return e < 0})) { return; };
     i_j = i_j.map((e) => {return e*level});
-
-    console.log('new: ' + i_j + '\n')
   }
   else {
     var i_j = [x,y];
