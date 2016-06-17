@@ -331,8 +331,9 @@ J.viewer.prototype.curse = function(x,y,win = true) {
   // If screen coordinates
   if (win) {
     var i_j = this.xy2ij(x,y);
+    console.log(this._camera._w)
     console.log('old: ' + i_j + ' x ' + level)
-    
+
     if (i_j.some((e) => {return e < 0})) { return; };
     i_j = i_j.map((e) => {return e*level});
 
