@@ -81,6 +81,7 @@ J.camera.prototype.jump = function(i, j, k) {
 
 J.camera.prototype.jumpIJK = function(i, j, k) {
 
+  var level = Math.pow(2,this._w);
   var shape = [['width', i, 0], ['height', j, 0], ['max_z_tiles', k, 1]],
   ijk_int = [], ijk_str = [], w = this._w, image = this._viewer._image, view = this._view;
 
@@ -94,7 +95,7 @@ J.camera.prototype.jumpIJK = function(i, j, k) {
   this._viewer._camera._i_j = ijk_str.slice(0,2);
 
   // Moves the camera to the appropriate horizontal coordinate
-  ijk_int = ijk_int.slice(0,2).map((e) => { return (image.zoomlevel_count-w)*e/2; });
+  ijk_int = ijk_int.slice(0,2).map((e) => { return level*e; });
   this._loader.load_tiles.apply(this._loader,ijk_str.concat([w, w, false]));
   this._view[6] = this._viewer._width/2 - view[0]*ijk_int[0]
   this._view[7] = this._viewer._height/2 - view[4]*ijk_int[1]
