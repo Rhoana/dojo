@@ -259,9 +259,6 @@ DOJO.onmousemove = function(x, y) {
     DOJO.viewer._controller.draw_merge(x, y);
 
   }
-
-  // control mouse pointer
-  DOJO.viewer.curse(x,y);
   
 };
 

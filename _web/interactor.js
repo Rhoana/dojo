@@ -115,6 +115,9 @@ J.interactor.prototype.onmouseup = function(e) {
     this._right_down = false;
   }
 
+  // control mouse pointer
+  DOJO.viewer.curse(x,y);
+
 };
 
 J.interactor.prototype.onmousewheel = function(e) {
