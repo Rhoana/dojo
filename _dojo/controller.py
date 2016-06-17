@@ -498,19 +498,12 @@ class Controller(object):
   def finalize_split(self, input):
 
     values = input['value']
+    image = self.__dojoserver.get_image()
     self.label_id = values['id']
     self.z = values['z']
 
-    # find tiles we need for this split on highest res
-    bb = values['bbox']
-    print 'bb', bb
-    #
-    # make sure the bb is valid
-    #
-    max_width = self.__dojoserver.get_image()._width
-    max_height = self.__dojoserver.get_image()._height
-    bb[1] = min(max_width, bb[1])
-    bb[3] = min(max_height, bb[3])
+    # find tiles we need for this split on highest res and make sure the bb is valid
+    bb = np.clip(np.array(values['bbox']),0,[image._width]*2 + [image._height]*2)
 
     self.x_tiles = range((bb[0]//512), (((bb[1]-1)//512) + 1))
     self.y_tiles = range((bb[2]//512), (((bb[3]-1)//512) + 1))
@@ -660,20 +653,13 @@ class Controller(object):
     TODO: move to separate class
     '''
     values = input['value']
+    image = self.__dojoserver.get_image()
     self.z = values['z']
     self.label_id = values['id']
     self.data_path = self.__mojo_dir + '/images/tiles/w=00000000/z='+str(values['z']).zfill(8)
 
-    # find tiles we need for this split on highest res
-    bb = values['brush_bbox']
-
-    #
-    # make sure the bb is valid
-    #
-    max_width = self.__dojoserver.get_image()._width
-    max_height = self.__dojoserver.get_image()._height
-    bb[1] = min(max_width, bb[1])
-    bb[3] = min(max_height, bb[3])
+    # find tiles we need for this split on highest res and make sure the bb is valid
+    bb = np.clip(np.array(values['brush_bbox']),0,[image._width]*2 + [image._height]*2)
 
     # print 'newbb',bb
     self.x_tiles = range((bb[0]//512), (((bb[1]-1)//512) + 1))
