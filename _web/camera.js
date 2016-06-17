@@ -92,14 +92,13 @@ J.camera.prototype.jumpIJK = function(i, j, k) {
   this._z = ijk_str[2];
   DOJO.update_slice_number(ijk_int[2]+1);
   this._viewer._camera._i_j = ijk_str.slice(0,2);
+  var level = 1/(Math.pow(2,w));
 
   // Moves the camera to the appropriate horizontal coordinate
-  ijk_int = ijk_int.slice(0,2).map((e) => { return (image.zoomlevel_count-w)*e/2; });
+  ijk_int = ijk_int.slice(0,2).map((e) => { return level*e; });
   this._loader.load_tiles.apply(this._loader,ijk_str.concat([w, w, false]));
   this._view[6] = this._viewer._width/2 - view[0]*ijk_int[0]
   this._view[7] = this._viewer._height/2 - view[4]*ijk_int[1]
-
-  console.log(ijk_int)
 
   // control mouse pointer
   DOJO.viewer.move_pointer(ijk_int[0],ijk_int[1],false);

@@ -25,7 +25,6 @@ J.loader.prototype.load_json = function(url, callback) {
 };
 
 J.loader.prototype.load_image = function(x, y, z, w, callback) {
-//  console.log('  I')
   var i = new Image();
   i.src = '/image/'+pad(z,8)+'/'+w+'/'+x+'_'+y+'.jpg';
   i.onload = callback.bind(this, i);
@@ -33,9 +32,9 @@ J.loader.prototype.load_image = function(x, y, z, w, callback) {
 };
 
 J.loader.prototype.load_segmentation = function(x, y, z, w, callback) {
-  var zlc = this._viewer._image.zoomlevel_count
-  var zoom = Array(w).fill(w).join('')+Array(zlc-w).fill(' ').join('')
-  console.log('  S'+' zoom: '+zoom+'@ '+[x,y,z].join())
+//  var zlc = this._viewer._image.zoomlevel_count
+//  var zoom = Array(w).fill(w).join('')+Array(zlc-w).fill(' ').join('')
+//  console.log('  S'+' zoom: '+zoom+'@ '+[x,y,z].join())
   var xhr = new XMLHttpRequest();
   xhr.open('GET', '/segmentation/'+pad(z,8)+'/'+w+'/'+x+'_'+y+'.raw', true);
   xhr.responseType = 'arraybuffer';
@@ -90,7 +89,6 @@ J.loader.prototype.get_image = function(x, y, z, w, callback, no_cache) {
 };
 
 J.loader.prototype.cache_image = function(x, y, z, w) {
-//  console.log('C I')
   // now get some more images  
   for (var j=1;j<=this._z_cache_size;j++) {
     if (z+j < this._viewer._image.max_z_tiles) {
@@ -124,7 +122,6 @@ J.loader.prototype.get_segmentation = function(x, y, z, w, callback, no_cache) {
   this.load_segmentation(x, y, z, w, function(s) {
 
     tempA = s.responseURL.split("/").slice(-3);
-//     console.log(tempA[2] + " at z=" + tempA[0] + " is " + s.status + " " + s.statusText); 
     // uncompress
     var compressed = new Zlib.Inflate(new Uint8Array(s.response));
     var raw_s = compressed.decompress();
@@ -143,7 +140,6 @@ J.loader.prototype.get_segmentation = function(x, y, z, w, callback, no_cache) {
 };
 
 J.loader.prototype.cache_segmentation = function(x, y, z, w) {
-  console.log('C S')
   // now get some more images
   for (var j=1;j<=this._z_cache_size;j++) {
     if (z+j < this._viewer._image.max_z_tiles) {
