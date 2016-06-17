@@ -142,12 +142,10 @@ J.loader.prototype.get_segmentation = function(x, y, z, w, callback, no_cache) {
 
 J.loader.prototype.cache_segmentation = function(x, y, z, w) {
 
-  // now get some more images  
+  // now get some more images
   for (var j=1;j<=this._z_cache_size;j++) {
-    if (z+j < this._viewer._image.max_z_tiles) {      
-      console.log('getting', z+j);
+    if (z+j < this._viewer._image.max_z_tiles) {
       this.get_segmentation(x, y, z+j, w, function(s) {
-        console.log('cached', s);
       }, true);
     }
   }

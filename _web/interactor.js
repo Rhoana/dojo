@@ -116,7 +116,7 @@ J.interactor.prototype.onmouseup = function(e) {
   }
 
   // control mouse pointer
-  DOJO.viewer.curse(x,y);
+  DOJO.viewer.move_pointer(x,y);
 
 };
 
@@ -128,7 +128,7 @@ J.interactor.prototype.onmousewheel = function(e) {
   var y = e.clientY;
 
   this._camera._x = x;
-  this._camera._y = y;  
+  this._camera._y = y;
   this._camera._i_j = this._viewer.xy2ij(x, y);
 
   this._camera.zoom(x, y, delta);
@@ -138,11 +138,11 @@ J.interactor.prototype.onmousewheel = function(e) {
 };
 
 J.interactor.prototype.onkeydown = function(e) {
-  
+
   if (!this._viewer._image_buffer_ready) return;
 
   if (this._keypress_callback) return;
-  
+
   // 80: P TOGGLE LOCKED ONLY MODE
   // 81: Q HIDE/SHOW SEGMENTATION
   // 65: A TOGGLE BORDERS
@@ -172,35 +172,37 @@ J.interactor.prototype.onkeydown = function(e) {
   e.preventDefault();
 
   if (e.keyCode == 87) {
-  
+
     this._keypress_callback = setTimeout(function() {
       this._camera.slice_up();
       this._keypress_callback = null;
-    }.bind(this),10); 
+    }.bind(this),10);
 
   } else if (e.keyCode == 80) {
-    
+
     console.log('P')
 
     this._keypress_callback = setTimeout(function() {
       this._viewer._only_locked = !this._viewer._only_locked;
       this._viewer.redraw();
       this._keypress_callback = null;
-    }.bind(this),10);   
+    }.bind(this),10);
 
   } else if (e.keyCode == 70) {
-  
+
     this._keypress_callback = setTimeout(function() {
       this._viewer.toggle_borders();
       this._viewer.toggle_segmentation();
       this._keypress_callback = null;
-    }.bind(this),10);   
+    }.bind(this),10);
 
   } else if (e.keyCode == 74) {
-  
+
     this._keypress_callback = setTimeout(function() {
-      
-      var coords = window.prompt('Where to jump (X,Y,Z) to? e.g. 100,100,100');
+
+      var img = this._viewer._image
+      var middle = [img.width,img.height,img.max_z_tiles].map((e) => {return Math.floor(e/2);});
+      var coords = window.prompt('Where to jump in X,Y,Z?\nYou can try '+middle.toString());
 
       if (coords) {
 

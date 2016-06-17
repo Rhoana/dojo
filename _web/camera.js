@@ -92,16 +92,17 @@ J.camera.prototype.jumpIJK = function(i, j, k) {
   this._z = ijk_str[2];
   DOJO.update_slice_number(ijk_int[2]+1);
   this._viewer._camera._i_j = ijk_str.slice(0,2);
-  var level = 1/(Math.pow(2,w));
 
   // Moves the camera to the appropriate horizontal coordinate
-  ijk_int = ijk_int.slice(0,2).map((e) => { return level*e; });
+  ijk_int = ijk_int.slice(0,2).map((e) => { return (image.zoomlevel_count-w)*e/2; });
   this._loader.load_tiles.apply(this._loader,ijk_str.concat([w, w, false]));
   this._view[6] = this._viewer._width/2 - view[0]*ijk_int[0]
   this._view[7] = this._viewer._height/2 - view[4]*ijk_int[1]
 
+  console.log(ijk_int)
+
   // control mouse pointer
-  DOJO.viewer.curse(ijk_int[0],ijk_int[1],false);
+  DOJO.viewer.move_pointer(ijk_int[0],ijk_int[1],false);
 
 };
 
@@ -179,7 +180,7 @@ J.camera.prototype.zoom = function(x, y, delta) {
         // zooming out
         old_scale *= 2;
         new_scale *= 2;
-        
+
       } else {
 
         // zooming in
@@ -199,12 +200,12 @@ J.camera.prototype.zoom = function(x, y, delta) {
 
   // translate to correct point
   this._view[6] -= wheel_sign * Math.abs(u_v[0] - u_new);
-  this._view[7] -= wheel_sign * Math.abs(u_v[1] - v_new);  
+  this._view[7] -= wheel_sign * Math.abs(u_v[1] - v_new);
 
   if (load) {
     this._loader.load_tiles(x, y, this._z, this._w, fzl, no_draw);
     // Also move the cursor!
-    this._viewer.curse(x,y);
+    this._viewer.move_pointer(x,y);
   }
 
   this._zoom_end_timeout = setTimeout(this.zoom_end.bind(this), 60);

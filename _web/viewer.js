@@ -321,7 +321,7 @@ J.viewer.prototype.get_color = function(id) {
 
 };
 
-J.viewer.prototype.curse = function(x,y,win = true) {
+J.viewer.prototype.move_pointer = function(x,y,win = true) {
 
   // Get zoom level and radius
   var level = 1/(Math.pow(2,this._camera._w));
