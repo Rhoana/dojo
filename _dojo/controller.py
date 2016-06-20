@@ -649,8 +649,9 @@ class Controller(object):
     #
     offset_x = self.x_tiles[0]*512
     offset_y = self.y_tiles[0]*512
+    bb = values['brush_bbox']
 
-    bbox_relative = values['brush_bbox'] - np.array([offset_x, offset_y, offset_x, offset_y])
+    bbox_relative = bb - np.array([offset_x, offset_y, offset_x, offset_y])
 
     sub_tile = row_img[bbox_relative[2]:bbox_relative[3],bbox_relative[0]:bbox_relative[1]]
     seg_sub_tile = row_seg[bbox_relative[2]:bbox_relative[3],bbox_relative[0]:bbox_relative[1]]
