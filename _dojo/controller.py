@@ -721,15 +721,12 @@ class Controller(object):
 
     # compute end points of line
     end_points = np.zeros(brush_mask.shape,dtype=bool)
-    #
-    first_point = i_js[0]
-    last_point = i_js[-1]
+    first_point,last_point = (i_js[0],i_js[-1])
 
     bind = lambda x: tuple(min(x[i] - bb[2*i], brush_mask.shape[1-i]-1) for i in range(1,-1,-1))
     first_points, last_points = (bind(x) for x in [first_point, last_point])
 
-    end_points[first_points] = True
-    end_points[last_points] = True
+    end_points[first_points],end_points[last_points] = (True, True)
     end_points = mh.morph.dilate(end_points, np.ones((2*brush_size, 2*brush_size)))
 
     # compute seeds
