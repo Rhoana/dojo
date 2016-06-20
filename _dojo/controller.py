@@ -303,9 +303,9 @@ class Controller(object):
         offset_x = self.x_tiles[0]*512
         offset_y = self.y_tiles[0]*512
 
-        bbox_relative =  np.array(bb) - [offset_x, offset_y, offset_x , offset_y]
+        bb_relative =  np.array(bb) - [offset_x, offset_y, offset_x , offset_y]
 
-        row_val[bbox_relative[1]:bbox_relative[3],bbox_relative[0]:bbox_relative[2]] = old_area
+        row_val[bb_relative[1]:bb_relative[3],bb_relative[0]:bb_relative[2]] = old_area
 
         # Save all the splits
         self.save_iter(row_val)
@@ -314,7 +314,7 @@ class Controller(object):
         output = {}
         output['name'] = 'HARD_RELOAD'
         output['origin'] = 'SERVER'
-        output['value'] = {'z':self.z, 'full_bbox':str(bb)}
+        output['value'] = {'z':self.z, 'full_bb':str(bb)}
         # print output
         self.__websocket.send(json.dumps(output))
 
@@ -387,9 +387,9 @@ class Controller(object):
         offset_x = self.x_tiles[0]*512
         offset_y = self.y_tiles[0]*512
 
-        bbox_relative = np.array(bb) - [offset_x, offset_y, offset_x , offset_y]
+        bb_relative = np.array(bb) - [offset_x, offset_y, offset_x , offset_y]
 
-        row_val[bbox_relative[1]:bbox_relative[3],bbox_relative[0]:bbox_relative[2]] = new_area
+        row_val[bb_relative[1]:bb_relative[3],bb_relative[0]:bb_relative[2]] = new_area
 
         # Save all the splits
         self.save_iter(row_val)
@@ -398,7 +398,7 @@ class Controller(object):
         output = {}
         output['name'] = 'HARD_RELOAD'
         output['origin'] = 'SERVER'
-        output['value'] = {'z':self.z, 'full_bbox':str(bb)}
+        output['value'] = {'z':self.z, 'full_bb':str(bb)}
         # print output
         self.__websocket.send(json.dumps(output))
 
@@ -461,7 +461,7 @@ class Controller(object):
     output = {}
     output['name'] = 'HARD_RELOAD'
     output['origin'] = 'SERVER'
-    output['value'] = {'z':z, 'full_bbox':str(bb)}
+    output['value'] = {'z':z, 'full_bb':str(bb)}
     # print output
     self.__websocket.send(json.dumps(output))
 
@@ -480,7 +480,7 @@ class Controller(object):
   def finalize_split(self, input):
 
     values = input['value']
-    bb = values['bbox']
+    bb = values['bb']
     image = self.__dojoserver.get_image()
     self.label_id = values['id']
     self.z = values['z']
@@ -558,7 +558,7 @@ class Controller(object):
       unselected_label = 1
 
     full_coords = np.where(label_image > 0)
-    full_bbox = [min(full_coords[1]), min(full_coords[0]), max(full_coords[1]), max(full_coords[0])]
+    full_bb = [min(full_coords[1]), min(full_coords[0]), max(full_coords[1]), max(full_coords[0])]
 
     label_image[label_image == selected_label] = 0 # should be zero then
     label_image[label_image == unselected_label] = new_id - self.lookup_label(self.label_id)
@@ -570,20 +570,20 @@ class Controller(object):
     #
     # this is for undo
     #
-    old_area = old_tile[full_bbox[1]:full_bbox[3],full_bbox[0]:full_bbox[2]]
-    new_area = tile[full_bbox[1]:full_bbox[3],full_bbox[0]:full_bbox[2]]
+    old_area = old_tile[full_bb[1]:full_bb[3],full_bb[0]:full_bb[2]]
+    new_area = tile[full_bb[1]:full_bb[3],full_bb[0]:full_bb[2]]
     current_action = values['current_action']
 
-    print 'FULL BBOX', full_bbox, offset_x, offset_y
+    print 'FULL bb', full_bb, offset_x, offset_y
 
-    upd_full_bbox = [full_bbox[i] + [offset_x, offset_y][i%2] for i in range(4)]
+    upd_full_bb = [full_bb[i] + [offset_x, offset_y][i%2] for i in range(4)]
 
     action = {}
     action['origin'] = input['origin']
     action['name'] = 'ACTION'
     action_value = {}
     action_value['type'] = 'SPLIT'
-    action_value['value'] = [values["z"], upd_full_bbox, old_area, new_area]
+    action_value['value'] = [values["z"], upd_full_bb, old_area, new_area]
     action['value'] = [current_action, action_value]
 
     self.add_action(action)
@@ -591,22 +591,22 @@ class Controller(object):
     # Save all the splits, yielding offsets
     offsets = self.save_iter(tile)
 
-    full_bbox[0] += offsets[0]
-    full_bbox[1] += offsets[1]
-    full_bbox[2] += offsets[0]
-    full_bbox[3] += offsets[1]
+    full_bb[0] += offsets[0]
+    full_bb[1] += offsets[1]
+    full_bb[2] += offsets[0]
+    full_bb[3] += offsets[1]
 
     output = {}
     output['name'] = 'RELOAD'
     output['origin'] = input['origin']
-    output['value'] = {'z':values["z"], 'full_bbox':str(full_bbox)}
+    output['value'] = {'z':values["z"], 'full_bb':str(full_bb)}
     # print output
     self.__websocket.send(json.dumps(output))
 
     output = {}
     output['name'] = 'SPLITDONE'
     output['origin'] = input['origin']
-    output['value'] = {'z':values["z"], 'full_bbox':str(full_bbox)}
+    output['value'] = {'z':values["z"], 'full_bb':str(full_bb)}
     self.__websocket.send(json.dumps(output))
 
     self.__split_count += 1
@@ -617,7 +617,7 @@ class Controller(object):
     '''
     values = input['value']
     self.z = values['z']
-    bb = values['brush_bbox']
+    bb = values['brush_bb']
     self.label_id = values['id']
     image = self.__dojoserver.get_image()
     [width, height] = [image._width, image._height]
@@ -650,11 +650,9 @@ class Controller(object):
     offset_x = self.x_tiles[0]*512
     offset_y = self.y_tiles[0]*512
 
-    bbox = values['brush_bbox']
-    bbox_relative = bbox - np.array([offset_x]*2 + [offset_y]*2)
-
-    sub_tile = row_img[bbox_relative[2]:bbox_relative[3],bbox_relative[0]:bbox_relative[1]]
-    seg_sub_tile = row_seg[bbox_relative[2]:bbox_relative[3],bbox_relative[0]:bbox_relative[1]]
+    bb_relative = bb - np.array([offset_x]*2 + [offset_y]*2)
+    sub_tile = row_img[bb_relative[2]:bb_relative[3],bb_relative[0]:bb_relative[1]]
+    seg_sub_tile = row_seg[bb_relative[2]:bb_relative[3],bb_relative[0]:bb_relative[1]]
 
     sub_tile = mh.gaussian_filter(sub_tile, 1).astype(np.uint8) # gaussian filter
     sub_tile = (255 * exposure.equalize_hist(sub_tile)).astype(np.uint8) # enhance contrast
@@ -704,7 +702,7 @@ class Controller(object):
         brush_mask[c[1],c[0]] = True
 
     # crop
-    brush_mask = brush_mask[bbox[2]:bbox[3],bbox[0]:bbox[1]]
+    brush_mask = brush_mask[bb[2]:bb[3],bb[0]:bb[1]]
     brush_mask = mh.morph.dilate(brush_mask, np.ones((2*brush_size, 2*brush_size)))
 
     brush_image = np.copy(sub_tile)
@@ -727,10 +725,10 @@ class Controller(object):
     first_point = i_js[0]
     last_point = i_js[-1]
 
-    first_point_x = min(first_point[0] - bbox[0],brush_mask.shape[1]-1)
-    first_point_y = min(first_point[1] - bbox[2], brush_mask.shape[0]-1)
-    last_point_x = min(last_point[0] - bbox[0], brush_mask.shape[1]-1)
-    last_point_y = min(last_point[1] - bbox[2], brush_mask.shape[0]-1)
+    first_point_x = min(first_point[0] - bb[0],brush_mask.shape[1]-1)
+    first_point_y = min(first_point[1] - bb[2], brush_mask.shape[0]-1)
+    last_point_x = min(last_point[0] - bb[0], brush_mask.shape[1]-1)
+    last_point_y = min(last_point[1] - bb[2], brush_mask.shape[0]-1)
     end_points[first_point_y, first_point_x] = True
     end_points[last_point_y, last_point_x] = True
     end_points = mh.morph.dilate(end_points, np.ones((2*brush_size, 2*brush_size)))
@@ -777,10 +775,10 @@ class Controller(object):
 
         if ws[y,x] != ws[y,x+1]:
           lines_array[y,x] = 1
-          lines.append([bbox[0]+x,bbox[2]+y])
+          lines.append([bb[0]+x,bb[2]+y])
         if ws[y,x] != ws[y+1,x]:
           lines_array[y,x] = 1
-          lines.append([bbox[0]+x,bbox[2]+y])
+          lines.append([bb[0]+x,bb[2]+y])
 
     for y in range(1,ws.shape[0]):
       for x in range(1,ws.shape[1]):
@@ -790,10 +788,10 @@ class Controller(object):
 
         if ws[y,x] != ws[y,x-1]:
           lines_array[y,x] = 1
-          lines.append([bbox[0]+x,bbox[2]+y])
+          lines.append([bb[0]+x,bb[2]+y])
         if ws[y,x] != ws[y-1,x]:
           lines_array[y,x] = 1
-          lines.append([bbox[0]+x,bbox[2]+y])
+          lines.append([bb[0]+x,bb[2]+y])
 
     print 'long loop end'
 
