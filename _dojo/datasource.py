@@ -96,6 +96,10 @@ class Datasource(object):
           # width and height
           self._width = int(self.__info['numVoxelsX'])
           self._height = int(self.__info['numVoxelsY'])
+          self._xtiles = int(self.__info['numTilesX'])
+          self._ytiles = int(self.__info['numTilesY'])
+          self._voxPerTileX = int(self.__info['numVoxelsPerTileX'])
+          self._voxPerTileY = int(self.__info['numVoxelsPerTileY'])
 
         # colormap
         elif self.__colormap_file_regex.match(os.path.join(root,f)):

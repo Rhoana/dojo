@@ -283,7 +283,6 @@ class Controller(object):
         self.z = action['value'][0]
         bb = action['value'][1]
         old_area = action['value'][2]
-        new_area = action['value'][3]
 
         self.x_tiles = range((bb[0]//512), (((bb[2]-1)//512) + 1))
         self.y_tiles = range((bb[1]//512), (((bb[3]-1)//512) + 1))
@@ -304,7 +303,7 @@ class Controller(object):
         offset_x = self.x_tiles[0]*512
         offset_y = self.y_tiles[0]*512
 
-        bbox_relative = bb - [offset_x, offset_y, offset_x , offset_y]
+        bbox_relative =  np.array(bb) - [offset_x, offset_y, offset_x , offset_y]
 
         row_val[bbox_relative[1]:bbox_relative[3],bbox_relative[0]:bbox_relative[2]] = old_area
 
@@ -367,7 +366,6 @@ class Controller(object):
 
         self.z = action['value'][0]
         bb = action['value'][1]
-        old_area = action['value'][2]
         new_area = action['value'][3]
 
         self.x_tiles = range((bb[0]//512), (((bb[2]-1)//512) + 1))
@@ -389,7 +387,7 @@ class Controller(object):
         offset_x = self.x_tiles[0]*512
         offset_y = self.y_tiles[0]*512
 
-        bbox_relative = bb - [offset_x, offset_y, offset_x , offset_y]
+        bbox_relative = np.array(bb) - [offset_x, offset_y, offset_x , offset_y]
 
         row_val[bbox_relative[1]:bbox_relative[3],bbox_relative[0]:bbox_relative[2]] = new_area
 
@@ -516,8 +514,6 @@ class Controller(object):
       while str(v) in new_merges: v = new_merges[str(v)]
       row_val[np.where(row_val==float(k))] = v
 
-    print '0'
-
     i_js = values['line']
     click = values['click']
 
@@ -537,8 +533,6 @@ class Controller(object):
 
     label_image,n = mh.label(s_tile)
 
-    print '1'
-
     # check which label was selected
     selected_label = label_image[click[1]-offset_y, click[0]-offset_x]
 
@@ -546,8 +540,6 @@ class Controller(object):
 
     for c in i_js:
       label_image[c[1]-offset_y, c[0]-offset_x] = selected_label # the line belongs to the selected label
-
-    print '2'
 
     # update the segmentation data
 
@@ -572,8 +564,6 @@ class Controller(object):
 
     tile = np.add(row_val, label_image).astype(np.uint32)
 
-    print '3'
-
     tif.imsave('/tmp/new_tile.tif', tile.astype(np.uint32))
 
     #
@@ -585,11 +575,7 @@ class Controller(object):
 
     print 'FULL BBOX', full_bbox, offset_x, offset_y
 
-    upd_full_bbox = [0,0,0,0]
-    upd_full_bbox[0] = full_bbox[0] + offset_x
-    upd_full_bbox[1] = full_bbox[1] + offset_y
-    upd_full_bbox[2] = full_bbox[2] + offset_x
-    upd_full_bbox[3] = full_bbox[3] + offset_y
+    upd_full_bbox = [full_bbox[i] + [offset_x, offset_y][i%2] for i in range(4)]
 
     action = {}
     action['origin'] = input['origin']
@@ -629,15 +615,15 @@ class Controller(object):
     TODO: move to separate class
     '''
     values = input['value']
-    image = self.__dojoserver.get_image()
     self.z = values['z']
     self.label_id = values['id']
-    self.data_path = self.__mojo_dir + '/images/tiles/w=00000000/z='+str(values['z']).zfill(8)
+    image = self.__dojoserver.get_image()
+    [width, height] = [image._width, image._height]
+    self.data_path = self.__mojo_dir + '/images/tiles/w=00000000/z='+str(self.z).zfill(8)
 
     # find tiles we need for this split on highest res and make sure the bb is valid
     bb = np.clip(np.array(values['brush_bbox']),0,[image._width]*2 + [image._height]*2)
 
-    # print 'newbb',bb
     self.x_tiles = range((bb[0]//512), (((bb[1]-1)//512) + 1))
     self.y_tiles = range((bb[2]//512), (((bb[3]-1)//512) + 1))
 
@@ -702,9 +688,6 @@ class Controller(object):
 
       # add linear interpolation to brush stroke
       dense_brush += zip(ys,xs)
-
-    width = self.__dojoserver.get_image()._width
-    height = self.__dojoserver.get_image()._height
 
     # add dense brush stroke to mask image
     brush_mask = np.zeros((height, width),dtype=bool)
@@ -881,15 +864,15 @@ class Controller(object):
     dicts = dicts_rows[:-lend]
 
     label_touches_border = True
-    max_x_tiles = self.__dojoserver.get_image()._width / 512
-    max_y_tiles = self.__dojoserver.get_image()._height / 512
+    max_x_tiles = self.__dojoserver.get_image()._xtiles
+    max_y_tiles = self.__dojoserver.get_image()._ytiles
 
     while label_touches_border:
 
       touches_top = self.label_id in rows[0][0,:]
       touches_left = self.label_id in rows[0][:,0]
-      touches_right = self.label_id in rows[0][:,rows[0].shape[1]-1]
-      touches_bottom = self.label_id in rows[0][rows[0].shape[0]-1, :]
+      touches_right = self.label_id in rows[0][:,-1]
+      touches_bottom = self.label_id in rows[0][-1, :]
 
       label_touches_border = touches_left or touches_right or touches_bottom or touches_top
 
