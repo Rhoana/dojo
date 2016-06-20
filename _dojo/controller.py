@@ -299,21 +299,12 @@ class Controller(object):
 
         #
         # NOW REPLACE THE PIXEL DATA
-        #
-        bbox_relative = np.array(bb)
-
-        #
         # but take offset of tile into account
         #
         offset_x = self.x_tiles[0]*512
         offset_y = self.y_tiles[0]*512
 
-        bbox_relative[0] -= offset_x
-        bbox_relative[1] -= offset_y
-        bbox_relative[2] -= offset_x
-        bbox_relative[3] -= offset_y
-
-        print row_val.shape
+        bbox_relative = bb - [offset_x, offset_y, offset_x , offset_y]
 
         row_val[bbox_relative[1]:bbox_relative[3],bbox_relative[0]:bbox_relative[2]] = old_area
 
@@ -393,19 +384,12 @@ class Controller(object):
 
         #
         # NOW REPLACE THE PIXEL DATA
-        #
-        bbox_relative = np.array(bb)
-
-        #
         # but take offset of tile into account
         #
         offset_x = self.x_tiles[0]*512
         offset_y = self.y_tiles[0]*512
 
-        bbox_relative[0] -= offset_x
-        bbox_relative[1] -= offset_y
-        bbox_relative[2] -= offset_x
-        bbox_relative[3] -= offset_y
+        bbox_relative = bb - [offset_x, offset_y, offset_x , offset_y]
 
         row_val[bbox_relative[1]:bbox_relative[3],bbox_relative[0]:bbox_relative[2]] = new_area
 
@@ -535,21 +519,13 @@ class Controller(object):
     print '0'
 
     i_js = values['line']
-    bbox = values['bbox']
     click = values['click']
 
-    bbox_relative = np.array(bbox)
-
     #
-    # but take offset of tile into account
+    # Take offset of tile into account
     #
     offset_x = self.x_tiles[0]*512
     offset_y = self.y_tiles[0]*512
-
-    bbox_relative[0] -= offset_x
-    bbox_relative[1] -= offset_x
-    bbox_relative[2] -= offset_y
-    bbox_relative[3] -= offset_y
 
     s_tile = np.zeros(row_val.shape)
     s_tile[row_val == self.label_id] = 1
@@ -661,13 +637,9 @@ class Controller(object):
     # find tiles we need for this split on highest res and make sure the bb is valid
     bb = np.clip(np.array(values['brush_bbox']),0,[image._width]*2 + [image._height]*2)
 
-    print bb
-
     # print 'newbb',bb
     self.x_tiles = range((bb[0]//512), (((bb[1]-1)//512) + 1))
     self.y_tiles = range((bb[2]//512), (((bb[3]-1)//512) + 1))
-
-    print self.x_tiles, self.y_tiles
 
     img_dict = {}
     seg_dict = {}
@@ -684,30 +656,21 @@ class Controller(object):
     #
     [row_seg,row_img] = self.edge_iter(seg_dict,img_dict,row_seg,row_img)
 
-    bbox = values['brush_bbox']
-    bbox_relative = np.array(bbox)
-
     #
     # but take offset of tile into account
     #
     offset_x = self.x_tiles[0]*512
     offset_y = self.y_tiles[0]*512
 
-    bbox_relative[0] -= offset_x
-    bbox_relative[1] -= offset_x
-    bbox_relative[2] -= offset_y
-    bbox_relative[3] -= offset_y
+    bbox_relative = bb - [offset_x, offset_y, offset_x , offset_y]
 
     sub_tile = row_img[bbox_relative[2]:bbox_relative[3],bbox_relative[0]:bbox_relative[1]]
     seg_sub_tile = row_seg[bbox_relative[2]:bbox_relative[3],bbox_relative[0]:bbox_relative[1]]
-
-    print sub_tile.shape
 
     sub_tile = mh.gaussian_filter(sub_tile, 1).astype(np.uint8) # gaussian filter
     sub_tile = (255 * exposure.equalize_hist(sub_tile)).astype(np.uint8) # enhance contrast
 
     brush_size = values['brush_size']
-
     i_js = values['i_js']
 
     # make sparse points in i_js a dense line (with linear interpolation)
@@ -751,7 +714,7 @@ class Controller(object):
         brush_mask[c[1],c[0]] = True
 
     # crop
-    brush_mask = brush_mask[bbox[2]:bbox[3],bbox[0]:bbox[1]]
+    brush_mask = brush_mask[bb[2]:bb[3],bb[0]:bb[1]]
     brush_mask = mh.morph.dilate(brush_mask, np.ones((2*brush_size, 2*brush_size)))
 
     brush_image = np.copy(sub_tile)
@@ -774,10 +737,10 @@ class Controller(object):
     first_point = i_js[0]
     last_point = i_js[-1]
 
-    first_point_x = min(first_point[0] - bbox[0],brush_mask.shape[1]-1)
-    first_point_y = min(first_point[1] - bbox[2], brush_mask.shape[0]-1)
-    last_point_x = min(last_point[0] - bbox[0], brush_mask.shape[1]-1)
-    last_point_y = min(last_point[1] - bbox[2], brush_mask.shape[0]-1)
+    first_point_x = min(first_point[0] - bb[0],brush_mask.shape[1]-1)
+    first_point_y = min(first_point[1] - bb[2], brush_mask.shape[0]-1)
+    last_point_x = min(last_point[0] - bb[0], brush_mask.shape[1]-1)
+    last_point_y = min(last_point[1] - bb[2], brush_mask.shape[0]-1)
     end_points[first_point_y, first_point_x] = True
     end_points[last_point_y, last_point_x] = True
     end_points = mh.morph.dilate(end_points, np.ones((2*brush_size, 2*brush_size)))
@@ -824,10 +787,10 @@ class Controller(object):
 
         if ws[y,x] != ws[y,x+1]:
           lines_array[y,x] = 1
-          lines.append([bbox[0]+x,bbox[2]+y])
+          lines.append([bb[0]+x,bb[2]+y])
         if ws[y,x] != ws[y+1,x]:
           lines_array[y,x] = 1
-          lines.append([bbox[0]+x,bbox[2]+y])
+          lines.append([bb[0]+x,bb[2]+y])
 
     for y in range(1,ws.shape[0]):
       for x in range(1,ws.shape[1]):
@@ -837,10 +800,10 @@ class Controller(object):
 
         if ws[y,x] != ws[y,x-1]:
           lines_array[y,x] = 1
-          lines.append([bbox[0]+x,bbox[2]+y])
+          lines.append([bb[0]+x,bb[2]+y])
         if ws[y,x] != ws[y-1,x]:
           lines_array[y,x] = 1
-          lines.append([bbox[0]+x,bbox[2]+y])
+          lines.append([bb[0]+x,bb[2]+y])
 
     print 'long loop end'
 
