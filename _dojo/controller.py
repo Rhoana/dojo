@@ -652,14 +652,9 @@ class Controller(object):
 
     bbox = values['brush_bbox']
     bbox_relative = bbox
-    bbox_relative -= np.array([offset_x, offset_y, offset_x, offset_y])
-
-    print bbox_relative
+    for i in range(4): bbox_relative[i] -= [offset_x, offset_y][i%2]
 
     sub_tile = row_img[bbox_relative[2]:bbox_relative[3],bbox_relative[0]:bbox_relative[1]]
-
-    print 'Sub ', sub_tile.shape
-
     seg_sub_tile = row_seg[bbox_relative[2]:bbox_relative[3],bbox_relative[0]:bbox_relative[1]]
 
     sub_tile = mh.gaussian_filter(sub_tile, 1).astype(np.uint8) # gaussian filter
