@@ -661,6 +661,8 @@ class Controller(object):
     # find tiles we need for this split on highest res and make sure the bb is valid
     bb = np.clip(np.array(values['brush_bbox']),0,[image._width]*2 + [image._height]*2)
 
+    print bb
+
     # print 'newbb',bb
     self.x_tiles = range((bb[0]//512), (((bb[1]-1)//512) + 1))
     self.y_tiles = range((bb[2]//512), (((bb[3]-1)//512) + 1))
