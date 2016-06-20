@@ -691,7 +691,9 @@ class Controller(object):
 
       # add linear interpolation to brush stroke
       dense_brush += zip(ys,xs)
-
+        
+    width = self.__dojoserver.get_image()._width
+    height = self.__dojoserver.get_image()._height
     # add dense brush stroke to mask image
     brush_mask = np.zeros((height, width),dtype=bool)
 
