@@ -651,16 +651,17 @@ class Controller(object):
     offset_y = self.y_tiles[0]*512
 
     bbox = values['brush_bbox']
-    bbox_relative = np.array(bbox)
-    bbox_relative = bbox_relative - [offset_x, offset_y, offset_x, offset_y]
+    bbox_relative = np.array(bbox) - np.array([offset_x, offset_y, offset_x, offset_y])
 
     sub_tile = row_img[bbox_relative[2]:bbox_relative[3],bbox_relative[0]:bbox_relative[1]]
+
+    print 'BB ', bbox_relative
+    print 'Sub ', sub_tile.shape
+
     seg_sub_tile = row_seg[bbox_relative[2]:bbox_relative[3],bbox_relative[0]:bbox_relative[1]]
 
     sub_tile = mh.gaussian_filter(sub_tile, 1).astype(np.uint8) # gaussian filter
     sub_tile = (255 * exposure.equalize_hist(sub_tile)).astype(np.uint8) # enhance contrast
-
-    print 'Sub ', sub_tile.shape
 
     brush_size = values['brush_size']
 
