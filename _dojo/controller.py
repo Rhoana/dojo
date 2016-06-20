@@ -616,13 +616,14 @@ class Controller(object):
     '''
     values = input['value']
     self.z = values['z']
+    bb = values['brush_bbox']
     self.label_id = values['id']
     image = self.__dojoserver.get_image()
     [width, height] = [image._width, image._height]
     self.data_path = self.__mojo_dir + '/images/tiles/w=00000000/z='+str(self.z).zfill(8)
 
     # find tiles we need for this split on highest res and make sure the bb is valid
-    bb = np.clip(np.array(values['brush_bbox']),0,[image._width]*2 + [image._height]*2)
+    bb = np.clip(np.array(bb),0,[image._width]*2 + [image._height]*2)
 
     self.x_tiles = range((bb[0]//512), (((bb[1]-1)//512) + 1))
     self.y_tiles = range((bb[2]//512), (((bb[3]-1)//512) + 1))
@@ -648,7 +649,7 @@ class Controller(object):
     offset_x = self.x_tiles[0]*512
     offset_y = self.y_tiles[0]*512
 
-    bbox_relative = bb - [offset_x, offset_y, offset_x , offset_y]
+    bbox_relative = bb - [offset_x, offset_y, offset_x, offset_y]
 
     sub_tile = row_img[bbox_relative[2]:bbox_relative[3],bbox_relative[0]:bbox_relative[1]]
     seg_sub_tile = row_seg[bbox_relative[2]:bbox_relative[3],bbox_relative[0]:bbox_relative[1]]
