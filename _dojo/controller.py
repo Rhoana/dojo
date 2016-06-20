@@ -644,24 +644,18 @@ class Controller(object):
     #
     [row_seg,row_img] = self.edge_iter(seg_dict,img_dict,row_seg,row_img)
 
-    bbox = values['brush_bbox']
-    bbox_relative = np.array(bbox)
-
     #
     # but take offset of tile into account
     #
     offset_x = self.x_tiles[0]*512
     offset_y = self.y_tiles[0]*512
 
-    bbox_relative[0] -= offset_x
-    bbox_relative[1] -= offset_x
-    bbox_relative[2] -= offset_y
-    bbox_relative[3] -= offset_y
+    bbox = values['brush_bbox']
+    bbox_relative = np.array(bbox)
+    bbox_relative = bbox_relative - [offset_x, offset_y, offset_x, offset_y]
 
     sub_tile = row_img[bbox_relative[2]:bbox_relative[3],bbox_relative[0]:bbox_relative[1]]
     seg_sub_tile = row_seg[bbox_relative[2]:bbox_relative[3],bbox_relative[0]:bbox_relative[1]]
-
-    print sub_tile.shape
 
     sub_tile = mh.gaussian_filter(sub_tile, 1).astype(np.uint8) # gaussian filter
     sub_tile = (255 * exposure.equalize_hist(sub_tile)).astype(np.uint8) # enhance contrast
