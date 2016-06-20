@@ -655,7 +655,7 @@ class Controller(object):
 
     sub_tile = row_img[bbox_relative[2]:bbox_relative[3],bbox_relative[0]:bbox_relative[1]]
 
-    print 'BB ', bbox_relative
+    print 'Img ', row_img
     print 'Sub ', sub_tile.shape
 
     seg_sub_tile = row_seg[bbox_relative[2]:bbox_relative[3],bbox_relative[0]:bbox_relative[1]]
