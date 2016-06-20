@@ -314,7 +314,7 @@ class Controller(object):
         output = {}
         output['name'] = 'HARD_RELOAD'
         output['origin'] = 'SERVER'
-        output['value'] = {'z':self.z, 'full_bb':str(bb)}
+        output['value'] = {'z':self.z, 'full_bbox':str(bb)}
         # print output
         self.__websocket.send(json.dumps(output))
 
@@ -398,7 +398,7 @@ class Controller(object):
         output = {}
         output['name'] = 'HARD_RELOAD'
         output['origin'] = 'SERVER'
-        output['value'] = {'z':self.z, 'full_bb':str(bb)}
+        output['value'] = {'z':self.z, 'full_bbox':str(bb)}
         # print output
         self.__websocket.send(json.dumps(output))
 
@@ -461,7 +461,7 @@ class Controller(object):
     output = {}
     output['name'] = 'HARD_RELOAD'
     output['origin'] = 'SERVER'
-    output['value'] = {'z':z, 'full_bb':str(bb)}
+    output['value'] = {'z':z, 'full_bbox':str(bb)}
     # print output
     self.__websocket.send(json.dumps(output))
 
@@ -480,7 +480,7 @@ class Controller(object):
   def finalize_split(self, input):
 
     values = input['value']
-    bb = values['bb']
+    bb = values['bbox']
     image = self.__dojoserver.get_image()
     self.label_id = values['id']
     self.z = values['z']
@@ -599,14 +599,14 @@ class Controller(object):
     output = {}
     output['name'] = 'RELOAD'
     output['origin'] = input['origin']
-    output['value'] = {'z':values["z"], 'full_bb':str(full_bb)}
+    output['value'] = {'z':values["z"], 'full_bbox':str(full_bb)}
     # print output
     self.__websocket.send(json.dumps(output))
 
     output = {}
     output['name'] = 'SPLITDONE'
     output['origin'] = input['origin']
-    output['value'] = {'z':values["z"], 'full_bb':str(full_bb)}
+    output['value'] = {'z':values["z"], 'full_bbox':str(full_bb)}
     self.__websocket.send(json.dumps(output))
 
     self.__split_count += 1
@@ -617,7 +617,7 @@ class Controller(object):
     '''
     values = input['value']
     self.z = values['z']
-    bb = values['brush_bb']
+    bb = values['brush_bbox']
     self.label_id = values['id']
     image = self.__dojoserver.get_image()
     [width, height] = [image._width, image._height]
