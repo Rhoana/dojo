@@ -660,6 +660,8 @@ class Controller(object):
     sub_tile = mh.gaussian_filter(sub_tile, 1).astype(np.uint8) # gaussian filter
     sub_tile = (255 * exposure.equalize_hist(sub_tile)).astype(np.uint8) # enhance contrast
 
+    print 'Sub ', sub_tile.shape
+
     brush_size = values['brush_size']
 
     i_js = values['i_js']
