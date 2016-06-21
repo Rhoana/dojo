@@ -587,6 +587,7 @@ class Controller(object):
     action['value'] = [current_action, action_value]
 
     self.add_action(action)
+    print 'split done\n'
 
     # Save all the splits, yielding offsets
     offsets = self.save_iter(tile)
@@ -789,8 +790,6 @@ class Controller(object):
           lines_array[y,x] = 1
           lines.append([bb[0]+x,bb[2]+y])
 
-    print 'split done\n'
-
     output = {}
     output['name'] = 'SPLITRESULT'
     output['origin'] = input['origin']
@@ -868,12 +867,8 @@ class Controller(object):
 
     count = 0
     while label_touches_border:
-      # raw_input('show tile ' + str(self.x_tiles) + ', ' + str(self.y_tiles) + '?')
       img = np.dstack(tuple([255*(rows[0]-rows[0].min())/(rows[0].max())])*3)
-      if self.label_id not in rows[0]:
-        row_0 = rows[0][0,:]
-        all_0 = [row_0[i] for i in sorted(np.unique(row_0, return_index=True)[1])]
-        print '   No match in IDs ' + str(all_0)
+      if self.label_id not in rows[0]: print 'No match in tile ' + str(self.x_tiles) + ', ' + str(self.y_tiles)
 
       img[np.where(rows[0] == self.label_id)] = [50,160,80]
       cv2.imwrite('now.png', img.astype(np.uint8))
@@ -1021,8 +1016,6 @@ class Controller(object):
 
   def use_new_merge(self):
 
-    print 'label was ' + str(self.label_id)
-
     self.ids = [self.label_id]
     # Temporarily harden new merges
     new_merges = self.__new_merge_table
@@ -1033,8 +1026,6 @@ class Controller(object):
         if v not in self.ids and v not in chain: chain.append(v)
       if self.label_id == v:
         self.ids += chain
-
-    print 'labels are ' + str(self.ids)
 
   def lookup_label(self, label_id):
 
