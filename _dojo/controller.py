@@ -10,7 +10,6 @@ import math
 import shutil
 from scipy import ndimage
 from skimage import exposure
-import time
 
 class Controller(object):
 
@@ -857,9 +856,8 @@ class Controller(object):
     while label_touches_border:
       img = np.dstack(tuple([255*rows[0]/(rows[0].max())])*3)
       img[np.where(rows[0] == self.label_id)] = [50,160,80]
+      raw_input('show tile ' + str(count) + '?')
       cv2.imwrite('now.png', img.astype(np.uint8))
-      print 'show tile ' + str(count)
-      time.sleep(3)
       count += 1
 
       touches_top = self.label_id in rows[0][0,:]
