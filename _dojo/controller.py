@@ -857,7 +857,7 @@ class Controller(object):
       img = np.dstack(tuple([255*(rows[0]-rows[0].min())/(rows[0].max())])*3)
       img[np.where(rows[0] == self.label_id)] = [50,160,80]
       raw_input('show tile ' + str(count) + '?')
-      print '   closest differs by ' + str(min(rows[0]-self.label_id))
+      print '   closest differs by ' + str((rows[0]-self.label_id).min())
       cv2.imwrite('now.png', img.astype(np.uint8))
       count += 1
 
