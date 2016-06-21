@@ -10,6 +10,7 @@ import math
 import shutil
 from scipy import ndimage
 from skimage import exposure
+import time
 
 class Controller(object):
 
@@ -287,8 +288,6 @@ class Controller(object):
         self.x_tiles = range((bb[0]//512), (((bb[2]-1)//512) + 1))
         self.y_tiles = range((bb[1]//512), (((bb[3]-1)//512) + 1))
 
-        print self.x_tiles, self.y_tiles, bb
-
         tile_dict = {} # here this is the segmentation
 
         # Load segmentation data
@@ -370,8 +369,6 @@ class Controller(object):
 
         self.x_tiles = range((bb[0]//512), (((bb[2]-1)//512) + 1))
         self.y_tiles = range((bb[1]//512), (((bb[3]-1)//512) + 1))
-
-        print self.x_tiles, self.y_tiles, bb
 
         tile_dict = {} # here this is the segmentation
 
@@ -537,18 +534,13 @@ class Controller(object):
     # check which label was selected
     selected_label = label_image[click[1]-offset_y, click[0]-offset_x]
 
-    # print 'selected', selected_label
-
     for c in i_js:
       label_image[c[1]-offset_y, c[0]-offset_x] = selected_label # the line belongs to the selected label
 
     # update the segmentation data
 
-    print 'largest id', self.__largest_id
-
     self.__largest_id += 1
     new_id = self.__largest_id
-    print 'new largest id', new_id - self.lookup_label(self.label_id)
 
     # unselected_label = selected_label==1 ? unselected_label=2 : unselected_label:1
 
@@ -573,8 +565,6 @@ class Controller(object):
     old_area = old_tile[full_bb[1]:full_bb[3],full_bb[0]:full_bb[2]]
     new_area = tile[full_bb[1]:full_bb[3],full_bb[0]:full_bb[2]]
     current_action = values['current_action']
-
-    print 'FULL bb', full_bb, offset_x, offset_y
 
     upd_full_bb = [full_bb[i] + [offset_x, offset_y][i%2] for i in range(4)]
 
@@ -612,9 +602,9 @@ class Controller(object):
     self.__split_count += 1
 
   def split(self, input):
-    '''
-    TODO: move to separate class
-    '''
+
+    print 'split go...'
+
     values = input['value']
     self.z = values['z']
     bb = values['brush_bbox']
@@ -642,6 +632,7 @@ class Controller(object):
     # important: we need to detect if the label_id touches one of the borders of our segmentation
     # we need to load additional tiles until this is not the case anymore
     #
+    print 'Load more tiles?'
     [row_seg,row_img] = self.edge_iter(seg_dict,img_dict,row_seg,row_img)
 
     #
@@ -663,7 +654,7 @@ class Controller(object):
 
     # make sparse points in i_js a dense line (with linear interpolation)
     dense_brush = []
-    print 'starting loop'
+
     for i in range(len(i_js)-1):
       # two sparse points
       p0 = i_js[i]
@@ -757,10 +748,6 @@ class Controller(object):
     lines_array = np.zeros(ws.shape,dtype=np.uint8)
     lines = []
 
-    print 'long loop start'
-    print 'Looking for ', self.label_id
-    print 'new mt', self.__new_merge_table
-
     for y in range(ws.shape[0]-1):
       for x in range(ws.shape[1]-1):
 
@@ -789,9 +776,7 @@ class Controller(object):
           lines_array[y,x] = 1
           lines.append([bb[0]+x,bb[2]+y])
 
-    print 'long loop end'
-
-    print 'split done'
+    print 'split done\n'
 
     output = {}
     output['name'] = 'SPLITRESULT'
@@ -868,7 +853,14 @@ class Controller(object):
     max_x_tiles = self.__dojoserver.get_image()._xtiles
     max_y_tiles = self.__dojoserver.get_image()._ytiles
 
+    count = 0
     while label_touches_border:
+      img = np.dstack(tuple([255*rows[0]/(rows[0].max())])*3)
+      img[np.where(rows[0] == self.label_id)] = [50,160,80]
+      cv2.imwrite('now.png', img.astype(np.uint8))
+      print 'show tile ' + str(count)
+      time.sleep(3)
+      count += 1
 
       touches_top = self.label_id in rows[0][0,:]
       touches_left = self.label_id in rows[0][:,0]
@@ -938,14 +930,9 @@ class Controller(object):
       if w!=0:
         tile = ndimage.interpolation.zoom(tile, .5, order=0, mode='nearest')
 
-      print '='*80
-      print 'W', w
-
       # find tiles
       self.x_tiles = range((target_i//512), (((target_i + target_width-1)//512) + 1))
       self.y_tiles = range((target_j//512), (((target_j + target_height-1)//512) + 1))
-
-      print 'TILES', self.x_tiles, self.y_tiles
 
       tile_width = 0
       pixel_written_x = 0
@@ -995,19 +982,12 @@ class Controller(object):
               tile_width = min(512-offset_x, target_width-pixel_written_x)
               tile_height = min(512-offset_y, target_height-pixel_written_y)
 
-              print 'pixel X,Y', tile_x, tile_y
-
-              print 'copying', pixel_written_y,':',pixel_written_y+tile_height,',',pixel_written_x,':',pixel_written_x+tile_width
-              print '     to', offset_y,':',offset_y+tile_height,',', offset_x,':',offset_x+tile_width
-
               image_data[offset_y:offset_y+tile_height,offset_x:offset_x+tile_width] = tile[pixel_written_y:pixel_written_y+tile_height,pixel_written_x:pixel_written_x+tile_width]
 
               hdf5filename = output_folder+s
               h5f = h5py.File(hdf5filename, 'w')
               h5f.create_dataset('dataset_1', data=image_data)
               h5f.close()
-
-              print 'written', hdf5filename
 
               pixel_written_y += tile_height
 
