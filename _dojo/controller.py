@@ -631,7 +631,7 @@ class Controller(object):
     # important: we need to detect if the label_id touches one of the borders of our segmentation
     # we need to load additional tiles until this is not the case anymore
     #
-    print 'Load more tiles?'
+    print 'tiles for ' + str(self.label_id) + '...'
     [row_seg,row_img] = self.edge_iter(seg_dict,img_dict,row_seg,row_img)
 
     #
@@ -857,6 +857,7 @@ class Controller(object):
       img = np.dstack(tuple([255*(rows[0]-rows[0].min())/(rows[0].max())])*3)
       img[np.where(rows[0] == self.label_id)] = [50,160,80]
       raw_input('show tile ' + str(count) + '?')
+      print '   closest differs by ' + str(min(rows[0]-self.label_id))
       cv2.imwrite('now.png', img.astype(np.uint8))
       count += 1
 
