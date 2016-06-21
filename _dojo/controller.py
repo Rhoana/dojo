@@ -856,7 +856,11 @@ class Controller(object):
     while label_touches_border:
       raw_input('show tile ' + str(self.x_tiles) + ', ' + str(self.y_tiles) + '?')
       img = np.dstack(tuple([255*(rows[0]-rows[0].min())/(rows[0].max())])*3)
-      if self.label_id not in rows[0] : print '   No match here!'
+      if self.label_id not in rows[0]:
+        row_0 = rows[0][0,:]
+        all_0 = [row_0[i] for i in sorted(np.unique(row_0, return_index=True)[1])]
+        print '   No match in IDs ' + str(all_0)
+
       img[np.where(rows[0] == self.label_id)] = [50,160,80]
       cv2.imwrite('now.png', img.astype(np.uint8))
       count += 1
