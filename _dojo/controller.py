@@ -294,6 +294,12 @@ class Controller(object):
         # go through rows of each segmentation
         row_val = self.tile_iter(tile_dict)[0]
 
+        # Temporarily harden new merges
+        new_merges = self.__new_merge_table
+        for k,v in new_merges.iteritems():
+          while str(v) in new_merges: v = new_merges[str(v)]
+          row_val[np.where(row_val==float(k))] = v
+
         #
         # NOW REPLACE THE PIXEL DATA
         # but take offset of tile into account
@@ -375,6 +381,12 @@ class Controller(object):
         tile_dict = self.file_iter(tile_dict)[0]
         # go through rows of each tile and segmentation
         row_val = self.tile_iter(tile_dict)[0]
+
+        # Temporarily harden new merges
+        new_merges = self.__new_merge_table
+        for k,v in new_merges.iteritems():
+          while str(v) in new_merges: v = new_merges[str(v)]
+          row_val[np.where(row_val==float(k))] = v
 
         #
         # NOW REPLACE THE PIXEL DATA
@@ -494,6 +506,8 @@ class Controller(object):
     # go through rows of each segmentation
     row_val = self.tile_iter(tile_dict)[0]
 
+    self.use_new_merge()
+
     ##
     #
     # important: we need to detect if the label_id touches one of the borders of our segmentation
@@ -501,15 +515,12 @@ class Controller(object):
     #
     [row_val, old_tile] = self.edge_iter(tile_dict, row_val)
 
+    # temporarily flatten
+    for seg in self.ids: row_val[np.where(row_val == seg)] = self.label_id
+
     # Apply saved hardened merges
     lut = self.get_hard_merge_table()
     row_val = lut[row_val]
-
-    # Temporarily harden new merges
-    new_merges = self.__new_merge_table
-    for k,v in new_merges.iteritems():
-      while str(v) in new_merges: v = new_merges[str(v)]
-      row_val[np.where(row_val==float(k))] = v
 
     i_js = values['line']
     click = values['click']
@@ -609,7 +620,6 @@ class Controller(object):
     bb = values['brush_bbox']
     self.label_id = values['id']
     image = self.__dojoserver.get_image()
-    [width, height] = [image._width, image._height]
     self.data_path = self.__mojo_dir + '/images/tiles/w=00000000/z='+str(self.z).zfill(8)
 
     # find tiles we need for this split on highest res and make sure the bb is valid
@@ -626,13 +636,17 @@ class Controller(object):
     # go through rows of each tile and segmentation, AGAIN!
     [row_seg,row_img] = self.tile_iter(seg_dict,img_dict)
 
+    self.use_new_merge()
+
     ##
     #
     # important: we need to detect if the label_id touches one of the borders of our segmentation
     # we need to load additional tiles until this is not the case anymore
     #
-    print 'tiles for ' + str(self.label_id) + '...'
     [row_seg,row_img] = self.edge_iter(seg_dict,img_dict,row_seg,row_img)
+
+    # temporarily flatten
+    for seg in self.ids: row_seg[np.where(row_seg == seg)] = self.label_id
 
     #
     # but take offset of tile into account
@@ -854,7 +868,7 @@ class Controller(object):
 
     count = 0
     while label_touches_border:
-      raw_input('show tile ' + str(self.x_tiles) + ', ' + str(self.y_tiles) + '?')
+      # raw_input('show tile ' + str(self.x_tiles) + ', ' + str(self.y_tiles) + '?')
       img = np.dstack(tuple([255*(rows[0]-rows[0].min())/(rows[0].max())])*3)
       if self.label_id not in rows[0]:
         row_0 = rows[0][0,:]
@@ -865,10 +879,10 @@ class Controller(object):
       cv2.imwrite('now.png', img.astype(np.uint8))
       count += 1
 
-      touches_top = self.label_id in rows[0][0,:]
-      touches_left = self.label_id in rows[0][:,0]
-      touches_right = self.label_id in rows[0][:,-1]
-      touches_bottom = self.label_id in rows[0][-1, :]
+      touches_top = any([ seg in rows[0][0,:] for seg in self.ids ])
+      touches_left = any([ seg in rows[0][:,0] for seg in self.ids ])
+      touches_right = any([ seg in rows[0][:,-1] for seg in self.ids ])
+      touches_bottom = any([ seg in rows[0][-1,:] for seg in self.ids ])
 
       label_touches_border = touches_left or touches_right or touches_bottom or touches_top
 
@@ -1004,6 +1018,23 @@ class Controller(object):
 
     # Return offsets
     return [offset_x,offset_y]
+
+  def use_new_merge(self):
+
+    print 'label was ' + str(self.label_id)
+
+    self.ids = [self.label_id]
+    # Temporarily harden new merges
+    new_merges = self.__new_merge_table
+    for k,v in new_merges.iteritems():
+      chain = [int(k)]
+      while str(v) in new_merges:
+        v = new_merges[str(v)]
+        if v not in self.ids and v not in chain: chain.append(v)
+      if self.label_id == v:
+        self.ids += chain
+
+    print 'labels are ' + str(self.ids)
 
   def lookup_label(self, label_id):
 
