@@ -854,7 +854,7 @@ class Controller(object):
 
     count = 0
     while label_touches_border:
-      img = np.dstack(tuple([255*rows[0]/(rows[0].max())])*3)
+      img = np.dstack(tuple([255*(rows[0]-rows[0].min())/(rows[0].max())])*3)
       img[np.where(rows[0] == self.label_id)] = [50,160,80]
       raw_input('show tile ' + str(count) + '?')
       cv2.imwrite('now.png', img.astype(np.uint8))
