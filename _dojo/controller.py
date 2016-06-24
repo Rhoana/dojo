@@ -10,6 +10,7 @@ import math
 import shutil
 from scipy import ndimage
 from skimage import exposure
+from PIL import Image as PILImage
 
 class Controller(object):
 
@@ -813,7 +814,7 @@ class Controller(object):
         # If extra dictionary for image data
         if len(dicts) > 1:
           img = 'y='+str(y).zfill(8)+',x='+str(x).zfill(8)+'.'+self.__dojoserver.get_image().get_input_format()
-          dicts[-1][x][y] = cv2.imread(os.path.join(self.data_path,img),0)
+          dicts[-1][x][y] = np.array(PILImage.open(os.path.join(self.data_path,img)))
         # Always get segmentation data
         seg = 'y='+str(y).zfill(8)+',x='+str(x).zfill(8)+'.'+self.__dojoserver.get_segmentation().get_input_format()
 
@@ -865,14 +866,11 @@ class Controller(object):
     max_x_tiles = self.__dojoserver.get_image()._xtiles
     max_y_tiles = self.__dojoserver.get_image()._ytiles
 
-    count = 0
     while label_touches_border:
       img = np.dstack(tuple([255*(rows[0]-rows[0].min())/(rows[0].max())])*3)
       if self.label_id not in rows[0]: print 'No match in tile ' + str(self.x_tiles) + ', ' + str(self.y_tiles)
 
       img[np.where(rows[0] == self.label_id)] = [50,160,80]
-      cv2.imwrite('now.png', img.astype(np.uint8))
-      count += 1
 
       touches_top = any([ seg in rows[0][0,:] for seg in self.ids ])
       touches_left = any([ seg in rows[0][:,0] for seg in self.ids ])

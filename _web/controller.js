@@ -1336,10 +1336,12 @@ J.controller.prototype.is_3d_label = function(id) {
 
 J.controller.prototype.add_3d_label = function(id) {
 
-  this._3d_labels[id] = true;
+  if (id != 0) {
+    this._3d_labels[id] = true;
 
-  this.create_gl_3d_labels();
-  this.update_threeD();
+    this.create_gl_3d_labels();
+    this.update_threeD();
+  }
 
 };
 

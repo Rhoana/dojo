@@ -3,10 +3,8 @@ import re
 import StringIO
 from datasource import Datasource
 from PIL import Image as PILImage
-import cv2
-import zlib
-
 import numpy as np
+import zlib
 
 
 class Image(Datasource):
@@ -34,7 +32,7 @@ class Image(Datasource):
     # Sample all slices or a maximum number of z slices from all files
     for i in np.linspace(0,len(files)-1, num=min(len(files),self._Datasource__zSample_max)).astype('int'):
 
-      input_image = cv2.imread(files[i],0)
+      input_image = np.array(PILImage.open(files[i]))
 
       if out_is_there:
         #out = np.dstack([out, input_image])
