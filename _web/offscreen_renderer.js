@@ -196,8 +196,6 @@ J.offscreen_renderer.prototype.draw = function(i, s, c, x, y) {
   gl.bindBuffer(gl.ARRAY_BUFFER, this._square_buffer);
   gl.vertexAttribPointer(this.h_aPosition, 3, gl.FLOAT, false, 0, 0);
 
-  console.log(this._viewer._controller._highlighted_id);
-
   // some values
   gl.uniform1f(this.h_uActivatedId, this._viewer._controller._activated_id);
   gl.uniform1f(this.h_uHighlightedId, this._viewer._controller._highlighted_id);
