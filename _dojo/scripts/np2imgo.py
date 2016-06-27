@@ -10,6 +10,7 @@ import numpy as np
 class Imgo:
     def __init__(self, img, output_dir):
 
+        img = np.array(img).astype(np.uint8)
         shape = img.shape
 
         tile_num_pixels_y = 512

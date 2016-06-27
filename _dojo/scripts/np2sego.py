@@ -10,6 +10,7 @@ import sqlite3
 class Sego:
     def __init__(self, seg, output_dir):
 
+        seg = np.array(seg).astype(np.uint8)
         shape = seg.shape
         transpose = True
 
