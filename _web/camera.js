@@ -135,7 +135,7 @@ J.camera.prototype.zoom = function(x, y, delta) {
   var future_zoom_level = Math.round((this._view[0] + wheel_sign * this._linear_zoom_factor)*10)/10;
 
   // clamp the linear pixel zoom
-  if (future_zoom_level <= 0.7 || future_zoom_level >= 5.0) return;
+  if (future_zoom_level <= 0.1 || future_zoom_level >= 5.0) return;
 
   var load = false;
   var no_draw = false;
