@@ -400,8 +400,8 @@ DOJO.init_threeD = function() {
   var zSample_num = Math.min(DOJO.viewer._image.zSample_max,DOJO.viewer._image.max_z_tiles);
   var volume_zoomlevel = pad(DOJO.viewer._image.zoomlevel_count - 1, 8);
 
-  vol.spacing = [1,1,Math.floor(512/zSample_num)];
-  vol.dimensions = [512,512,Math.floor(zSample_num)];
+  vol.spacing = [1,1,1];
+  vol.dimensions = [512,512,zSample_num];
   vol.file = '/image/volume/'+volume_zoomlevel+'/&.RZ';
   vol.xySampleRate = 1;
 
