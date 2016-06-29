@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 
-from _dojo.scripts.np2imgo import Imgo
-from _dojo.scripts.np2sego import Sego
-from collections import defaultdict
-import matplotlib.pyplot as plt
+from np2imgo import Imgo
+from np2sego import Sego
 import numpy as np
 import shutil
 import time
