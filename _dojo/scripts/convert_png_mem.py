@@ -71,32 +71,32 @@ class convert:
             for fold in folders:
                 seg_dirt = glob.glob(os.path.join(fold, _sepath))
                 img_dirt = glob.glob(os.path.join(fold, _ipath))
-                if not seg_dirt: self.err('segs not found')
-                if not img_dirt: self.err('imgs not found')
+                if not seg_dirt:
+                    spot = self.hash(os.path.basename(fold))
+                    mg[spot[0]:(spot + self._slice)[0],spot[1]:(spot + self._slice)[1]] = np.ones(self._slice)
+                    print 'segs', spot,'not found'
+                else:
+                     ## Use each file in both subfolders of all folderss
+                    for segment in glob.glob(os.path.join(seg_dirt[0],_ty)):
+                        spot = self.hash(os.path.basename(segment))
+                        if spot[2] != now_z: continue
 
-                ## Use each file in both subfolders of all folders
-                for image in glob.glob(os.path.join(img_dirt[0],_ty)):
-                    spot = self.hash(os.path.basename(image))
-                    if spot[2] != now_z: continue
+                        if len(spot) != 3 or (np.clip(spot,0,all_shape)-spot).any(): self.err('segs not in bounds')
+                        seg[spot[0]:(spot + self._slice)[0],spot[1]:(spot + self._slice)[1]] = np.dot(cv2.imread(segment),b_)
 
-                    if len(spot) != 3 or (np.clip(spot,0,all_shape)-spot).any(): self.err('imgs not in bounds')
-                    img[spot[0]:(spot + self._slice)[0],spot[1]:(spot + self._slice)[1]] = cv2.imread(image,0)
 
-                #     print  os.path.basename(image)
-                #     print  spot
-                # print  '\n'
+                if not img_dirt:
+                    spot = self.hash(os.path.basename(fold))
+                    mg[spot[0]:(spot + self._slice)[0],spot[1]:(spot + self._slice)[1]] = np.ones(self._slice)
+                    print 'imgs', spot,'not found'
+                else:
+                    ## Use each file in both subfolders of all folders
+                    for image in glob.glob(os.path.join(img_dirt[0],_ty)):
+                        spot = self.hash(os.path.basename(image))
+                        if spot[2] != now_z: continue
 
-                ## Use each file in both subfolders of all folderss
-                for segment in glob.glob(os.path.join(seg_dirt[0],_ty)):
-                    spot = self.hash(os.path.basename(segment))
-                    if spot[2] != now_z: continue
-
-                    if len(spot) != 3 or (np.clip(spot,0,all_shape)-spot).any(): self.err('segs not in bounds')
-                    seg[spot[0]:(spot + self._slice)[0],spot[1]:(spot + self._slice)[1]] = np.dot(cv2.imread(segment),b_)
-
-                #     print  os.path.basename(segment)
-                #     print  spot
-                # print  '\n'
+                        if len(spot) != 3 or (np.clip(spot,0,all_shape)-spot).any(): self.err('imgs not in bounds')
+                        img[spot[0]:(spot + self._slice)[0],spot[1]:(spot + self._slice)[1]] = cv2.imread(image,0)
 
             segger.run(seg,now_z-self._skip)
             imgger.run(img,now_z-self._skip)
