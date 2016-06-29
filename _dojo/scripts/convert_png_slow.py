@@ -17,7 +17,8 @@ class convert:
 
         places = []
         folders = []
-        b_ = (65536,256,1)
+        new_id = np.uint8(2)
+        ids = defaultdict(int)
         here = os.path.dirname(_here)
         _infold,_outfold = [os.path.normpath(os.path.join(here,pa)) for pa in [_infold,_outfold]]
 
@@ -78,10 +79,26 @@ class convert:
                 spot = self.hash(os.path.basename(segment))
 
                 if len(spot) != 3 or (np.clip(spot,0,all_shape-edge)-spot).any(): self.err('segs not in bounds')
-                seg[spot[0]:(spot + edge)[0],spot[1]:(spot + edge)[1],spot[2]] = np.dot(cv2.imread(segment),b_)
+                # Read the image
+                out_seg = []
+                raw_seg = cv2.imread(segment).reshape(-1,3)
+                if not raw_seg.any():
+                    result = np.ones(self._box[:-1])
+                else:
+                    for pix in raw_seg:
+                        out_seg.append(ids[tuple(pix)])
+                        if out_seg[-1] > 0 or not pix.any(): continue
+                        # If we need a new ID created
+                        ids[tuple(pix)] = new_id
+                        out_seg[-1] = new_id
+                        new_id += 1
+                    result = np.array(out_seg).reshape(self._box[:-1])
 
                 print  os.path.basename(segment)
                 print  spot
+
+                ## Fill in the image
+                seg[spot[0]:(spot + edge)[0],spot[1]:(spot + edge)[1],spot[2]] = result
 
             print  '\n'
 

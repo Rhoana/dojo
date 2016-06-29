@@ -12,7 +12,7 @@ class Sego:
 
         seg = np.array(seg).astype(np.uint8)
         shape = seg.shape
-        transpose = True
+        transpose = False
 
         tile_num_pixels_y             = 512
         tile_num_pixels_x             = 512
