@@ -4,6 +4,7 @@ from np2imgo import Imgo
 from np2sego import Sego
 import numpy as np
 import shutil
+import h5py
 import time
 import glob
 import cv2
@@ -89,6 +90,10 @@ class convert:
         if os.path.exists(out_folder): shutil.rmtree(out_folder)
         else : print 'making ', out_folder
         os.mkdir(out_folder)
+
+        # with h5py.File(os.path.join(out_folder,'data.h5'), 'w') as hf:
+        #     hf.create_dataset('images', data=img)
+        #     hf.create_dataset('labels', data=seg)
 
         # Do labels
         Sego(seg[:,:,1:], _outfold)
