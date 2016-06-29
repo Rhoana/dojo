@@ -158,20 +158,20 @@ class Sego:
 
         print 'Writing TiledVolumeDescription file'
 
-        ( original_image_num_pixels_x, original_image_num_pixels_y ) = all_shape
+        ( original_image_num_pixels_x, original_image_num_pixels_y,numTilesZ ) = all_shape
 
         tiledVolumeDescription = lxml.etree.Element( "tiledVolumeDescription",
             fileExtension = "hdf5",
             numTilesX = str( int( math.ceil( original_image_num_pixels_x / self.tile_num_pixels_x ) ) ),
             numTilesY = str( int( math.ceil( original_image_num_pixels_y / self.tile_num_pixels_y ) ) ),
-            numTilesZ = str( self.tile_index_z ),
+            numTilesZ = str( numTilesZ ),
             numTilesW = str( self.tile_index_w ),
             numVoxelsPerTileX = str( self.tile_num_pixels_x ),
             numVoxelsPerTileY = str( self.tile_num_pixels_y ),
             numVoxelsPerTileZ = str( 1 ),
             numVoxelsX = str( original_image_num_pixels_x ),
             numVoxelsY = str( original_image_num_pixels_y ),
-            numVoxelsZ = str( self.tile_index_z ),
+            numVoxelsZ = str( numTilesZ ),
             dxgiFormat = 'R32_UInt',
             numBytesPerVoxel = str( 4 ),
             isSigned = str( False ).lower() )

@@ -60,21 +60,21 @@ class Imgo:
 
     def save(self,all_shape):
 
-        ( original_image_num_pixels_x, original_image_num_pixels_y ) = all_shape
+        ( original_image_num_pixels_x, original_image_num_pixels_y, numTilesZ) = all_shape
 
         #Output TiledVolumeDescription xml file
         tiledVolumeDescription = lxml.etree.Element( "tiledVolumeDescription",
             fileExtension = self.output_image_extension[1:],
             numTilesX = str( int( math.ceil( original_image_num_pixels_x / self.tile_num_pixels_x ) ) ),
             numTilesY = str( int( math.ceil( original_image_num_pixels_y / self.tile_num_pixels_y ) ) ),
-            numTilesZ = str( self.tile_index_z ),
+            numTilesZ = str( numTilesZ ),
             numTilesW = str( self.tile_index_w ),
             numVoxelsPerTileX = str( self.tile_num_pixels_x ),
             numVoxelsPerTileY = str( self.tile_num_pixels_y ),
             numVoxelsPerTileZ = str( 1 ),
             numVoxelsX = str( original_image_num_pixels_x ),
             numVoxelsY = str( original_image_num_pixels_y ),
-            numVoxelsZ = str( self.tile_index_z ),
+            numVoxelsZ = str( numTilesZ ),
             dxgiFormat = 'R8_UNorm',
             numBytesPerVoxel = str( 1 ),
             isSigned = str( False ).lower() )

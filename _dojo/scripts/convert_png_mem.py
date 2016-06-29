@@ -16,7 +16,7 @@ class convert:
 
         places = []
         folders = []
-        b_ = (65536,256,1)
+        b_ = (1,256,65536)
         here = os.path.dirname(_here)
         _infold,_outfold = [os.path.normpath(os.path.join(here,pa)) for pa in [_infold,_outfold]]
 
@@ -28,8 +28,9 @@ class convert:
         a_pic = cv2.imread(a_box[0],0)
         # glob.glob(os.path.join(img_dirt[0],_ty)
 
+        self._skip = _skip
         self._slice = list(a_pic.shape) + [1,]
-        self._box = list(a_pic.shape) + [len(a_box),]
+        self._box = list(a_pic.shape) + [len(a_box)-_skip,]
         self._sp = _sp
 
         print '\nfrom ', _infold
@@ -61,7 +62,7 @@ class convert:
         # Do image
         imgger = Imgo(_outfold)
 
-        for now_z in range(_skip,all_z):
+        for now_z in range(self._skip,all_z):
 
             img = np.zeros(all_shape[:-1],dtype=np.uint8)
             seg = np.zeros(all_shape[:-1],dtype=np.uint32)
@@ -78,8 +79,7 @@ class convert:
                     spot = self.hash(os.path.basename(image))
                     if spot[2] != now_z: continue
 
-                    if len(spot) != 3 or (np.clip(spot,0,all_shape-self._slice)-spot).any():
-                        self.err('imgs not in bounds')
+                    if len(spot) != 3 or (np.clip(spot,0,all_shape)-spot).any(): self.err('imgs not in bounds')
                     img[spot[0]:(spot + self._slice)[0],spot[1]:(spot + self._slice)[1]] = cv2.imread(image,0)
 
                 #     print  os.path.basename(image)
@@ -91,21 +91,20 @@ class convert:
                     spot = self.hash(os.path.basename(segment))
                     if spot[2] != now_z: continue
 
-                    if len(spot) != 3 or (np.clip(spot,0,all_shape-self._slice)-spot).any():
-                        self.err('segs not in bounds')
+                    if len(spot) != 3 or (np.clip(spot,0,all_shape)-spot).any(): self.err('segs not in bounds')
                     seg[spot[0]:(spot + self._slice)[0],spot[1]:(spot + self._slice)[1]] = np.dot(cv2.imread(segment),b_)
 
                 #     print  os.path.basename(segment)
                 #     print  spot
                 # print  '\n'
 
-            segger.run(seg,now_z)
-            imgger.run(img,now_z)
+            segger.run(seg,now_z-self._skip)
+            imgger.run(img,now_z-self._skip)
 
-            print 'done w/ z=', now_z
+            print 'done w/ z=', now_z-self._skip
 
-        segger.save(all_shape[:-1])
-        imgger.save(all_shape[:-1])
+        segger.save(all_shape)
+        imgger.save(all_shape)
 
 
     def hash(self,p):

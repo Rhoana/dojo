@@ -2,7 +2,7 @@ import numpy as np
 import time
 import sqlite3
 
-MAX_SEGMENTS = 10000000
+MAX_SEGMENTS = 16777216
 
 class Database(object):
 
