@@ -73,7 +73,7 @@ class convert:
                 img_dirt = glob.glob(os.path.join(fold, _ipath))
                 if not seg_dirt:
                     spot = self.hash(os.path.basename(fold))
-                    seg[spot[0]:(spot + self._slice)[0],spot[1]:(spot + self._slice)[1]] = np.ones(self._slice)
+                    seg[spot[0]:(spot + self._slice)[0],spot[1]:(spot + self._slice)[1]] = np.ones(self._slice[:-1])
                     print 'segs', spot,'not found'
                 else:
                      ## Use each file in both subfolders of all folderss
@@ -87,7 +87,7 @@ class convert:
 
                 if not img_dirt:
                     spot = self.hash(os.path.basename(fold))
-                    img[spot[0]:(spot + self._slice)[0],spot[1]:(spot + self._slice)[1]] = np.ones(self._slice)
+                    img[spot[0]:(spot + self._slice)[0],spot[1]:(spot + self._slice)[1]] = np.ones(self._slice[:-1])
                     print 'imgs', spot,'not found'
                 else:
                     ## Use each file in both subfolders of all folders
