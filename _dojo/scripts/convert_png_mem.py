@@ -64,7 +64,7 @@ class convert:
         for now_z in range(_skip,all_z):
 
             img = np.zeros(all_shape[:-1],dtype=np.uint8)
-            seg = np.zeros(all_shape[:-1],dtype=np.uint8)
+            seg = np.zeros(all_shape[:-1],dtype=np.uint32)
 
             ## Fill arrays
             for fold in folders:
