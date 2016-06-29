@@ -113,7 +113,7 @@ class convert:
             nums = (nums[1:3]+nums[:1])*np.array(self._box) + [0,0,nums[-1]]
         elif len(nums) == 3:
             nums = nums[1:3]+nums[:1]
-        return nums
+        return np.array(nums)
 
     def err(self,e):
         sys.stderr.write(e)
