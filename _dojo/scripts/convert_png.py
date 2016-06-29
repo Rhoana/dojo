@@ -43,12 +43,12 @@ class convert:
         ## Make emtpty arrays
         layout = np.amax(np.array(places),0)+1
         all_shape = layout*self._box
-        img = np.zeros(all_shape)
-        seg = np.zeros(all_shape)
-        edge = self._box[:-1] + [1,]
         print 'there are ', layout, ' boxes'
         print 'each box is ', self._box, ' voxels'
         print 'there are ', all_shape, ' voxels\n'
+        img = np.zeros(all_shape)
+        seg = np.zeros(all_shape)
+        edge = self._box[:-1] + [1,]
         t0 = time.time()
 
         ## Fill arrays
