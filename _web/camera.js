@@ -129,25 +129,16 @@ J.camera.prototype.zoom = function(x, y, delta) {
 
   if (this._zoom_end_timeout) clearTimeout(this._zoom_end_timeout);
 
-  var wheel_sign = sign(delta/120);
+  var wheel_sign = sign(delta);
 
   var future_w = this._w - wheel_sign;
-  var future_zoom_level = Math.round((this._view[0] + wheel_sign * this._linear_zoom_factor)*10)/10;
+  var future_zoom_level = this._view[0] + Math.round((this._view[0] * wheel_sign * this._linear_zoom_factor)*10)/10;
 
   // clamp the linear pixel zoom
-  if (future_zoom_level <= 0.1 || future_zoom_level >= 5.0) return;
+  if (future_zoom_level <= .5 || future_zoom_level >= 10.0) return;
 
   var load = false;
   var no_draw = false;
-  var fzl = future_zoom_level;
-
-  if (future_w >= 0 && future_w < this._viewer._image.zoomlevel_count) {
-    // start loading the tiles immediately but set no_draw to true
-    // this._loader.load_tiles(x, y, this._z, this._w, future_w, true);
-    // load = true;
-    // no_draw = true;
-    // fzl = future_w;
-  }
 
   var old_scale = this._view[0];
 
@@ -161,7 +152,6 @@ J.camera.prototype.zoom = function(x, y, delta) {
   if ((new_scale >= 2 && wheel_sign > 0) || (new_scale-this._linear_zoom_factor < 1 && wheel_sign < 0)) {
 
     future_zoom_level = this._w - wheel_sign;
-
     // clamp zooming
     if (future_zoom_level >= 0 && future_zoom_level < this._viewer._image.zoomlevel_count) {
 
@@ -172,7 +162,6 @@ J.camera.prototype.zoom = function(x, y, delta) {
 
       // Change zoom level
       this._w = future_zoom_level;
-      fzl = future_zoom_level;
 
       if (wheel_sign < 0) {
 
@@ -202,9 +191,9 @@ J.camera.prototype.zoom = function(x, y, delta) {
   this._view[7] -= wheel_sign * Math.abs(u_v[1] - v_new);
 
   if (load) {
-    this._loader.load_tiles(x, y, this._z, this._w, fzl, no_draw);
+    this._loader.load_tiles(x, y, this._z, this._w, future_zoom_level, no_draw);
     // Also move the cursor!
-//    this._viewer.move_pointer(x,y);
+    // this._viewer.move_pointer(x,y);
   }
 
   this._zoom_end_timeout = setTimeout(this.zoom_end.bind(this), 60);

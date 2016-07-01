@@ -17,6 +17,8 @@ J.interactor = function(viewer) {
   corner_id = ['tools','info','threeD','log'];
   this._corners = corner_id.map( x => document.getElementById(x));
   this._scroll = new Date().getTime();
+  this._scroll_stop;
+  this.viewchange();
 
   this.init();
 
@@ -34,9 +36,7 @@ J.interactor.prototype.init = function() {
   this._viewer._canvas.oncontextmenu = function() { return false; };
 
   // mouse wheel
-  this._viewer._canvas.onmousewheel = this.onmousewheel.bind(this);
-  // for firefox
-  this._viewer._canvas.addEventListener('DOMMouseScroll', this.onmousewheel.bind(this), false);
+  this._viewer._canvas.onwheel = this.on_wheel_pinch.bind(this);
 
   // keyboard
   window.onkeydown = this.onkeydown.bind(this);
@@ -64,10 +64,6 @@ J.interactor.prototype.onmousemove = function(e) {
   this._camera._x = x;
   this._camera._y = y;
   this._camera._i_j = this._viewer.xy2ij(x, y);
-
-  //var u_v = this._viewer.xy2uv(x, y);
-
-  
   DOJO.onmousemove(x, y);
 
   if (this._left_down) {
@@ -81,6 +77,8 @@ J.interactor.prototype.onmousemove = function(e) {
   }
 
   this._last_mouse = [x, y];
+  clearTimeout(this._scroll_stop);
+  this._scroll_stop=setTimeout(this.viewchange.bind(this),80);
 
 };
 
@@ -120,15 +118,14 @@ J.interactor.prototype.onmouseup = function(e) {
     // right
     this._right_down = false;
   }
-
   // control mouse pointer
-//  DOJO.viewer.move_pointer(x,y);
+  // DOJO.viewer.move_pointer(x,y);
 
 };
 
-J.interactor.prototype.onmousewheel = function(e) {
+J.interactor.prototype.on_wheel_pinch = function(e) {
 
-  if (new Date().getTime() - this._scroll > 50) {
+  if (new Date().getTime() - this._scroll > 40) {
 
       var delta = e.wheelDelta || -e.detail;
 
@@ -139,6 +136,17 @@ J.interactor.prototype.onmousewheel = function(e) {
       this._camera._y = y;
       this._camera._i_j = this._viewer.xy2ij(x, y);
       this._camera.zoom(x, y, delta);
+
+      this._last_mouse = [x, y];
+      this._scroll = new Date().getTime();
+//      this.viewchange();
+  }
+  clearTimeout(this._scroll_stop);
+  this._scroll_stop=setTimeout(this.viewchange.bind(this),10);
+
+};
+
+J.interactor.prototype.viewchange = function(e) {
 
       lookx = [window.pageXOffset, document.body.clientWidth-window.innerWidth-window.pageXOffset];
       looky = [window.pageYOffset, document.body.clientHeight-window.innerHeight-window.pageYOffset];
@@ -151,24 +159,6 @@ J.interactor.prototype.onmousewheel = function(e) {
           c.style[box[i][0]] = box[i][2]+'px';
           c.style[box[i][1]] = box[i][3]+'px';
       });
-
-      this._last_mouse = [x, y];
-      this._scroll = new Date().getTime();
-  }
-
-  var delta = e.wheelDelta || -e.detail;
-
-  var x = e.clientX;
-  var y = e.clientY;
-
-  this._camera._x = x;
-  this._camera._y = y;
-  this._camera._i_j = this._viewer.xy2ij(x, y);
-
-  this._camera.zoom(x, y, delta);
-
-  this._last_mouse = [x, y];
-
 };
 
 J.interactor.prototype.onkeydown = function(e) {
