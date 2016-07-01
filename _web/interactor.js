@@ -12,6 +12,12 @@ J.interactor = function(viewer) {
 
   this._keypress_callback = null;
 
+  this._wherex = ['left','right'];
+  this._wherey = ['top','bottom'];
+  corner_id = ['tools','info','threeD','log'];
+  this._corners = corner_id.map( x => document.getElementById(x));
+  this._scroll = new Date().getTime();
+
   this.init();
 
 };
@@ -121,6 +127,34 @@ J.interactor.prototype.onmouseup = function(e) {
 };
 
 J.interactor.prototype.onmousewheel = function(e) {
+
+  if (new Date().getTime() - this._scroll > 50) {
+
+      var delta = e.wheelDelta || -e.detail;
+
+      var x = e.clientX;
+      var y = e.clientY;
+
+      this._camera._x = x;
+      this._camera._y = y;
+      this._camera._i_j = this._viewer.xy2ij(x, y);
+      this._camera.zoom(x, y, delta);
+
+      lookx = [window.pageXOffset, document.body.clientWidth-window.innerWidth-window.pageXOffset];
+      looky = [window.pageYOffset, document.body.clientHeight-window.innerHeight-window.pageYOffset];
+      see = (x,y) => [ this._wherex[x], this._wherey[y], 10+lookx[x], 10+looky[y] ];
+      bin = x => x.toString(2).split('').slice(1).map(Number);
+      box = [4,5,6,7].map( i => see.apply(this,bin(i)));
+      this._corners.forEach((c,i) => {
+          c.style[box[i][0]] = '10px';
+          c.style[box[i][1]] = '10px';
+          c.style[box[i][0]] = box[i][2]+'px';
+          c.style[box[i][1]] = box[i][3]+'px';
+      });
+
+      this._last_mouse = [x, y];
+      this._scroll = new Date().getTime();
+  }
 
   var delta = e.wheelDelta || -e.detail;
 
