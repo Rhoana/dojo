@@ -11,14 +11,7 @@ J.interactor = function(viewer) {
   this._last_mouse = [0,0];
 
   this._keypress_callback = null;
-
-  this._wherex = ['left','right'];
-  this._wherey = ['top','bottom'];
-  corner_id = ['tools','info','threeD','log'];
-  this._corners = corner_id.map( x => document.getElementById(x));
   this._scroll = new Date().getTime();
-  this._scroll_stop;
-  this.viewchange();
 
   this.init();
 
@@ -77,8 +70,6 @@ J.interactor.prototype.onmousemove = function(e) {
   }
 
   this._last_mouse = [x, y];
-  clearTimeout(this._scroll_stop);
-  this._scroll_stop=setTimeout(this.viewchange.bind(this),80);
 
 };
 
@@ -124,8 +115,9 @@ J.interactor.prototype.onmouseup = function(e) {
 };
 
 J.interactor.prototype.on_wheel_pinch = function(e) {
+  e.preventDefault();
 
-  if (new Date().getTime() - this._scroll > 40) {
+  if (new Date().getTime() - this._scroll > 12) {
 
       var delta = e.wheelDelta || -e.detail;
 
@@ -139,26 +131,7 @@ J.interactor.prototype.on_wheel_pinch = function(e) {
 
       this._last_mouse = [x, y];
       this._scroll = new Date().getTime();
-//      this.viewchange();
   }
-  clearTimeout(this._scroll_stop);
-  this._scroll_stop=setTimeout(this.viewchange.bind(this),10);
-
-};
-
-J.interactor.prototype.viewchange = function(e) {
-
-      lookx = [window.pageXOffset, document.body.clientWidth-window.innerWidth-window.pageXOffset];
-      looky = [window.pageYOffset, document.body.clientHeight-window.innerHeight-window.pageYOffset];
-      see = (x,y) => [ this._wherex[x], this._wherey[y], 10+lookx[x], 10+looky[y] ];
-      bin = x => x.toString(2).split('').slice(1).map(Number);
-      box = [4,5,6,7].map( i => see.apply(this,bin(i)));
-      this._corners.forEach((c,i) => {
-          c.style[box[i][0]] = '10px';
-          c.style[box[i][1]] = '10px';
-          c.style[box[i][0]] = box[i][2]+'px';
-          c.style[box[i][1]] = box[i][3]+'px';
-      });
 };
 
 J.interactor.prototype.onkeydown = function(e) {
