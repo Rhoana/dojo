@@ -193,7 +193,7 @@ J.camera.prototype.zoom = function(x, y, delta) {
   if (load) {
     this._loader.load_tiles(x, y, this._z, this._w, future_zoom_level, no_draw);
     // Also move the cursor!
-    // this._viewer.move_pointer(x,y);
+    this._viewer.move_pointer(x,y);
   }
 
   this._zoom_end_timeout = setTimeout(this.zoom_end.bind(this), 60);

@@ -2,19 +2,16 @@ var J = J || {};
 
 J.viewer = function(container) {
 
-  var _container = document.getElementById(container);
+  this._container = document.getElementById(container);
 
-  this._container = _container;
+  this._canvas = document.createElement('canvas');
+  this._canvas.width = this._container.clientWidth;
+  this._canvas.height = this._container.clientHeight;
+  this._container.appendChild(this._canvas);
 
-  var _canvas = document.createElement('canvas');
-  _canvas.width = _container.clientWidth;
-  _canvas.height = _container.clientHeight;
-  _container.appendChild(_canvas);
+  this._width = this._canvas.width;
+  this._height = this._canvas.height;
 
-  this._width = _canvas.width;
-  this._height = _canvas.height;
-
-  this._canvas = _canvas;
   this._context = this._canvas.getContext('2d');
 
   this._image_buffer = document.createElement('canvas');
@@ -31,7 +28,7 @@ J.viewer = function(container) {
   this._pixel_data_buffer = this._segmentation_buffer_context.createImageData(512, 512);
 
   this._offscreen_buffer = document.createElement('canvas');
-  _container.appendChild(this._offscreen_buffer);
+  this._container.appendChild(this._offscreen_buffer);
   this._offscreen_buffer.width = 512;
   this._offscreen_buffer.height = 512;
 
