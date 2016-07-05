@@ -56,6 +56,9 @@ J.loader.prototype.get_image = function(x, y, z, w, callback, no_cache) {
           // we have it cached
           var i = this._image_cache[z][w][x][y];
 
+          this._viewer.cache_context[w].fillStyle="#01665E";
+          this._viewer.cache_context[w].fillRect(x,y,1,1);
+
           if (!no_cache) {
             this.cache_image(x, y, z, w);
           }
@@ -68,6 +71,9 @@ J.loader.prototype.get_image = function(x, y, z, w, callback, no_cache) {
     }
 
   }
+
+  this._viewer.cache_context[w].fillStyle="#BF812D";
+  this._viewer.cache_context[w].fillRect(x,y,1,1);
 
   this.load_image(x, y, z, w, function(i) {
 
