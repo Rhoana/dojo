@@ -103,9 +103,6 @@ J.viewer.prototype.init = function(callback) {
 
     this._interactor = new J.interactor(this);
 
-    // see caching
-    this.start_see_cache();
-
     this._image_buffer.width = this._overlay_buffer.width = this._pt_buff.width = this._image.width;
     this._image_buffer.height = this._overlay_buffer.height = this._pt_buff.height = this._image.height;
 
@@ -113,6 +110,7 @@ J.viewer.prototype.init = function(callback) {
 
       this._segmentation = JSON.parse(res.response);
 
+      // TODO support if we don't have a segmentation
       this._loader.load_json('/segmentation/colormap', function(res) {
 
         this._colormap = JSON.parse(res.response);
@@ -121,7 +119,7 @@ J.viewer.prototype.init = function(callback) {
 
         var pos = 0;
         for (var i=0; i<this._max_colors; i++) {
-
+          
           var c = this._colormap[i];
 
           this._gl_colormap[pos++] = c[0];
@@ -430,9 +428,6 @@ J.viewer.prototype.render = function() {
     // draw mouse pointer
     this._context.drawImage(this._pt_buff,0,0);
 
-    // draw cache map
-    for (i in this.cache_buffer) {this.cache_context[i].drawImage(this.cache_buffer[i],0,0);}
-
     this._force_rerender = false;
   }
 
@@ -576,24 +571,4 @@ J.viewer.prototype.get_segmentation_id_before_merge = function(i, j, callback) {
 
 J.viewer.prototype.is_locked = function(id) {
   return this._controller.is_locked(id);
-};
-
-J.viewer.prototype.start_see_cache = function() {
-  this.cache_context = [];
-  this.cache_buffer = [];
-  for (i = 0; i < this._image.zoomlevel_count; i++){
-    this.cache_buffer[i] = document.createElement('canvas');
-    this.cache_buffer[i].style.position = 'absolute';
-    this.cache_buffer[i].style.background = 'blue';
-    this.cache_buffer[i].style.top = 200*i;
-    this.cache_buffer[i].style.right = 0;
-    this.cache_buffer[i].height = 200;
-    this.cache_buffer[i].width = 200;
-    this.cache_buffer[i].height = 200;
-    this.cache_buffer[i].width = 200;
-    this.cache_context[i] = this.cache_buffer[i].getContext('2d');
-    this._container.appendChild(this.cache_buffer[i]);
-    this.cache_context[i].rect(0,0,1,1);
-    this.cache_context[i].stroke();
-  }
 };
