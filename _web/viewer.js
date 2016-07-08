@@ -581,25 +581,19 @@ J.viewer.prototype.is_locked = function(id) {
 J.viewer.prototype.start_see_cache = function() {
   this.cache_context = [];
   this.cache_buffer = [];
-  spacer = 5;
-  topper = 20;
-  righter = 10;
-  sizer = (window.innerHeight-2*topper)/this._image.zoomlevel_count;
-  sizer = Math.min(sizer - spacer,200);
   for (i = 0; i < this._image.zoomlevel_count; i++){
     this.cache_buffer[i] = document.createElement('canvas');
-    this.cache_buffer[i].style['image-rendering'] = 'pixelated';
-    this.cache_buffer[i].style.background = 'black';
     this.cache_buffer[i].style.position = 'absolute';
-    this.cache_buffer[i].style.top = topper+(sizer+spacer)*i;
-    this.cache_buffer[i].style.right = righter;
-    this.cache_buffer[i].style.height = sizer;
-    this.cache_buffer[i].style.width = sizer;
-    this.cache_buffer[i].height = this._image.zoom_levels[i][0];
-    this.cache_buffer[i].width = this._image.zoom_levels[i][0];
+    this.cache_buffer[i].style.background = 'blue';
+    this.cache_buffer[i].style.top = 200*i;
+    this.cache_buffer[i].style.right = 0;
+    this.cache_buffer[i].height = 200;
+    this.cache_buffer[i].width = 200;
+    this.cache_buffer[i].height = 200;
+    this.cache_buffer[i].width = 200;
     this.cache_context[i] = this.cache_buffer[i].getContext('2d');
     this._container.appendChild(this.cache_buffer[i]);
-    this.cache_context[i].fillStyle="#01665E";
-    this.cache_context[i].fillRect(0,0,1,1);
+    this.cache_context[i].rect(0,0,1,1);
+    this.cache_context[i].stroke();
   }
 };
