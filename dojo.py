@@ -22,10 +22,12 @@ class DojoHandler(tornado.web.RequestHandler):
 
   def initialize(self, logic):
     self.__logic = logic
-
+  @tornado.web.asynchronous
+  @tornado.gen.coroutine
   def get(self, uri):
     self.__logic.handle(self)
-
+  @tornado.web.asynchronous
+  @tornado.gen.coroutine
   def post(self, uri):
     self.__logic.handle(self)
 
