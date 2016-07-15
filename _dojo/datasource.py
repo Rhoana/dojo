@@ -33,7 +33,7 @@ class Datasource(object):
 
     # Actual z-stack and max 3D z-stack
     self.__max_z_tiles = 0
-    self.__zSample_max = 50
+    self.__zSample_max = 80
 
     self.__has_colormap = False
     self.__colormap = None

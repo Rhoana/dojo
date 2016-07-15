@@ -110,7 +110,7 @@ J.interactor.prototype.onmouseup = function(e) {
     this._right_down = false;
   }
   // control mouse pointer
-  DOJO.viewer.move_pointer(x,y);
+//  DOJO.viewer.move_pointer(x,y);
 
 };
 
