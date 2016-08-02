@@ -114,13 +114,7 @@ J.offscreen_renderer.prototype.init_buffers = function() {
   // u-v
   this._uv_buffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, this._uv_buffer);
-  var uvs = new Float32Array([
-    0., 0.,
-    1., 0.,
-    0., 1.,
-    1., 1.
-    ]);
-  gl.bufferData(gl.ARRAY_BUFFER, uvs, gl.STATIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from('00100111'), gl.STATIC_DRAW);
 
 };
 
