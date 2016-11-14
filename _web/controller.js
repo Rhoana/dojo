@@ -615,6 +615,42 @@ J.controller.prototype.is_locked = function(id) {
   return (id in this._lock_table);
 };
 
+J.controller.prototype.kill = function(x, y) {
+
+  var i_j = this._viewer.xy2ij(x, y);
+
+  if (i_j[0] == -1 || i_j[1] == -1) return;
+
+  this._viewer.get_segmentation_id(i_j[0], i_j[1], function(id) {
+
+    var verb = 'locked';
+
+    if (id in this._lock_table) {
+      delete this._lock_table[id];
+
+            verb = 'unlocked';
+    } else {
+      this._lock_table[id] = true;
+          }
+
+    var color1 = DOJO.viewer.get_color(id);
+    var color1_hex = rgbToHex(color1[0], color1[1], color1[2]);
+    var log = 'User $USER '+verb+' label <font color="'+color1_hex+'">'+id+'</font>.';
+
+    this.send_log(log);
+
+    this.create_gl_lock_table();
+
+    this._gl_lock_table_changed = true;
+
+    this.send_lock_table();
+
+    this._viewer.redraw();
+
+  }.bind(this));
+
+};
+
 J.controller.prototype.lock = function(x, y) {
 
   if (!this._lock_table) {

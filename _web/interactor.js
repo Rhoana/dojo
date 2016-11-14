@@ -262,6 +262,13 @@ J.interactor.prototype.onkeydown = function(e) {
       this._viewer.toggle_borders();
       this._keypress_callback = null;
     }.bind(this),10); 
+  
+  } else if (e.keyCode == 8) {
+
+    this._keypress_callback = setTimeout(function() {
+      this._viewer._controller.kill(this._camera._x, this._camera._y);
+      this._keypress_callback = null;
+    }.bind(this),10); 
 
   } else if (e.keyCode == 76) {
 
