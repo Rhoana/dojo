@@ -151,11 +151,11 @@ J.controller.prototype.receive = function(data) {
     this._gl_merge_table_changed = true;
 
   } else if (input.name == 'UNDO_MERGE_GROUP') {    
-
-    for (var i=1; i<input.value.length; i++) {
+    
+    for (var i=0; i<input.value.length; i++) {
 
       var id = input.value[i];
-
+      
       delete this._new_merge_table[id];
       delete this._temp_merge_table[id];     
 
@@ -1167,7 +1167,7 @@ J.controller.prototype.end_draw_merge = function() {
 
   if(this._last_id){
     var color2 = DOJO.viewer.get_color(this._last_id);
-    var color0_hex = rgbToHex(color2[0], color2[1], color2[2]);
+    var color2_hex = rgbToHex(color2[0], color2[1], color2[2]);
     var log = 'User $USER merged many labels to <font color="'+color2_hex+'">' +this._last_id + '</font>.';
     this.send_log(log);
   }
