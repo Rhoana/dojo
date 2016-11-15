@@ -1131,7 +1131,10 @@ J.controller.prototype.draw_merge = function(x, y) {
     DOJO.viewer.get_segmentation_id(i, i_j[1], function(id) {
 
       if (this._merge_target_ids.indexOf(id) == -1) {
-        this._merge_target_ids.push(id);
+        
+        if(!(id in this._lock_table)){
+          this._merge_target_ids.push(id);
+        }
       }
 
     }.bind(this));
@@ -1151,12 +1154,13 @@ J.controller.prototype.end_draw_merge = function() {
 
   this._temp_merge_table = {};
 
+  console.log(this._lock_table);
+
   // add all to merge table
   var no_target_ids = this._merge_target_ids.length;
   for (var i=0; i<no_target_ids; i++) {
-
-    this.merge(this._merge_target_ids[i]);
-
+    var merge_id = this._merge_target_ids[i]
+    this.merge(merge_id);
   }
 
   var context = this._viewer._image_buffer_context;    

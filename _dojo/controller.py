@@ -266,7 +266,6 @@ class Controller(object):
 
         ids = action['value'][0]
 
-        print action['value']
         for i in ids:
 
           key = str(i)
