@@ -623,27 +623,15 @@ J.controller.prototype.kill = function(x, y) {
 
   this._viewer.get_segmentation_id(i_j[0], i_j[1], function(id) {
 
-    var verb = 'locked';
-
-    if (id in this._lock_table) {
-      delete this._lock_table[id];
-
-            verb = 'unlocked';
-    } else {
-      this._lock_table[id] = true;
-          }
-
     var color1 = DOJO.viewer.get_color(id);
     var color1_hex = rgbToHex(color1[0], color1[1], color1[2]);
-    var log = 'User $USER '+verb+' label <font color="'+color1_hex+'">'+id+'</font>.';
+    var log = 'User $USER deleted label <font color="'+color1_hex+'">'+id+'</font>.';
 
     this.send_log(log);
 
-    this.create_gl_lock_table();
-
-    this._gl_lock_table_changed = true;
-
-    this.send_lock_table();
+    this.start_merge(0,x,y);
+    this.draw_merge(x,y);
+    this.end_draw_merge();
 
     this._viewer.redraw();
 
@@ -1152,7 +1140,7 @@ J.controller.prototype.draw_merge = function(x, y) {
 
 };
 
-J.controller.prototype.end_draw_merge = function(x, y) {
+J.controller.prototype.end_draw_merge = function() {
 
   console.log('end draw merge')
 
@@ -1177,11 +1165,12 @@ J.controller.prototype.end_draw_merge = function(x, y) {
   this._viewer._canvas.style.cursor = '';
   this._viewer.clear_overlay_buffer();
 
-  var color2 = DOJO.viewer.get_color(this._last_id);
-  var color2_hex = rgbToHex(color2[0], color2[1], color2[2]);
-  var log = 'User $USER merged many labels to <font color="'+color2_hex+'">' +this._last_id + '</font>.';
-
-  this.send_log(log);
+  if(this._last_id){
+    var color2 = DOJO.viewer.get_color(this._last_id);
+    var color0_hex = rgbToHex(color2[0], color2[1], color2[2]);
+    var log = 'User $USER merged many labels to <font color="'+color2_hex+'">' +this._last_id + '</font>.';
+    this.send_log(log);
+  }
 
   for (var id in this._temp_merge_table) {
 
@@ -1211,7 +1200,7 @@ J.controller.prototype.merge = function(id) {
     throw new Error('Merge-table does not exist.');
   }
 
-  if (!this._last_id) {
+  if ( !(this._last_id >= 0) ) {
     this._last_id = this._viewer.lookup_id(id);
 
     this.activate(id);

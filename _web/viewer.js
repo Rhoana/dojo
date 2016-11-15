@@ -197,7 +197,6 @@ J.viewer.prototype.draw_webgl = function(x,y,z,w,i,s) {
 
   // draw image and segmentation
   this._offscreen_renderer.draw(i, s, this._image_buffer_context, x, y);
-    console.log(x + ', ' + y);
 
 };
 

@@ -153,6 +153,7 @@ J.interactor.prototype.onkeydown = function(e) {
   // 67: C ZOOM IN
   // 88: X ZOOM OUT
   // 90: Z MARK PROBLEM
+  // 9: DEL KILL SEGMENT
   // 76: L LOCK/UNLOCK
   // 27: ESC
   // 189: - DECREASE OPACITY
