@@ -26,7 +26,7 @@ DOJO.init = function() {
     // Allows for highlighintg of searched segment
     // Allowing for compatability with Neuroblocks
     if (typeof(args['activeId']) != 'undefined') {
-      console.log('sdsd')
+
       var id = args['activeId'];
       DOJO.viewer._controller._adjust_mode = 1;
       DOJO.viewer._controller._adjust_id = id;
@@ -35,6 +35,25 @@ DOJO.init = function() {
       DOJO.viewer._controller.highlight(id);
 
       DOJO.single_segment = true;
+
+    };
+
+    if (typeof(args['jump']) != 'undefined') {
+
+      var coords = args['jump'].split(',');
+    
+      if (coords.length != 3) {
+
+        window.alert('Error parsing position.');
+
+      } else {
+
+        DOJO.viewer._camera._w = 0;
+
+
+        DOJO.viewer._camera.jumpIJK(coords[0], coords[1], coords[2]);
+
+      }
 
     };
 
