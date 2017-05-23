@@ -42,9 +42,9 @@ class Datasource(object):
     self.__volume = None
 
     # file system regex
-    self.__info_regex = re.compile('.*' + self.__sub_dir + '/tiledVolumeDescription.xml$')
-    self.__colormap_file_regex = re.compile('.*' + self.__sub_dir + '/colorMap.hdf5$')
-    self.__segmentinfo_file_regex = re.compile('.*' + self.__sub_dir + '/segmentInfo.db$')
+    self.__info_regex = re.compile('.*tiledVolumeDescription.xml$')
+    self.__colormap_file_regex = re.compile('.*colorMap.hdf5')
+    self.__segmentinfo_file_regex = re.compile('.*segmentInfo.db$')
 
     # handler regex
     self.__query_toc_regex = re.compile('^/' + self.__query + '/contents$')
@@ -75,8 +75,8 @@ class Datasource(object):
   def __setup(self):
 
     # parse the mojo directory
-    root = ''
-    files = os.listdir(self.__mojo_dir)
+    root = os.path.join(self.__mojo_dir, self.__sub_dir)
+    files = os.listdir(root)
 
     for f in files:
 

@@ -568,8 +568,6 @@ class Controller(object):
 
     tile = np.add(row_val, label_image).astype(np.uint32)
 
-    tif.imsave('/tmp/new_tile.tif', tile.astype(np.uint32))
-
     #
     # this is for undo
     #
@@ -754,11 +752,6 @@ class Controller(object):
     # run watershed
     #
     ws = mh.cwatershed(brush_image.max() - brush_image, seeds)
-
-    # mh.imsave('/tmp/end_points.tif', 50*end_points.astype(np.uint8))
-    # mh.imsave('/tmp/seeds_mask.tif', 50*seed_mask.astype(np.uint8))
-    # mh.imsave('/tmp/seeds.tif', 50*seeds.astype(np.uint8))
-    # mh.imsave('/tmp/ws.tif', 50*ws.astype(np.uint8))
 
     lines_array = np.zeros(ws.shape,dtype=np.uint8)
     lines = []
