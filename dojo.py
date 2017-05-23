@@ -22,15 +22,13 @@ class DojoHandler(tornado.web.RequestHandler):
 
   def initialize(self, logic):
     self.__logic = logic
-
+  @tornado.web.asynchronous
+  @tornado.gen.coroutine
   def get(self, uri):
-    '''
-    '''
     self.__logic.handle(self)
-
+  @tornado.web.asynchronous
+  @tornado.gen.coroutine
   def post(self, uri):
-    '''
-    '''
     self.__logic.handle(self)
 
 
@@ -38,32 +36,39 @@ class DojoHandler(tornado.web.RequestHandler):
 class ServerLogic:
 
   def __init__( self ):
-    '''
-    '''
+
     pass
 
   def run( self, mojo_dir, out_dir, port, configured ):
-    '''
-    '''
+
 
     signal.signal(signal.SIGINT, self.close)
-
-    #monkey.patch_thread()
 
     self.__mojo_dir = mojo_dir
     self.__configured = configured
     self.__out_dir = out_dir
 
     # create temp folder
-    tmpdir = tempfile.mkdtemp()
-    self.__tmpdir = tmpdir
+    tmpdir = out_dir
+    self.__tmpdir = out_dir
+
+    self.log = -1
+
+    #
+    # since we just have an output dir,
+    # create it now
+    #
 
     # register two data sources
-    self.__segmentation = _dojo.Segmentation(mojo_dir, tmpdir)
+    self.__segmentation = _dojo.Segmentation(mojo_dir, tmpdir, out_dir, self)
     self.__image = _dojo.Image(mojo_dir, tmpdir)
 
     # and the controller
-    self.__controller = _dojo.Controller(mojo_dir, out_dir, tmpdir, self.__segmentation.get_database())
+    if self.__segmentation:
+      db = self.__segmentation.get_database()
+    else:
+      db = None
+    self.__controller = _dojo.Controller(mojo_dir, out_dir, tmpdir, db, self)
 
     # and the viewer
     self.__viewer = _dojo.Viewer()
@@ -74,16 +79,12 @@ class ServerLogic:
     ip = socket.gethostbyname(socket.gethostname())
 
     dojo = tornado.web.Application([
-      # viewer
-      # (r'/', web.RedirectHandler, {'url':'/dojo/'}),
-      # (r'/dojo', web.RedirectHandler, {'url':'/dojo/'}),
 
-
-      # # image
-      # (r'/image/(.*)', _dojo.Image(mojo_dir)),
+      # image
       (r'/ws', _dojo.Websockets, dict(controller=self.__controller)),
+      # viewer
       (r'/(.*)', DojoHandler, dict(logic=self))
-  
+
     ])
 
     
@@ -98,14 +99,21 @@ class ServerLogic:
 
     tornado.ioloop.IOLoop.instance().start()
 
-  def finish_setup(self):
-    '''
-    '''
 
+  def get_image(self):
+    return self.__image
+
+
+  def get_segmentation(self):
+    return self.__segmentation
+
+  def get_controller(self):
+    return self.__controller
+
+  def finish_setup(self):
     mojo_dir = self.__mojo_dir
     tmpdir = self.__tmpdir
     out_dir = self.__out_dir
-
 
     # register two data sources
     self.__segmentation = _dojo.Segmentation(mojo_dir, tmpdir)
@@ -119,15 +127,8 @@ class ServerLogic:
     print 'Setup finished.'
 
   def handle( self, r ):
-    '''
-    '''
-    
-    content = None
 
-    # if request.find_input_header('upgrade'):
-    #   # special case for websockets
-    #   self.__websockets.handle(request)
-    #   return
+    content = None
 
     # the access to the viewer
     if not self.__configured:
@@ -143,13 +144,12 @@ class ServerLogic:
     if not content:
       content, content_type = self.__image.handle(r.request)
 
-
     # invalid request
     if not content:
       content = 'Error 404'
       content_type = 'text/html'
 
-    print 'IP',r.request.remote_ip
+    # print 'IP',r.request.remote_ip
 
     r.set_header('Access-Control-Allow-Origin', '*')
     r.set_header('Content-Type', content_type)
@@ -157,18 +157,14 @@ class ServerLogic:
     
 
   def close(self, signal, frame):
-    '''
-    '''
-    print 'Saving..'
+    print 'Sayonara..!!'
     output = {}
     output['origin'] = 'SERVER'
-    self.__controller.save(output)
 
     sys.exit(0)
 
 def print_help( scriptName ):
-  '''
-  '''
+
   description = ''
   print description
   print
@@ -194,7 +190,8 @@ if __name__ == "__main__":
     # and a free port
     port = 1336
     result = 0
-    import socket;
+
+    import socket
     while result==0:
       port += 1
       sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

@@ -1,6 +1,7 @@
 import math
 import os
 import re
+import shutil
 
 import h5py
 import json
@@ -10,9 +11,8 @@ from database import Database
 
 class Datasource(object):
 
-  def __init__(self, mojo_dir, tmp_dir, query, input_format, output_format, sub_dir):
-    '''
-    '''
+  def __init__(self, mojo_dir, tmp_dir, query, input_format, output_format, sub_dir, out_dir=None):
+
 
     self.__mojo_dir = mojo_dir
     self.__mojo_tmp_dir = tmp_dir
@@ -22,14 +22,18 @@ class Datasource(object):
     self.__output_format = output_format
     self.__sub_dir = sub_dir
 
+    self.__out_dir = out_dir
+
     # {'numBytesPerVoxel': '4', 'numVoxelsPerTileZ': '1', 'numVoxelsX': '1024', 'numVoxelsPerTileY': '512', 'numVoxelsPerTileX': '512', 'dxgiFormat': 'R32_UInt', 'numTilesX': '2', 'numTilesY': '2', 'numTilesZ': '20', 'fileExtension': 'hdf5', 'numTilesW': '2', 'numVoxelsZ': '20', 'numVoxelsY': '1024', 'isSigned': 'false'}
     self.__info = None
 
     # this is required to connect the deepzoom protocol to mojo zoom
     self.__max_deepzoom_level = 0.0
     self.__max_mojozoom_level = 0.0
-    
+
+    # Actual z-stack and max 3D z-stack
     self.__max_z_tiles = 0
+    self.__zSample_max = 80
 
     self.__has_colormap = False
     self.__colormap = None
@@ -38,9 +42,9 @@ class Datasource(object):
     self.__volume = None
 
     # file system regex
-    self.__info_regex = re.compile('.*' + self.__sub_dir + '/tiledVolumeDescription.xml$')
-    self.__colormap_file_regex = re.compile('.*' + self.__sub_dir + '/colorMap.hdf5$')
-    self.__segmentinfo_file_regex = re.compile('.*' + self.__sub_dir + '/segmentInfo.db$')
+    self.__info_regex = re.compile('.*tiledVolumeDescription.xml$')
+    self.__colormap_file_regex = re.compile('.*colorMap.hdf5')
+    self.__segmentinfo_file_regex = re.compile('.*segmentInfo.db$')
 
     # handler regex
     self.__query_toc_regex = re.compile('^/' + self.__query + '/contents$')
@@ -53,68 +57,96 @@ class Datasource(object):
 
     self.__setup()
 
+  def get_info(self):
+
+    return self.__info
+
+
+  def get_input_format(self):
+
+    return self.__input_format
+
+
+  def get_max_zoomlevel(self):
+
+    return self.__max_mojozoom_level
+
 
   def __setup(self):
-    '''
-    '''
 
     # parse the mojo directory
-    for root, dirs, files in os.walk(self.__mojo_dir):  
+    root = os.path.join(self.__mojo_dir, self.__sub_dir)
+    files = os.listdir(root)
 
-      for f in files:
+    for f in files:
 
-        # info file
-        if self.__info_regex.match(os.path.join(root,f)):
-          tree = ET.parse(os.path.join(root,f))
-          xml_root = tree.getroot()
-          self.__info = xml_root.attrib
-          # set the max deepzoom zoom level
-          self.__max_deepzoom_level = int(math.log(int(self.__info['numVoxelsX']), 2))
-          # set the max mojo zoom level
-          self.__max_mojozoom_level = int(math.ceil( math.log(float(self.__info['numVoxelsPerTileX'])/float(self.__info['numVoxelsX']), 0.5) ))
-          # get the max number of Z tiles
-          self.__max_z_tiles = int(self.__info['numTilesZ'])
+      # info file
+      if self.__info_regex.match(os.path.join(root,f)):
+        tree = ET.parse(os.path.join(root,f))
+        xml_root = tree.getroot()
+        self.__info = xml_root.attrib
+        # set the max deepzoom zoom level
+        self.__max_deepzoom_level = int(math.log(int(self.__info['numVoxelsX']), 2))
+        # set the max mojo zoom level
+        self.__max_mojozoom_level = int(math.ceil( math.log(float(self.__info['numVoxelsPerTileX'])/float(self.__info['numVoxelsX']), 0.5) ))
+        # get the max number of Z tiles
+        self.__max_z_tiles = int(self.__info['numTilesZ'])
+        # get the file format
+        self.__input_format = str(self.__info['fileExtension'])
+        # width and height
+        self._width = int(self.__info['numVoxelsX'])
+        self._height = int(self.__info['numVoxelsY'])
+        self._xtiles = int(self.__info['numTilesX'])
+        self._ytiles = int(self.__info['numTilesY'])
+        self._voxPerTileX = int(self.__info['numVoxelsPerTileX'])
+        self._voxPerTileY = int(self.__info['numVoxelsPerTileY'])
 
-        # colormap
-        elif self.__colormap_file_regex.match(os.path.join(root,f)):
-          hdf5_file = h5py.File(os.path.join(root,f), 'r')
-          list_of_names = []
-          hdf5_file.visit(list_of_names.append) 
-          self.__has_colormap = True
-          self.__colormap = hdf5_file[list_of_names[0]].value
+      # colormap
+      elif self.__colormap_file_regex.match(os.path.join(root,f)):
+        hdf5_file = h5py.File(os.path.join(root,f), 'r')
+        list_of_names = []
+        hdf5_file.visit(list_of_names.append) 
+        self.__has_colormap = True
+        self.__colormap = hdf5_file[list_of_names[0]].value
 
-        # segmentinfo database
-        elif self.__segmentinfo_file_regex.match(os.path.join(root,f)):
-          print 'Connecting to DB'
-          self.__database = Database(os.path.join(root,f))
+      # segmentinfo database
+      elif self.__segmentinfo_file_regex.match(os.path.join(root,f)):
+
+        old_db_file = os.path.join(root,f)
+        # new_db_file = old_db_file.replace(self.__mojo_dir, self.__out_dir+'/')
+        
+        # os.mkdir(self.__out_dir+'/ids')
+        # print 'Copied DB from', old_db_file, 'to', new_db_file
+        # shutil.copy(old_db_file, new_db_file)
+        print 'Connecting to DB'
+        self.__database = Database(old_db_file)
+        # grab existing merge table
+        self.__database._merge_table = self.__database.get_merge_table()
+        self.__database._lock_table = self.__database.get_lock_table()
+
 
 
   def reconfigure(self):
-    '''
-    '''
+
     self.__setup()
 
   def get_info_xml(self):
-    '''
-    '''
+
     xml_info = '<?xml version="1.0" encoding="UTF-8"?>\n'
     xml_info += '<Image xmlns="http://schemas.microsoft.com/deepzoom/2008" TileSize="'+self.__info['numVoxelsPerTileX']+'" Overlap="0" Format="'+self.__output_format+'"><Size Width="'+self.__info['numVoxelsX']+'" Height="'+self.__info['numVoxelsY']+'"/></Image>'
 
     return xml_info
 
   def get_tile(self, file):
-    '''
-    '''
+
     pass
 
   def get_database(self):
-    '''
-    '''
+
     return self.__database
 
   def get_volume(self, zoomlevel):
-    '''
-    '''
+
 
     w_path = os.path.join(self.__mojo_dir, self.__sub_dir, 'tiles', 'w='+str(zoomlevel).zfill(8))
     w_path_tmp = os.path.join(self.__mojo_tmp_dir, self.__sub_dir, 'tiles', 'w='+str(zoomlevel).zfill(8))
@@ -124,9 +156,16 @@ class Datasource(object):
     tile_files = []
 
     for d in dirs:
+      if d.startswith('.'):
+        continue
+
       files = os.listdir(os.path.join(w_path,d))
 
       for f in files:
+
+        if f.startswith('.'):
+          continue
+
         # check if we have an updated version for this tile
         if os.path.exists(os.path.join(w_path_tmp, d, f)):
           tile_files.append(os.path.join(w_path_tmp, d, f))
@@ -135,15 +174,17 @@ class Datasource(object):
 
     return tile_files
 
-  def handle(self, request, content, content_type):
+  def handle(self, request):
     '''
     React to a HTTP request.
     '''
+    content_type = 'text/html'
+    content = None
 
     # table of contents
     if self.__query_toc_regex.match(request.uri):
-      content_type = 'text/html'
       content = {}
+      content['zSample_max'] = self.__zSample_max
       content['max_z_tiles'] = self.__max_z_tiles
       content['colormap'] = str(self.__has_colormap).lower()
       content['width'] = self.__info['numVoxelsX']
@@ -152,62 +193,54 @@ class Datasource(object):
 
       content = json.dumps(content)
 
-    # tilesource info
-    elif self.__query_tilesource_regex.match(request.uri):
-      content_type = 'text/html'
-      content = self.get_info_xml()
-
-    # colormap
-    elif self.__query_colormap_regex.match(request.uri) and self.__has_colormap:
-      content_type = 'text/html'
-      content = json.dumps(self.__colormap.tolist())
-
-    # segmentinfo
-    elif self.__query_segmentinfo_regex.match(request.uri):
-      content_type = 'text/html'
-      content = json.dumps(self.__database.get_segment_info())
-
-    elif self.__query_id_tile_index_regex.match(request.uri):
-      content_type = 'text/html'
-      request_splitted = request.uri.split('/')
-      tile_id = request_splitted[-1]
-      content = json.dumps(self.__database.get_id_tile_index(tile_id))
-
-    # volume
-    elif self.__query_volume_regex.match(request.uri):
-      
-      request_splitted = request.uri.split('/')
-      zoomlevel = int(request_splitted[-2])
-
-      content, content_type = self.get_volume(zoomlevel)
-
     # tile
     elif self.__query_tile_regex.match(request.uri):
 
       request_splitted = request.uri.split('/')
       tile_x_y = request_splitted[-1].split('.')[0]
-      tile_x = tile_x_y.split('_')[0]
-      tile_y = tile_x_y.split('_')[1]
+      tile_x, tile_y = tile_x_y.split('_')
 
       zoomlevel = int(request_splitted[-2])
-      # re-map zoomlevel
-      #zoomlevel = min(self.__max_mojozoom_level, self.__max_deepzoom_level - zoomlevel)
-
       slice_number = request_splitted[-3]
 
       updated_tile_file = os.path.join(self.__mojo_tmp_dir, self.__sub_dir, 'tiles', 'w='+str(zoomlevel).zfill(8), 'z='+slice_number.zfill(8), 'y='+tile_y.zfill(8)+','+'x='+tile_x.zfill(8)+'.'+self.__input_format)
-      # print updated_tile_file
+
       if os.path.exists(updated_tile_file):
 
         content, content_type = self.get_tile(updated_tile_file)
         return content, content_type
 
       tile_file = os.path.join(self.__mojo_dir, self.__sub_dir, 'tiles', 'w='+str(zoomlevel).zfill(8), 'z='+slice_number.zfill(8), 'y='+tile_y.zfill(8)+','+'x='+tile_x.zfill(8)+'.'+self.__input_format)
-      #print 'Requested', tile_file
+
       if os.path.exists(tile_file):
 
         content, content_type = self.get_tile(tile_file)
 
+    # volume
+    elif self.__query_volume_regex.match(request.uri):
+
+      request_splitted = request.uri.split('/')
+      zoomlevel = int(request_splitted[-2])
+
+      content, content_type = self.get_volume(zoomlevel)
+
+    # # tile source info
+    # elif self.__query_tilesource_regex.match(request.uri):
+    #   content = self.get_info_xml()
+    #
+    # # segment info
+    # elif self.__query_segmentinfo_regex.match(request.uri):
+    #   content = json.dumps(self.__database.get_segment_info())
+    #
+    # # tile index
+    # elif self.__query_id_tile_index_regex.match(request.uri):
+    #   request_splitted = request.uri.split('/')
+    #   tile_id = request_splitted[-1]
+    #   content = json.dumps(self.__database.get_id_tile_index(tile_id))
+
+    # Only colormap for segmentation
+    elif self.__has_colormap and self.__query_colormap_regex.match(request.uri):
+      content = json.dumps(self.__colormap.tolist())
 
     return content, content_type
 

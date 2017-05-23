@@ -140,13 +140,10 @@ function linkShaders(gl, vs_id, fs_id) {
 
 function from32bitTo8bit(value) {
 
-  // pack value to 4 bytes (little endian)
-  var b3 = Math.floor(value / (256*256*256)); // lsb
-  var b2 = Math.floor((value-b3) / (256*256));
-  var b1 = Math.floor((value-b3-b2) / (256));
-  var b0 = Math.floor(value-b1*(256)-b2*(256*256)-b3*(256*256*256)); // msb  
-
-  return [b0, b1, b2, b3];
+  arr = new ArrayBuffer(4); // an Int32 takes 4 bytes
+  view = new DataView(arr);
+  view.setUint32(0, value, true); // byteOffset = 0; litteEndian = false
+  return new Uint8Array(arr);
 
 }
 
@@ -155,3 +152,32 @@ function fire_resize_event() {
   evt.initUIEvent('resize', true, false, window, 0);
   window.dispatchEvent(evt);  
 }
+
+
+function parse_args() {
+
+  // from http://stackoverflow.com/a/7826782/1183453
+  var args = document.location.search.substring(1).split('&');
+  argsParsed = {};
+  for (var i=0; i < args.length; i++)
+  {
+      arg = unescape(args[i]);
+
+      if (arg.length == 0) {
+        continue;
+      }
+
+      if (arg.indexOf('=') == -1)
+      {
+          argsParsed[arg.replace(new RegExp('/$'),'').trim()] = true;
+      }
+      else
+      {
+          kvp = arg.split('=');
+          argsParsed[kvp[0].trim()] = kvp[1].replace(new RegExp('/$'),'').trim();
+      }
+  }
+
+  return argsParsed;
+
+};

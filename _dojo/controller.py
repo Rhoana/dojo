@@ -1,3 +1,5 @@
+import cv2
+import glob
 import h5py
 import os, errno
 import json
@@ -8,29 +10,41 @@ import math
 import shutil
 from scipy import ndimage
 from skimage import exposure
+from PIL import Image as PILImage
 
 class Controller(object):
 
-  def __init__(self, mojo_dir, out_dir, tmp_dir, database):
-    '''
-    '''
+  def __init__(self, mojo_dir, out_dir, tmp_dir, database, dojoserver):
+
+
     self.__websocket = None
-
-    self.__merge_table = {}
-
-    self.__lock_table = {'0':True}
-
-    self.__problem_table = []
-
-    self.__users = []
 
     self.__mojo_dir = mojo_dir
 
     self.__mojo_tmp_dir = tmp_dir
 
     self.__mojo_out_dir = out_dir
-    
+
     self.__database = database
+
+    self.__users = []
+
+    self.__problem_table = []
+
+    self.__new_merge_table = {}
+
+    self.__old_lock_table = {'0':True}
+
+    self.__hard_merge_table = self.__database._merge_table
+
+    self.__lock_table = self.__database._lock_table
+
+    self.__dojoserver = dojoserver
+
+    # Attributes for the split operation
+    [self.data_path,self.label_id,self.x_tiles,self.y_tiles,self.z] = [0,0,0,0,0]
+
+    self.__actions = {}
 
     if self.__database:
       self.__largest_id = self.__database.get_largest_id()
@@ -40,26 +54,13 @@ class Controller(object):
     self.__split_count = 0
 
   def handshake(self, websocket):
-    '''
-    '''
+
     self.__websocket = websocket
 
     self.send_welcome()
 
-    # always send the merge table first thing
-    self.send_merge_table('SERVER')
-    # then the lock table
-    self.send_lock_table('SERVER')
-    # then the problem table
-    self.send_problem_table('SERVER')
-
-    # then send the redraw command
-    self.send_redraw('SERVER')
-
-
   def send_welcome(self):
-    '''
-    '''
+
     output = {}
     output['name'] = 'WELCOME'
     output['origin'] = 'SERVER'
@@ -67,10 +68,8 @@ class Controller(object):
 
     self.__websocket.send(json.dumps(output))
 
-
   def send_redraw(self, origin):
-    '''
-    '''
+
     output = {}
     output['name'] = 'REDRAW'
     output['origin'] = 'SERVER'
@@ -78,46 +77,53 @@ class Controller(object):
 
     self.__websocket.send(json.dumps(output))
 
-  def get_merge_table(self):
-    '''
-    '''
-    return self.__merge_table
+  def get_hard_merge_table(self):
 
-  def get_lock_table(self):
-    '''
-    '''
-    return self.__lock_table
+    return self.__hard_merge_table
 
   def get_problem_table(self):
-    '''
-    '''
+
     return self.__problem_table
 
-  def send_merge_table(self, origin):
-    '''
-    '''
+  def send_new_merge_table(self, origin):
+
 
     output = {}
     output['name'] = 'MERGETABLE'
     output['origin'] = origin
-    output['value'] = self.get_merge_table()
+    output['value'] = self.__new_merge_table
+
+    self.__websocket.send(json.dumps(output))
+
+  def send_undo_merge(self, origin, ids):
+
+    output = {}
+    output['name'] = 'UNDO_MERGE_GROUP'
+    output['origin'] = origin
+    output['value'] = ids
+    self.__websocket.send(json.dumps(output))
+
+  def send_redo_merge(self, origin, values):
+
+    output = {}
+    output['name'] = 'REDO_MERGE_GROUP'
+    output['origin'] = origin
+    output['value'] = values
 
     self.__websocket.send(json.dumps(output))
 
   def send_lock_table(self, origin):
-    '''
-    '''
+
 
     output = {}
     output['name'] = 'LOCKTABLE'
     output['origin'] = origin
-    output['value'] = self.get_lock_table()
+    output['value'] = self.__lock_table
 
     self.__websocket.send(json.dumps(output))
 
   def send_problem_table(self, origin):
-    '''
-    '''
+
 
     output = {}
     output['name'] = 'PROBLEMTABLE'
@@ -126,25 +132,53 @@ class Controller(object):
 
     self.__websocket.send(json.dumps(output))
 
+  def send_unblock(self, origin):
+
+
+    output = {}
+    output['name'] = 'UNBLOCK'
+    output['origin'] = origin
+    output['value'] = ''
+
+    self.__websocket.send(json.dumps(output))
 
   def on_message(self, message):
-    '''
-    '''
-    
+
+
     input = json.loads(message)
 
     if input['name'] == 'WELCOME':
 
       self.__users.append(input['origin'])
 
-    elif input['name'] == 'MERGETABLE':
-      self.__merge_table = input['value']
+      # always send the merge table first thing
+      self.send_new_merge_table(input['origin'])
+      # then the lock table
+      self.send_lock_table(input['origin'])
+      # then the problem table
+      self.send_problem_table(input['origin'])
 
-      self.send_merge_table(input['origin'])
+      self.send_unblock(input['origin'])
+
+      # then send the redraw command
+      self.send_redraw('SERVER')
+
+    elif input['name'] == 'MERGETABLE_SUBSET':
+      merge_table_subset = input['value']
+      for m in merge_table_subset:
+        self.__new_merge_table[m] = merge_table_subset[m]
+
+      input['value'] = self.__new_merge_table
+      self.send_new_merge_table(input['origin'])
 
       self.send_redraw(input['origin'])
 
     elif input['name'] == 'LOCKTABLE':
+      new_locks = dict((int(k), v) for k, v in input['value'].iteritems())
+      old_locks = self.__lock_table.viewkeys() - new_locks.viewkeys()
+      old_locks = old_locks | self.__old_lock_table.viewkeys()
+      self.__old_lock_table = dict((k,True) for k in old_locks)
+
       self.__lock_table = input['value']
 
       self.send_lock_table(input['origin'])
@@ -173,366 +207,346 @@ class Controller(object):
       self.finalize_split(input)
 
     elif input['name'] == 'ADJUST':
-      self.adjust(input)
+      print 'Not Adjusted'
 
     elif input['name'] == 'SAVE':
+      input['name'] = 'SAVING'
+      input['origin'] = 'SERVER'
+      self.__websocket.send(json.dumps(input))
       self.save(input)
 
+    elif input['name'] == 'ACTION':
+      self.add_action(input)
 
-  def adjust(self, input):
-    '''
-    '''
-    values = input['value']
+    elif input['name'] == 'UNDO':
+      self.undo_action(input)
 
-    print 'adjust'
+    elif input['name'] == 'REDO':
+      self.redo_action(input)
 
-    # try the temporary data first
-    data_path = self.__mojo_tmp_dir + '/ids/tiles/w=00000000/z='+str(values["z"]).zfill(8)
+  def add_action(self, input):
 
-    if not os.path.isdir(data_path):
-      data_path = self.__mojo_dir + '/ids/tiles/w=00000000/z='+str(values["z"]).zfill(8)
+    values = list(input['value'])
+    current_action = values[0]
+    value = values[1]
+    username = input['origin']
 
-    images = os.listdir(data_path)
-    tile = {}
-    for i in images:
+    # check if we have an action stack for this user
+    if not username in self.__actions:
+      self.__actions[username] = []
 
-      location = os.path.splitext(i)[0].split(',')
-      for l in location:
-        l = l.split('=')
-        exec(l[0]+'=int("'+l[1]+'")')
+    if current_action < len(self.__actions[username]):
+      # remove all actions from the last undo'ed one to the current
+      self.__actions[username] = self.__actions[username][0:current_action]
 
-      if not x in tile:
-        tile[x] = {}
+    self.__actions[username].append(value)
 
-      hdf5_file = h5py.File(os.path.join(data_path,i))
-      list_of_names = []
-      hdf5_file.visit(list_of_names.append)
-      image_data = hdf5_file[list_of_names[0]].value
-      hdf5_file.close()
-
-      tile[x][y] = image_data
-
-    row = None
-    first_row = True
-
-    # go through rows of each tile
-    for r in tile.keys():
-      column = None
-      first_column = True
-
-      for c in tile[r]:
-        if first_column:
-          column = tile[r][c]
-          first_column = False
-        else:
-          column = np.concatenate((column, tile[r][c]), axis=0)
-
-      if first_row:
-        row = column
-        first_row = False
-      else:
-        row = np.concatenate((row, column), axis=1)
-
-    tile = row
-
-    # 
-    label_id = values['id']
-    i_js = values['i_js']
-    brush_size = values['brush_size']
-
-    for c in i_js:
-
-      x = int(c[0])# - brush_size/2)
-      y = int(c[1])# - brush_size/2)
-
-      for i in range(brush_size):
-        for j in range(brush_size):
-
-          tile[y+j,x+i] = label_id
-
-
-    full_coords = np.where(tile == label_id)
-    full_bbox = [min(full_coords[1]), min(full_coords[0]), max(full_coords[1]), max(full_coords[0])]
-
-
-
-    # split tile and save as hdf5
-    x0y0 = tile[0:512,0:512]
-    x1y0 = tile[0:512,512:1024]
-    x0y1 = tile[512:1024,0:512]
-    x1y1 = tile[512:1024,512:1024]
-
-    output_folder = self.__mojo_tmp_dir + '/ids/tiles/w=00000000/z='+str(values["z"]).zfill(8)+'/'
-
-    try:
-      os.makedirs(output_folder)
-    except OSError as exc: # Python >2.5
-      if exc.errno == errno.EEXIST and os.path.isdir(output_folder):
-        pass
-      else: raise
-
-    h5f = h5py.File(output_folder+'y=00000000,x=00000000.hdf5', 'w')
-    h5f.create_dataset('dataset_1', data=x0y0)
-    h5f.close()
-
-    h5f = h5py.File(output_folder+'y=00000001,x=00000000.hdf5', 'w')
-    h5f.create_dataset('dataset_1', data=x0y1)
-    h5f.close()
-
-    h5f = h5py.File(output_folder+'y=00000000,x=00000001.hdf5', 'w')
-    h5f.create_dataset('dataset_1', data=x1y0)
-    h5f.close()
-
-    h5f = h5py.File(output_folder+'y=00000001,x=00000001.hdf5', 'w')
-    h5f.create_dataset('dataset_1', data=x1y1)
-    h5f.close()
-
-    output_folder = self.__mojo_tmp_dir + '/ids/tiles/w=00000001/z='+str(values["z"]).zfill(8)+'/'
-
-    try:
-      os.makedirs(output_folder)
-    except OSError as exc: # Python >2.5
-      if exc.errno == errno.EEXIST and os.path.isdir(output_folder):
-        pass
-      else: raise
-
-    # zoomed_tile = tile.reshape(512,512)
-    zoomed_tile = ndimage.interpolation.zoom(tile, .5, order=0, mode='nearest')
-    h5f = h5py.File(output_folder+'y=00000000,x=00000000.hdf5', 'w')
-    h5f.create_dataset('dataset_1', data=zoomed_tile)
-    h5f.close()
-
+    #
+    # send the action index
+    #
     output = {}
-    output['name'] = 'RELOAD'
-    output['origin'] = input['origin']
-    output['value'] = {'z':values["z"], 'full_bbox':str(full_bbox)}
-    # print output
+    output['name'] = 'CURRENT_ACTION'
+    output['origin'] = username
+    output['value'] = [len(self.__actions[username])]*2
     self.__websocket.send(json.dumps(output))
 
+  def undo_action(self, input):
+
+    value = input['value']
+    username = input['origin']
+
+    if username in self.__actions:
+      # actions available
+      action = self.__actions[username][value-1]
+
+      #
+      # undo merge and split
+      #
+      if action['type'] == 'MERGE_GROUP':
+
+        ids = action['value'][0]
+
+        for i in ids:
+
+          key = str(i)
+
+          if key in self.__new_merge_table:
+            del self.__new_merge_table[key]
+          else:
+            # this was already undo'ed before
+            pass
+
+        self.send_undo_merge('SERVER', ids)
+        self.send_redraw('SERVER')
+
+      elif action['type'] == 'SPLIT':
+
+        self.z = action['value'][0]
+        bb = action['value'][1]
+        old_area = action['value'][2]
+
+        self.x_tiles = range((bb[0]//512), (((bb[2]-1)//512) + 1))
+        self.y_tiles = range((bb[1]//512), (((bb[3]-1)//512) + 1))
+
+        tile_dict = {} # here this is the segmentation
+
+        # Load segmentation data
+        tile_dict = self.file_iter(tile_dict)[0]
+        # go through rows of each segmentation
+        row_val = self.tile_iter(tile_dict)[0]
+
+        # Temporarily harden new merges
+        new_merges = self.__new_merge_table
+        for k,v in new_merges.iteritems():
+          while str(v) in new_merges: v = new_merges[str(v)]
+          row_val[np.where(row_val==float(k))] = v
+
+        #
+        # NOW REPLACE THE PIXEL DATA
+        # but take offset of tile into account
+        #
+        offset_x = self.x_tiles[0]*512
+        offset_y = self.y_tiles[0]*512
+
+        bb_relative =  np.array(bb) - [offset_x, offset_y, offset_x , offset_y]
+
+        row_val[bb_relative[1]:bb_relative[3],bb_relative[0]:bb_relative[2]] = old_area
+
+        # Save all the splits
+        self.save_iter(row_val)
+
+        # send reload event
+        output = {}
+        output['name'] = 'HARD_RELOAD'
+        output['origin'] = 'SERVER'
+        output['value'] = {'z':self.z, 'full_bbox':str(bb)}
+        # print output
+        self.__websocket.send(json.dumps(output))
+
+      # decrease value
+      value = max(0, value-1)
+
+    #
+    # send the action index
+    #
     output = {}
-    output['name'] = 'ADJUSTDONE'
-    output['origin'] = input['origin']
-    output['value'] = {'z':values["z"], 'full_bbox':str(full_bbox)}
-    self.__websocket.send(json.dumps(output))    
+    output['name'] = 'CURRENT_ACTION'
+    output['origin'] = username
+    output['value'] = [value, len(self.__actions[username])]
+    self.__websocket.send(json.dumps(output))
+
+  def redo_action(self, input):
+
+    value = input['value']
+    username = input['origin']
+    # increase value
+    value = min(len(self.__actions[username]), value+1)
+
+    if username in self.__actions:
+
+      # actions available
+      action = self.__actions[username][value-1]
+
+      #
+      # redo merge
+      #
+      if action['type'] == 'MERGE_GROUP':
+
+        ids = action['value'][0]
+
+        for i in ids:
+
+          if i == action['value'][1]:
+            # avoid GPU crash
+            continue
+
+          key = str(i)
+
+          self.__new_merge_table[key] = action['value'][1]
+
+        self.send_redo_merge('SERVER', action['value'])
+        self.send_redraw('SERVER')
+
+      elif action['type'] == 'SPLIT':
+
+        self.z = action['value'][0]
+        bb = action['value'][1]
+        new_area = action['value'][3]
+
+        self.x_tiles = range((bb[0]//512), (((bb[2]-1)//512) + 1))
+        self.y_tiles = range((bb[1]//512), (((bb[3]-1)//512) + 1))
+
+        tile_dict = {} # here this is the segmentation
+
+        # Load segmentation data
+        tile_dict = self.file_iter(tile_dict)[0]
+        # go through rows of each tile and segmentation
+        row_val = self.tile_iter(tile_dict)[0]
+
+        # Temporarily harden new merges
+        new_merges = self.__new_merge_table
+        for k,v in new_merges.iteritems():
+          while str(v) in new_merges: v = new_merges[str(v)]
+          row_val[np.where(row_val==float(k))] = v
+
+        #
+        # NOW REPLACE THE PIXEL DATA
+        # but take offset of tile into account
+        #
+        offset_x = self.x_tiles[0]*512
+        offset_y = self.y_tiles[0]*512
+
+        bb_relative = np.array(bb) - [offset_x, offset_y, offset_x , offset_y]
+
+        row_val[bb_relative[1]:bb_relative[3],bb_relative[0]:bb_relative[2]] = new_area
+
+        # Save all the splits
+        self.save_iter(row_val)
+
+        # send reload event
+        output = {}
+        output['name'] = 'HARD_RELOAD'
+        output['origin'] = 'SERVER'
+        output['value'] = {'z':self.z, 'full_bbox':str(bb)}
+        # print output
+        self.__websocket.send(json.dumps(output))
+
+    #
+    # send the action index
+    #
+    output = {}
+    output['name'] = 'CURRENT_ACTION'
+    output['origin'] = username
+    output['value'] = [value, len(self.__actions[username])]
+    self.__websocket.send(json.dumps(output))
 
   def save(self, input):
-    '''
-    '''
 
-    # parse the mojo directory for w=0 (largest images)
-    mojo_dir = (os.path.join(self.__mojo_dir, 'ids','tiles','w='+str(0).zfill(8)))
-    mojo_tmp_dir = (os.path.join(self.__mojo_tmp_dir, 'ids','tiles','w='+str(0).zfill(8)))
-
-    # first, copy the mojo dir to the output dir
-    shutil.rmtree(self.__mojo_out_dir, True)
-    shutil.copytree(self.__mojo_dir, self.__mojo_out_dir)
-
-    for root, dirs, files in os.walk(mojo_dir):  
-
-      for f in files:
-
-        # grab z
-        z_dir = os.path.dirname(os.path.join(root,f)).split('/')[-1]
-        print z_dir
-        # check if there is a temporary file (==newer data)
-        if os.path.exists(os.path.join(mojo_tmp_dir,z_dir,f)):
-          print 'Found TEMP'
-          segfile = os.path.join(mojo_tmp_dir, z_dir, f)
-        else:
-          segfile = os.path.join(root,f)
-
-        # now open the segfile and apply the merge table
-        hdf5_file = h5py.File(segfile)
-        list_of_names = []
-        hdf5_file.visit(list_of_names.append)
-        image_data = hdf5_file[list_of_names[0]].value
-        hdf5_file.close()
-
-        # for y in range(image_data.shape[0]):
-        #   for x in range(image_data.shape[1]):
-
-        #     image_data[y,x] = self.lookup_label(image_data[y,x])
-
-        for m in self.__merge_table.keys():
-          m_id = self.lookup_label(m)
-          image_data[np.where(image_data == int(m))] = m_id
-
-        # now store the image data
-        out_seg_file = os.path.join(self.__mojo_out_dir, 'ids', 'tiles', 'w='+str(0).zfill(8), z_dir, f)
-        h5f = h5py.File(out_seg_file, 'w')
-        h5f.create_dataset('dataset_1', data=image_data)
-        h5f.close()
-
-        print 'stored', out_seg_file
+    print 'SAVING..'
+    self.__actions = {}
+    for username in self.__actions:
+      # empty user actions
+      output = {}
+      output['value'] = [0,0]
+      output['origin'] = username
+      output['name'] = 'CURRENT_ACTION'
+      self.__websocket.send(json.dumps(output))
 
 
-    # now we need to create the zoomlevel 1
-    # TODO support multiple zoomlevels
+    for i in self.__new_merge_table:
+      self.__database.insert_merge(i, self.__new_merge_table[i])
+      # self.__database.store()
 
-    w0_new_dir = os.path.join(self.__mojo_out_dir, 'ids', 'tiles', 'w='+str(0).zfill(8))
-    for z in os.listdir(w0_new_dir):
+    print 'STORED MERGE TABLE'
 
-      data_path = os.path.join(w0_new_dir, z)
+    # print self.__lock_table
+    for i in self.__lock_table:
+      if i=='0':
+        continue
+      self.__database.insert_lock(i)
+      # self.__database.store()
 
-      images = os.listdir(data_path)
-      tile = {}
-      for i in images:
+    for i in self.__old_lock_table:
+      if i=='0':
+        continue
+      self.__database.remove_lock(i)
 
-        location = os.path.splitext(i)[0].split(',')
-        for l in location:
-          l = l.split('=')
-          exec(l[0]+'=int("'+l[1]+'")')
+    print 'STORED LOCK TABLE'
 
-        if not x in tile:
-          tile[x] = {}
+    self.__database.store()
 
-        hdf5_file = h5py.File(os.path.join(data_path,i))
-        list_of_names = []
-        hdf5_file.visit(list_of_names.append)
-        image_data = hdf5_file[list_of_names[0]].value
-        hdf5_file.close()
+    print 'ALL STORED'
 
-        tile[x][y] = image_data
-
-      row = None
-      first_row = True
-
-      # go through rows of each tile
-      for r in tile.keys():
-        column = None
-        first_column = True
-
-        for c in tile[r]:
-          if first_column:
-            column = tile[r][c]
-            first_column = False
-          else:
-            column = np.concatenate((column, tile[r][c]), axis=0)
-
-        if first_row:
-          row = column
-          first_row = False
-        else:
-          row = np.concatenate((row, column), axis=1)
-
-      tile = row
-
-      # now downsample and save as w=00000001
-      zoomed_tile = ndimage.interpolation.zoom(tile, .5, order=0, mode='nearest')
-
-      out_seg_file = os.path.join(self.__mojo_out_dir, 'ids', 'tiles', 'w='+str(1).zfill(8), z, 'y=00000000,x=00000000.hdf5')
-      h5f = h5py.File(out_seg_file, 'w')
-      h5f.create_dataset('dataset_1', data=zoomed_tile)
-      h5f.close()
+    # re-harden updated merge table from database
+    self.__database._merge_table = self.__database.get_merge_table()
+    self.__hard_merge_table = self.__database._merge_table
 
     print 'Splits', self.__split_count
-    print 'Merges', len(self.__merge_table.keys())
     print 'All saved! Yahoo!'
+
+    z = 0
+    bb = [0, 0, 512, 512]
+    # send reload event
+    output = {}
+    output['name'] = 'HARD_RELOAD'
+    output['origin'] = 'SERVER'
+    output['value'] = {'z':z, 'full_bbox':str(bb)}
+    # print output
+    self.__websocket.send(json.dumps(output))
 
     # ping back
     output = {}
     output['name'] = 'SAVED'
-    output['origin'] = input['origin']
+    output['origin'] = 'SERVER'
     output['value'] = {}
-    if self.__websocket:    
-      self.__websocket.send(json.dumps(output))  
+    if self.__websocket:
+      self.__websocket.send(json.dumps(output))
 
+    # send merge table
+    self.__new_merge_table = {}
+    self.send_new_merge_table('SERVER')
 
   def finalize_split(self, input):
-    '''
-    '''
+
     values = input['value']
+    bb = values['bbox']
+    image = self.__dojoserver.get_image()
+    self.label_id = values['id']
+    self.z = values['z']
 
-    # try the temporary data first
-    data_path = self.__mojo_tmp_dir + '/ids/tiles/w=00000000/z='+str(values["z"]).zfill(8)
+    # find tiles we need for this split on highest res and make sure the bb is valid
+    bb = np.clip(np.array(bb),0,[image._width]*2 + [image._height]*2)
 
-    if not os.path.isdir(data_path):
-      data_path = self.__mojo_dir + '/ids/tiles/w=00000000/z='+str(values["z"]).zfill(8)
+    self.x_tiles = range((bb[0]//512), (((bb[1]-1)//512) + 1))
+    self.y_tiles = range((bb[2]//512), (((bb[3]-1)//512) + 1))
 
-    images = os.listdir(data_path)
-    tile = {}
-    for i in images:
+    tile_dict = {} # here this is the segmentation
 
-      location = os.path.splitext(i)[0].split(',')
-      for l in location:
-        l = l.split('=')
-        exec(l[0]+'=int("'+l[1]+'")')
+    # Load segmentation data
+    tile_dict = self.file_iter(tile_dict)[0]
+    # go through rows of each segmentation
+    row_val = self.tile_iter(tile_dict)[0]
 
-      if not x in tile:
-        tile[x] = {}
+    self.use_new_merge()
 
-      hdf5_file = h5py.File(os.path.join(data_path,i))
-      list_of_names = []
-      hdf5_file.visit(list_of_names.append)
-      image_data = hdf5_file[list_of_names[0]].value
-      hdf5_file.close()
+    ##
+    #
+    # important: we need to detect if the label_id touches one of the borders of our segmentation
+    # we need to load additional tiles until this is not the case anymore
+    #
+    [row_val, old_tile] = self.edge_iter(tile_dict, row_val)
 
-      tile[x][y] = image_data
+    # temporarily flatten
+    for seg in self.ids: row_val[np.where(row_val == seg)] = self.label_id
 
-    row = None
-    first_row = True
+    # Apply saved hardened merges
+    lut = self.get_hard_merge_table()
+    row_val = lut[row_val]
 
-    # go through rows of each tile
-    for r in tile.keys():
-      column = None
-      first_column = True
-
-      for c in tile[r]:
-        if first_column:
-          column = tile[r][c]
-          first_column = False
-        else:
-          column = np.concatenate((column, tile[r][c]), axis=0)
-
-      if first_row:
-        row = column
-        first_row = False
-      else:
-        row = np.concatenate((row, column), axis=1)
-
-    tile = row
-
-    # 
-    label_id = values['id']
     i_js = values['line']
-    bbox = values['bbox']
     click = values['click']
 
-    # run through tile
-    # lookup each label
-    # for i in range(tile.shape[0]):
-    #   for j in range(tile.shape[1]):
-    #     tile[i,j] = self.lookup_label(tile[i,j])
+    #
+    # Take offset of tile into account
+    #
+    offset_x = self.x_tiles[0]*512
+    offset_y = self.y_tiles[0]*512
 
-    s_tile = np.zeros(tile.shape)
+    s_tile = np.zeros(row_val.shape)
+    s_tile[row_val == self.label_id] = 1
 
-    for l in self.lookup_merge_label(label_id):
-
-      s_tile[tile == int(l)] = 1
-      tile[tile == int(l)] = label_id
-
-    #mh.imsave('/tmp/seg.tif', s_tile.astype(np.uint8))
-
+    # mh.imsave('../t_val.jpg', row_val.astype(np.uint8))
 
     for c in i_js:
-      s_tile[c[1], c[0]] = 0
+      s_tile[c[1]-offset_y, c[0]-offset_x] = 0
 
     label_image,n = mh.label(s_tile)
 
-    if (n!=3):
-      print 'ERROR',n
-
     # check which label was selected
-    selected_label = label_image[click[1], click[0]]
-
-    print 'selected', selected_label
+    selected_label = label_image[click[1]-offset_y, click[0]-offset_x]
 
     for c in i_js:
-      label_image[c[1], c[0]] = selected_label # the line belongs to the selected label
-
-
-    mh.imsave('/tmp/seg2.tif', 10*label_image.astype(np.uint8))
-
+      label_image[c[1]-offset_y, c[0]-offset_x] = selected_label # the line belongs to the selected label
 
     # update the segmentation data
 
@@ -547,286 +561,156 @@ class Controller(object):
       unselected_label = 1
 
     full_coords = np.where(label_image > 0)
-    full_bbox = [min(full_coords[1]), min(full_coords[0]), max(full_coords[1]), max(full_coords[0])]
+    full_bb = [min(full_coords[1]), min(full_coords[0]), max(full_coords[1]), max(full_coords[0])]
 
     label_image[label_image == selected_label] = 0 # should be zero then
-    label_image[label_image == unselected_label] = new_id - self.lookup_label(label_id)
+    label_image[label_image == unselected_label] = new_id - self.lookup_label(self.label_id)
 
-    tile = np.add(tile, label_image).astype(np.uint32)
+    tile = np.add(row_val, label_image).astype(np.uint32)
 
-    # mh.imsave('/tmp/fullbbox.tif', 50*label_image[full_bbox[1]:full_bbox[3],full_bbox[0]:full_bbox[2]].astype(np.uint8))
+    #
+    # this is for undo
+    #
+    old_area = old_tile[full_bb[1]:full_bb[3],full_bb[0]:full_bb[2]]
+    new_area = tile[full_bb[1]:full_bb[3],full_bb[0]:full_bb[2]]
+    current_action = values['current_action']
 
-    #mh.imsave('/tmp/newtile.tif', tile.astype(np.uint32))
+    upd_full_bb = [full_bb[i] + [offset_x, offset_y][i%2] for i in range(4)]
 
-    # split tile and save as hdf5
-    x0y0 = tile[0:512,0:512]
-    x1y0 = tile[0:512,512:1024]
-    x0y1 = tile[512:1024,0:512]
-    x1y1 = tile[512:1024,512:1024]
+    action = {}
+    action['origin'] = input['origin']
+    action['name'] = 'ACTION'
+    action_value = {}
+    action_value['type'] = 'SPLIT'
+    action_value['value'] = [values["z"], upd_full_bb, old_area, new_area]
+    action['value'] = [current_action, action_value]
 
-    output_folder = self.__mojo_tmp_dir + '/ids/tiles/w=00000000/z='+str(values["z"]).zfill(8)+'/'
+    self.add_action(action)
+    print 'split done\n'
 
-    try:
-      os.makedirs(output_folder)
-    except OSError as exc: # Python >2.5
-      if exc.errno == errno.EEXIST and os.path.isdir(output_folder):
-        pass
-      else: raise
+    # Save all the splits, yielding offsets
+    offsets = self.save_iter(tile)
 
-    h5f = h5py.File(output_folder+'y=00000000,x=00000000.hdf5', 'w')
-    h5f.create_dataset('dataset_1', data=x0y0)
-    h5f.close()
-
-    h5f = h5py.File(output_folder+'y=00000001,x=00000000.hdf5', 'w')
-    h5f.create_dataset('dataset_1', data=x0y1)
-    h5f.close()
-
-    h5f = h5py.File(output_folder+'y=00000000,x=00000001.hdf5', 'w')
-    h5f.create_dataset('dataset_1', data=x1y0)
-    h5f.close()
-
-    h5f = h5py.File(output_folder+'y=00000001,x=00000001.hdf5', 'w')
-    h5f.create_dataset('dataset_1', data=x1y1)
-    h5f.close()
-
-    output_folder = self.__mojo_tmp_dir + '/ids/tiles/w=00000001/z='+str(values["z"]).zfill(8)+'/'
-
-    try:
-      os.makedirs(output_folder)
-    except OSError as exc: # Python >2.5
-      if exc.errno == errno.EEXIST and os.path.isdir(output_folder):
-        pass
-      else: raise
-
-    # zoomed_tile = tile.reshape(512,512)
-    zoomed_tile = ndimage.interpolation.zoom(tile, .5, order=0, mode='nearest')
-    h5f = h5py.File(output_folder+'y=00000000,x=00000000.hdf5', 'w')
-    h5f.create_dataset('dataset_1', data=zoomed_tile)
-    h5f.close()
+    full_bb[0] += offsets[0]
+    full_bb[1] += offsets[1]
+    full_bb[2] += offsets[0]
+    full_bb[3] += offsets[1]
 
     output = {}
     output['name'] = 'RELOAD'
     output['origin'] = input['origin']
-    output['value'] = {'z':values["z"], 'full_bbox':str(full_bbox)}
+    output['value'] = {'z':values["z"], 'full_bbox':str(full_bb)}
     # print output
     self.__websocket.send(json.dumps(output))
 
     output = {}
     output['name'] = 'SPLITDONE'
     output['origin'] = input['origin']
-    output['value'] = {'z':values["z"], 'full_bbox':str(full_bbox)}
-    self.__websocket.send(json.dumps(output))    
+    output['value'] = {'z':values["z"], 'full_bbox':str(full_bb)}
+    self.__websocket.send(json.dumps(output))
 
     self.__split_count += 1
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   def split(self, input):
-    '''
-    TODO: move to separate class
-    '''
+
+    print 'split go...'
+
     values = input['value']
-    data_path = self.__mojo_dir + '/images/tiles/w=00000000/z='+str(values["z"]).zfill(8)
+    self.z = values['z']
+    bb = values['brush_bbox']
+    self.label_id = values['id']
+    image = self.__dojoserver.get_image()
+    self.data_path = self.__mojo_dir + '/images/tiles/w=00000000/z='+str(self.z).zfill(8)
 
-    images = os.listdir(data_path)
-    tile = {}
-    for i in images:
+    # find tiles we need for this split on highest res and make sure the bb is valid
+    bb = np.clip(np.array(bb),0,[image._width]*2 + [image._height]*2)
 
-      location = os.path.splitext(i)[0].split(',')
-      for l in location:
-        l = l.split('=')
-        exec(l[0]+'=int("'+l[1]+'")')
+    self.x_tiles = range((bb[0]//512), (((bb[1]-1)//512) + 1))
+    self.y_tiles = range((bb[2]//512), (((bb[3]-1)//512) + 1))
 
-      if not x in tile:
-        tile[x] = {}
-      tile[x][y] = tif.imread(os.path.join(data_path,i))
+    img_dict = {}
+    seg_dict = {}
 
-    row = None
-    first_row = True
+    # Load segmentation and image data through file
+    [seg_dict,img_dict] = self.file_iter(seg_dict,img_dict)
+    # go through rows of each tile and segmentation, AGAIN!
+    [row_seg,row_img] = self.tile_iter(seg_dict,img_dict)
 
-    # go through rows of each tile
-    for r in tile.keys():
-      column = None
-      first_column = True
+    self.use_new_merge()
 
-      for c in tile[r]:
-        if first_column:
-          column = tile[r][c]
-          first_column = False
-        else:
-          column = np.concatenate((column, tile[r][c]), axis=0)
+    ##
+    #
+    # important: we need to detect if the label_id touches one of the borders of our segmentation
+    # we need to load additional tiles until this is not the case anymore
+    #
+    [row_seg,row_img] = self.edge_iter(seg_dict,img_dict,row_seg,row_img)
 
-      if first_row:
-        row = column
-        first_row = False
-      else:
-        row = np.concatenate((row, column), axis=1)
-
-    tile = row
-
-
-
-    # try the temporary data first
-    data_path = self.__mojo_tmp_dir + '/ids/tiles/w=00000000/z='+str(values["z"]).zfill(8)
-
-    if not os.path.isdir(data_path):
-      data_path = self.__mojo_dir + '/ids/tiles/w=00000000/z='+str(values["z"]).zfill(8)
-
-    images = os.listdir(data_path)
-    segtile = {}
-    for i in images:
-
-      location = os.path.splitext(i)[0].split(',')
-      for l in location:
-        l = l.split('=')
-        exec(l[0]+'=int("'+l[1]+'")')
-
-      if not x in segtile:
-        segtile[x] = {}
-
-      hdf5_file = h5py.File(os.path.join(data_path,i))
-      list_of_names = []
-      hdf5_file.visit(list_of_names.append)
-      image_data = hdf5_file[list_of_names[0]].value
-      hdf5_file.close()
-
-      segtile[x][y] = image_data
-
-    row2 = None
-    first_row = True
-
-    # go through rows of each tile
-    for r in segtile.keys():
-      column = None
-      first_column = True
-
-      for c in segtile[r]:
-        if first_column:
-          column = segtile[r][c]
-          first_column = False
-        else:
-          column = np.concatenate((column, segtile[r][c]), axis=0)
-
-      if first_row:
-        row2 = column
-        first_row = False
-      else:
-        row2 = np.concatenate((row2, column), axis=1)
-
-    segmentation = row2
-
-
-    label_id = values['id']
-
-
-
+    # temporarily flatten
+    for seg in self.ids: row_seg[np.where(row_seg == seg)] = self.label_id
 
     #
-    # crop according to bounding box
+    # but take offset of tile into account
     #
-    bbox = values['brush_bbox']
+    offset_x = self.x_tiles[0]*512
+    offset_y = self.y_tiles[0]*512
 
-    sub_tile = tile[bbox[2]:bbox[3],bbox[0]:bbox[1]]
-    seg_sub_tile = segmentation[bbox[2]:bbox[3],bbox[0]:bbox[1]]
-
-    mh.imsave('/tmp/dojobox.tif', sub_tile);
+    bb_relative = bb - np.array([offset_x]*2 + [offset_y]*2)
+    sub_tile = row_img[bb_relative[2]:bb_relative[3],bb_relative[0]:bb_relative[1]]
+    seg_sub_tile = row_seg[bb_relative[2]:bb_relative[3],bb_relative[0]:bb_relative[1]]
 
     sub_tile = mh.gaussian_filter(sub_tile, 1).astype(np.uint8) # gaussian filter
     sub_tile = (255 * exposure.equalize_hist(sub_tile)).astype(np.uint8) # enhance contrast
 
-
-    brush_mask = np.zeros((1024,1024),dtype=bool)
     brush_size = values['brush_size']
 
     i_js = values['i_js']
 
-    # for c in i_js:
-    #   brush_mask[c[1],c[0]-math.floor(brush_size/2)] = True
-    #   brush_mask[c[1],c[0]+math.floor(brush_size/2)] = True
-        
-    # brush_mask = brush_mask[bbox[2]:bbox[3],bbox[0]:bbox[1]]
-        
-    # for i in range(brush_size):
-    #     brush_mask = mh.morph.dilate(brush_mask)
-
-    # brush_mask = mh.morph.dilate(brush_mask, np.ones((brush_size, brush_size)))
-
     # make sparse points in i_js a dense line (with linear interpolation)
     dense_brush = []
-    for i in range(len(i_js)-1):       
+
+    for i in range(len(i_js)-1):
       # two sparse points
       p0 = i_js[i]
       p1 = i_js[i+1]
 
-
       # x and y coordinates of sparse points
       xp = [p0[1], p1[1]] if p0[1] < p1[1] else [p1[1], p0[1]]
       yp = [p0[0], p1[0]] if p0[1] < p1[1] else [p1[0], p0[0]]
-      
+
       # linear interpolation between p0 and p1
       xs = [x for x in range(xp[0], xp[1]+1)]
       ys = np.round(np.interp(xs, xp, yp)).astype(np.int32)
-          
+
       # add linear interpolation to brush stroke
       dense_brush += zip(ys,xs)
-      
-      # make x axis dense
-      
+
       # x and y coordinates of sparse points
       xp = [p0[1], p1[1]] if p0[0] < p1[0] else [p1[1], p0[1]]
       yp = [p0[0], p1[0]] if p0[0] < p1[0] else [p1[0], p0[0]]
-      
+
       # linear interpolation between p0 and p1
       ys = [y for y in range(yp[0], yp[1]+1)]
       xs = np.round(np.interp(ys, yp, xp)).astype(np.int32)
-          
+
       # add linear interpolation to brush stroke
       dense_brush += zip(ys,xs)
 
-      # dense_brush = list(set(dense_brush))
+    width = self.__dojoserver.get_image()._width
+    height = self.__dojoserver.get_image()._height
 
     # add dense brush stroke to mask image
-    brush_mask = np.zeros((1024,1024),dtype=bool)
+    brush_mask = np.zeros((height, width),dtype=bool)
 
-#    for c in i_js:
+    # for c in i_js:
     for c in dense_brush:
         brush_mask[c[1],c[0]] = True
-        
+
     # crop
-    brush_mask = brush_mask[bbox[2]:bbox[3],bbox[0]:bbox[1]]
+    brush_mask = brush_mask[bb[2]:bb[3],bb[0]:bb[1]]
     brush_mask = mh.morph.dilate(brush_mask, np.ones((2*brush_size, 2*brush_size)))
 
     brush_image = np.copy(sub_tile)
     brush_image[~brush_mask] = 0
-
-
 
     # compute frame
     frame = np.zeros(brush_mask.shape,dtype=bool)
@@ -835,139 +719,28 @@ class Controller(object):
     frame[-1,:] = True
     frame[:,-1] = True
 
-    # # compute corners 
-    # corners = np.zeros(brush_mask.shape,dtype=bool)
-
-    # n = 2*brush_size 
-
-    # # upper left 
-    # corners[0:n,0:n] = True
-
-    # # upper right
-    # corners[0:n,-n:-1] = True
-    # corners[0:n,-1] = True
-
-    # # lower left
-    # corners[-n:-1,0:n] = True
-    # corners[-1,0:n] = True
-
-    # # lower right
-    # corners[-n:-1,-n:-1] = True
-    # corners[-1,-n:-1] = True
-    # corners[-n:-1,-1] = True
-    # corners[-1,-1] = True
-
     # dilate non-brush segments
     outside_brush_mask = np.copy(~brush_mask)
     outside_brush_mask = mh.morph.dilate(outside_brush_mask, np.ones((brush_size, brush_size)))
 
-    # # compute brush boundary
-
-    # for y in range(outside_brush_mask.shape[0]-1):
-    #   for x in range(outside_brush_mask.shape[1]-1):
-
-    #     if brush_mask[y,x] != brush_mask[y,x+1]: #and seg_sub_tile[y,x] == label_id:  
-    #       outside_brush_mask[y,x] = 1
-    #       outside_brush_mask[y,x+1] = 1
-
-    #     if brush_mask[y,x] != brush_mask[y+1,x]: #and seg_sub_tile[y,x] == label_id:
-    #       outside_brush_mask[y,x] = 1
-    #       outside_brush_mask[y+1,x] = 1
-
-    # for y in range(1,outside_brush_mask.shape[0]):
-    #   for x in range(1,outside_brush_mask.shape[1]):
-
-    #     if brush_mask[y,x] != brush_mask[y,x-1]: #and seg_sub_tile[y,x] == label_id:  
-    #       outside_brush_mask[y,x] = 1
-    #       outside_brush_mask[y,x-1] = 1
-        
-    #     if brush_mask[y,x] != brush_mask[y-1,x]:# and seg_sub_tile[y,x] == label_id:
-    #       outside_brush_mask[y,x] = 1
-    #       outside_brush_mask[y-1,x] = 1
-
-
     # compute end points of line
     end_points = np.zeros(brush_mask.shape,dtype=bool)
+    first_point,last_point = (i_js[0],i_js[-1])
 
-    first_point = i_js[0]
-    last_point = i_js[-1]
+    bind = lambda x: tuple(min(x[i] - bb[2*i], brush_mask.shape[1-i]-1) for i in range(1,-1,-1))
+    first_points, last_points = (bind(x) for x in [first_point, last_point])
 
-    first_point_x = min(first_point[0] - bbox[0],brush_mask.shape[1]-1)
-    first_point_y = min(first_point[1] - bbox[2], brush_mask.shape[0]-1)
-    last_point_x = min(last_point[0] - bbox[0], brush_mask.shape[1]-1)
-    last_point_y = min(last_point[1] - bbox[2], brush_mask.shape[0]-1)
-
-    # print first_point_x, first_point_y
-    # print last_point_x, last_point_y
-
-    # p0 = (i_js[0][0] - bbox[0], i_js[0][1] - bbox[2])
-    # p1 = (i_js[-1][0] - bbox[0], i_js[-1][1] - bbox[2])
-    # p0 = 
-    # print i_js[0], i_js[-1], bbox, p0, p1, brush_mask.shape
-    # end_points[p0[1], p0[0]] = True
-    # end_points[p1[1], p1[0]] = True
-    end_points[first_point_y, first_point_x] = True
-    end_points[last_point_y, last_point_x] = True
+    end_points[first_points],end_points[last_points] = (True, True)
     end_points = mh.morph.dilate(end_points, np.ones((2*brush_size, 2*brush_size)))
-
 
     # compute seeds
     seed_mask = np.zeros(brush_mask.shape,dtype=bool)
-    # seed_mask[outside_brush_mask & brush_mask] = True 
-    seed_mask[outside_brush_mask] = True 
+    # seed_mask[outside_brush_mask & brush_mask] = True
+    seed_mask[outside_brush_mask] = True
     seed_mask[frame] = True
     # seed_mask[corners] = False
     seed_mask[end_points] = False
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    # outside_brush_mask = np.copy(~brush_mask)
-    # for i in range(brush_size / 2):
-    #     outside_brush_mask = mh.morph.dilate(outside_brush_mask)
-
-    # outside_brush_mask = mh.morph.dilate(outside_brush_mask, np.ones((brush_size, brush_size)))
-
-
-    # brush_boundary_mask = brush_mask & outside_brush_mask
-
-    # crop image and boundary mask
-    # brush_image = mh.croptobbox(brush_image)
-    # brush_boundary_mask = mh.croptobbox(brush_boundary_mask)
-
-    # x0 = brush_size/2
-    # x1 = brush_boundary_mask.shape[0] - x0
-    # y0 = x0
-    # y1 = brush_boundary_mask.shape[1] - y0
-
-    # brush_boundary_mask = brush_boundary_mask[x0:x1,y0:y1]
-    # brush_image = brush_image[x0:x1,y0:y1]
-
-
-
-
-
-
-    # seeds,n = mh.label(brush_boundary_mask)
     seeds,n = mh.label(seed_mask)
-
-    print n
 
     # remove small regions
     sizes = mh.labeled.labeled_size(seeds)
@@ -975,49 +748,41 @@ class Controller(object):
     too_small = np.where(sizes < min_seed_size)
     seeds = mh.labeled.remove_regions(seeds, too_small).astype(np.uint8)
 
-
     #
     # run watershed
     #
     ws = mh.cwatershed(brush_image.max() - brush_image, seeds)
 
-    mh.imsave('/tmp/end_points.tif', 50*end_points.astype(np.uint8))
-    mh.imsave('/tmp/seeds_mask.tif', 50*seed_mask.astype(np.uint8))
-    mh.imsave('/tmp/seeds.tif', 50*seeds.astype(np.uint8))
-    mh.imsave('/tmp/ws.tif', 50*ws.astype(np.uint8))
-
     lines_array = np.zeros(ws.shape,dtype=np.uint8)
     lines = []
-
-    print label_id
-
-    # valid_labels = [label_id]
-
-    # while label_id in self.__merge_table.values():
-    #   label_id = self.__merge_table.values()[]
-    #   valid_labels.append(label_id)
 
     for y in range(ws.shape[0]-1):
       for x in range(ws.shape[1]-1):
 
-        if ws[y,x] != ws[y,x+1] and self.lookup_label(seg_sub_tile[y,x]) == label_id:  
+        # print 'looking for', seg_sub_tile[y,x]
+
+        if self.lookup_label(seg_sub_tile[y,x]) != self.label_id:
+          continue
+
+        if ws[y,x] != ws[y,x+1]:
           lines_array[y,x] = 1
-          lines.append([bbox[0]+x,bbox[2]+y])
-        if ws[y,x] != ws[y+1,x] and self.lookup_label(seg_sub_tile[y,x]) == label_id:
+          lines.append([bb[0]+x,bb[2]+y])
+        if ws[y,x] != ws[y+1,x]:
           lines_array[y,x] = 1
-          lines.append([bbox[0]+x,bbox[2]+y])
+          lines.append([bb[0]+x,bb[2]+y])
 
     for y in range(1,ws.shape[0]):
       for x in range(1,ws.shape[1]):
-        if ws[y,x] != ws[y,x-1] and self.lookup_label(seg_sub_tile[y,x]) == label_id:  
+
+        if self.lookup_label(seg_sub_tile[y,x]) != self.label_id:
+          continue
+
+        if ws[y,x] != ws[y,x-1]:
           lines_array[y,x] = 1
-          lines.append([bbox[0]+x,bbox[2]+y])
-        if ws[y,x] != ws[y-1,x] and self.lookup_label(seg_sub_tile[y,x]) == label_id:
+          lines.append([bb[0]+x,bb[2]+y])
+        if ws[y,x] != ws[y-1,x]:
           lines_array[y,x] = 1
-          #lines_array[y-1,x] = 1
-          lines.append([bbox[0]+x,bbox[2]+y])          
-                
-    mh.imsave('/tmp/lines.tif', 50*lines_array.astype(np.uint8))
+          lines.append([bb[0]+x,bb[2]+y])
 
     output = {}
     output['name'] = 'SPLITRESULT'
@@ -1026,31 +791,239 @@ class Controller(object):
     # print output
     self.__websocket.send(json.dumps(output))
 
-  def lookup_label(self, label_id):
-    '''
-    '''
-    # print self.__merge_table, label_id
-    # print self.__merge_table.keys()
-    while str(label_id) in self.__merge_table.keys():
-      # print 'label id', label_id
-      # print 'merge[label id]', self.__merge_table[str(label_id)]
-      label_id = self.__merge_table[str(label_id)]
+  def file_iter(self,*dicts,**kwargs):
+    lend = range(len(dicts))
+    for x in self.x_tiles:
+      for y in self.y_tiles:
+        for i in lend:
+          if not x in dicts[i]:
+            dicts[i][x] = {}
+          # If updating data for last dictionary
+          elif 'up' in kwargs and i is len(dicts)-1:
+            # check for old data
+            if y in dicts[i][x]:
+              continue
 
-    # print 'new label', label_id
+        # If extra dictionary for image data
+        if len(dicts) > 1:
+          img = 'y='+str(y).zfill(8)+',x='+str(x).zfill(8)+'.'+self.__dojoserver.get_image().get_input_format()
+          dicts[-1][x][y] = np.array(PILImage.open(os.path.join(self.data_path,img)))
+        # Always get segmentation data
+        seg = 'y='+str(y).zfill(8)+',x='+str(x).zfill(8)+'.'+self.__dojoserver.get_segmentation().get_input_format()
+
+        # try the temporary data first
+        ids_data_path = self.__mojo_tmp_dir + '/ids/tiles/w=00000000/z='+str(self.z).zfill(8)
+        if not os.path.exists(os.path.join(ids_data_path,seg)):
+          ids_data_path = self.__mojo_dir + '/ids/tiles/w=00000000/z='+str(self.z).zfill(8)
+
+        hdf5_file = h5py.File(os.path.join(ids_data_path,seg))
+        list_of_names = []
+        hdf5_file.visit(list_of_names.append)
+        dicts[0][x][y] = hdf5_file[list_of_names[0]].value
+        hdf5_file.close()
+
+    # Return the only dictionary or all dictionaries
+    return dicts
+
+  def tile_iter(self,*dicts):
+    lend = range(len(dicts))
+    rows = [None]*len(dicts)
+    first_row = True
+    for r in dicts[0].keys():
+      cols = [None]*len(dicts)
+      first_col = True
+
+      for c in dicts[0][r]:
+        if first_col:
+          cols = [dicts[i][r][c] for i in lend]
+          first_col = False
+        else:
+          cols = [np.concatenate((cols[i], dicts[i][r][c]), axis=0) for i in lend]
+
+      if first_row:
+        rows = cols
+        first_row = False
+      else:
+        rows = [np.concatenate((rows[i], cols[i]), axis=1) for i in lend]
+
+    # Return the only tile value or all tile values
+    return rows
+
+  def edge_iter(self,*dicts_rows):
+    # Takes 2 or 4 arguments
+    lend = len(dicts_rows)//2
+    rows = dicts_rows[-lend:]
+    dicts = dicts_rows[:-lend]
+
+    label_touches_border = True
+    max_x_tiles = self.__dojoserver.get_image()._xtiles
+    max_y_tiles = self.__dojoserver.get_image()._ytiles
+
+    while label_touches_border:
+      img = np.dstack(tuple([255*(rows[0]-rows[0].min())/(rows[0].max())])*3)
+      if self.label_id not in rows[0]: print 'No match in tile ' + str(self.x_tiles) + ', ' + str(self.y_tiles)
+
+      img[np.where(rows[0] == self.label_id)] = [50,160,80]
+
+      touches_top = any([ seg in rows[0][0,:] for seg in self.ids ])
+      touches_left = any([ seg in rows[0][:,0] for seg in self.ids ])
+      touches_right = any([ seg in rows[0][:,-1] for seg in self.ids ])
+      touches_bottom = any([ seg in rows[0][-1,:] for seg in self.ids ])
+
+      label_touches_border = touches_left or touches_right or touches_bottom or touches_top
+
+      if not label_touches_border:
+        break
+
+      new_data = False
+
+      if touches_left and self.x_tiles[0] > 0:
+
+        # alright, we need to include more tiles in left x direction
+        self.x_tiles = [self.x_tiles[0]-1] + self.x_tiles
+        new_data = True
+
+      if touches_top and self.y_tiles[0] > 0:
+
+        self.y_tiles = [self.y_tiles[0]-1] + self.y_tiles
+        new_data = True
+
+      if touches_right and self.x_tiles[-1] < max_x_tiles-1:
+
+        self.x_tiles = self.x_tiles + [self.x_tiles[-1] + 1]
+        new_data = True
+
+      if touches_bottom and self.y_tiles[-1] < max_y_tiles-1:
+
+        self.y_tiles = self.y_tiles + [self.y_tiles[-1] + 1]
+        new_data = True
+
+      if new_data:
+
+        # go through rows of each tile and segmentation
+        rows = self.tile_iter(*self.file_iter(*dicts, up='date'))
+
+      else:
+
+        label_touches_border = False
+
+    # if only one dict, copy first row to second row
+    return rows*2 if lend == 1 else rows
+
+  def save_iter(self,tile):
+    # now create all zoomlevels
+    max_zoomlevel = self.__dojoserver.get_segmentation().get_max_zoomlevel()
+
+    target_i = 512*self.x_tiles[0]
+    target_j = 512*self.y_tiles[0]
+    target_width = tile.shape[1]
+    target_height = tile.shape[0]
+
+    for w in range(0, max_zoomlevel+1):
+
+      output_folder = self.__mojo_tmp_dir + '/ids/tiles/w='+str(w).zfill(8)+'/z='+str(self.z).zfill(8)+'/'
+
+      try:
+        os.makedirs(output_folder)
+      except OSError as exc: # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(output_folder):
+          pass
+        else: raise
+
+      if w!=0:
+        tile = ndimage.interpolation.zoom(tile, .5, order=0, mode='nearest')
+
+      # find tiles
+      self.x_tiles = range((target_i//512), (((target_i + target_width-1)//512) + 1))
+      self.y_tiles = range((target_j//512), (((target_j + target_height-1)//512) + 1))
+
+      tile_width = 0
+      pixel_written_x = 0
+
+
+      for i,x in enumerate(self.x_tiles):
+
+          # let's grab the pixel coordinate of all tiles of this column
+          tile_x = x*512
+
+          # now the offset in x for this column
+          if (i==0):
+              offset_x = target_i - tile_x + i*512
+          else:
+              offset_x = 0
+
+          pixel_written_y = 0
+
+          for j,y in enumerate(self.y_tiles):
+
+              #
+              # load old tile
+              #
+
+              s = 'y='+str(y).zfill(8)+',x='+str(x).zfill(8)+'.hdf5'
+
+              # try the temporary data first
+              ids_data_path = self.__mojo_tmp_dir + '/ids/tiles/w='+str(w).zfill(8)+'/z='+str(self.z).zfill(8)
+
+              if not os.path.exists(os.path.join(ids_data_path,s)):
+                ids_data_path = self.__mojo_dir + '/ids/tiles/w='+str(w).zfill(8)+'/z='+str(self.z).zfill(8)
+
+              hdf5_file = h5py.File(os.path.join(ids_data_path,s))
+              list_of_names = []
+              hdf5_file.visit(list_of_names.append)
+              image_data = hdf5_file[list_of_names[0]].value
+              hdf5_file.close()
+
+              # let's grab the pixel coordinate of this tile
+              tile_y = y*512
+
+              if (j==0):
+                  offset_y = target_j - tile_y + j*512
+              else:
+                  offset_y = 0
+
+              tile_width = min(512-offset_x, target_width-pixel_written_x)
+              tile_height = min(512-offset_y, target_height-pixel_written_y)
+
+              image_data[offset_y:offset_y+tile_height,offset_x:offset_x+tile_width] = tile[pixel_written_y:pixel_written_y+tile_height,pixel_written_x:pixel_written_x+tile_width]
+
+              hdf5filename = output_folder+s
+              h5f = h5py.File(hdf5filename, 'w')
+              h5f.create_dataset('dataset_1', data=image_data)
+              h5f.close()
+
+              pixel_written_y += tile_height
+
+          pixel_written_x += tile_width
+
+      # update target values
+      target_i /= 2
+      target_j /= 2
+      target_width /= 2
+      target_height /= 2
+
+    # Return offsets
+    return [offset_x,offset_y]
+
+  def use_new_merge(self):
+
+    self.ids = [self.label_id]
+    # Temporarily harden new merges
+    new_merges = self.__new_merge_table
+    for k,v in new_merges.iteritems():
+      chain = [int(k)]
+      while str(v) in new_merges:
+        v = new_merges[str(v)]
+        if v not in self.ids and v not in chain: chain.append(v)
+      if self.label_id == v:
+        self.ids += chain
+
+  def lookup_label(self, label_id):
+
+    label_id = self.__hard_merge_table[label_id]
+
+    while str(label_id) in self.__new_merge_table:
+
+      label_id = self.__new_merge_table[str(label_id)]
 
     return label_id
-
-  def lookup_merge_label(self,label_id):
-    '''
-    '''
-
-    labels = [str(label_id)]
-
-    for (k,v) in self.__merge_table.items():
-
-      if v == int(label_id):
-        labels = labels + self.lookup_merge_label(k)
-
-    return labels
-
-

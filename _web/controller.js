@@ -6,19 +6,23 @@ J.controller = function(viewer) {
 
   this._last_id = null;
 
-  this._merge_table = null;
-
-  this._gl_merge_table_keys = null;
-  this._gl_merge_table_values = null;
-  this._merge_table_length = -1;
+  this._current_action = 0;
 
   this._lock_table = null;
-
   this._gl_lock_table = null;
+  this._gl_lock_table_changed = true;
+  this._gl_merge_table_changed = true;
+  this._gl_colormap_changed = true;
+  this._gl_merge_table_keys = null;
+  this._gl_merge_table_values = null;
+  this._new_merge_table = {};
+  this._temp_merge_table = {};
+
   this._lock_table_length = -1;
+  this._merge_table_length = -1;
+  this._merge_table_end = -1;
 
   this._highlighted_id = null;
-
   this._activated_id = null;
 
   this._use_3d_labels = false;
@@ -45,7 +49,13 @@ J.controller = function(viewer) {
   this._brush_size = 3;
   this._brush_ijs = [];
 
+  this._merge_id = -1;
+  this._merge_mode = -1;
+  this._merge_target_ids = [];
+
   this.create_gl_3d_labels();
+
+  this._welcomed = false;
 
 };
 
@@ -83,24 +93,30 @@ J.controller.prototype.receive = function(data) {
   } 
 
   if (input.origin == this._origin) {
-    // we are the sender or the requester
+    // we are the requester
 
     if (input.name == 'SPLITRESULT') {
-      console.log(input)
       this.show_split_line(input.value);
       return;
-    } else if (input.name == 'SPLITDONE') {
+    } 
+    else if (input.name == 'SPLITDONE') {
       this.finish_split(input.value);
-    } else if (input.name == 'ADJUSTDONE') {
+    } 
+    else if (input.name == 'ADJUSTDONE') {
       this.finish_adjust(input.value);
-    } else if (input.name == 'SAVED') {
-      console.log('All saved. Yahoo!');
+    } 
+    else if (input.name == 'CURRENT_ACTION') {
+      this.update_current_action(input.value);
+    } 
+    else if (input.name == 'UNBLOCK') {
+      $('#loading_blocker').hide();
     }
 
-    return;
   }
 
-  if (input.name == 'WELCOME') {
+  if (!this._welcomed && input.name == 'WELCOME') {
+
+    this._welcomed = true;
 
     this.send('WELCOME', {});
 
@@ -114,7 +130,44 @@ J.controller.prototype.receive = function(data) {
     // received new lock table
     this._viewer._controller.update_lock_table(input.value);
 
+  } else if (input.name == 'REDO_MERGE_GROUP') {
+
+    var value = input.value[1];
+
+    this._temp_merge_table = {};
+
+    for (var i=1; i<input.value[0].length; i++) {
+
+      var id = input.value[0][i];
+
+      this._new_merge_table[id] = value;
+
+      this._temp_merge_table[id] = value;
+
+    }
+
+    this.create_gl_merge_table();
+
+    this._gl_merge_table_changed = true;
+
+  } else if (input.name == 'UNDO_MERGE_GROUP') {    
+    
+    for (var i=0; i<input.value.length; i++) {
+
+      var id = input.value[i];
+      
+      delete this._new_merge_table[id];
+      delete this._temp_merge_table[id];     
+
+    }
+
+    this.create_gl_merge_table();
+
+    this._gl_merge_table_changed = true;
+
   } else if (input.name == 'REDRAW') {
+
+    this._gl_merge_table_changed = true;
 
     this._viewer.redraw();
     this.update_threeD();
@@ -125,16 +178,29 @@ J.controller.prototype.receive = function(data) {
       this.on_mouse_move(input.origin, input.id, input.value);
 
   } else if (input.name == 'PROBLEMTABLE') {
-
     this.update_problem_table(input.value);
 
   } else if (input.name == 'RELOAD') {
 
     // force reload
-    console.log('force reload');
     this.reload_tiles(input.value);
 
+  } else if (input.name == 'HARD_RELOAD') {
 
+    // force reload
+    this.hard_reload_tiles(input.value);
+
+  } else if (input.name == 'SAVING') {
+
+    console.log('saving in progress');
+
+    $('#blocker').show();
+
+  } else if (input.name == 'SAVED') {
+      console.log('All saved. Yahoo!');
+      $('#undo').css('opacity', '0.3');
+      $('#redo').css('opacity', '0.3');
+      $('#blocker').hide();
   }
 
 };
@@ -145,6 +211,39 @@ J.controller.prototype.save = function() {
 
 };
 
+J.controller.prototype.add_action = function(type, value) {
+
+  this.send('ACTION', [this._current_action, {'type': type, 'value': value}]);
+
+};
+
+J.controller.prototype.undo_action = function() {2
+
+  this.send('UNDO', this._current_action);
+
+};
+
+J.controller.prototype.redo_action = function() {
+
+  this.send('REDO', this._current_action);
+
+};
+
+J.controller.prototype.update_current_action = function(value) {
+
+  this._current_action = parseInt(value[0],10);
+  last_act = parseInt(value[1],10);
+
+  $('#undo').css('opacity', '1.0'); 
+  $('#redo').css('opacity', '1.0'); 
+  if ( this._current_action == 0 ){
+    $('#undo').css('opacity', '0.3');      
+  }
+  if ( this._current_action == last_act ){
+    $('#redo').css('opacity', '0.3'); 
+  }
+
+};
 
 J.controller.prototype.on_mouse_move = function(origin, id, value) {
 
@@ -228,7 +327,6 @@ J.controller.prototype.on_mouse_move_3d = function(origin, id, i, j, k) {
   cursor.children[0].transform.matrix[13] = x_y_z[1];
   cursor.children[0].transform.matrix[14] = x_y_z[2];
 
-
 };
 
 J.controller.prototype.reset_cursors = function() {
@@ -248,7 +346,6 @@ J.controller.prototype.pick3d = function(o) {
   var z = o.transform.matrix[14];
 
   var i_j_k = this._viewer.xyz2ijk(x, y, z);
-
 
   if (o.dojo_type == '3dcursor') {
     
@@ -275,7 +372,6 @@ J.controller.prototype.send = function(name, data) {
 
 };
 
-
 ///
 ///
 ///
@@ -294,7 +390,6 @@ J.controller.prototype.update_threeD = function() {
   }
 
 };
-
 
 J.controller.prototype.update_problem_table = function(data) {
   
@@ -410,7 +505,6 @@ J.controller.prototype.create_exclamationmark_2d = function(i, j, id) {
 
   }.bind(this, id);
 
-
   this._exclamationmarks_2d[id] = e;
 
 };
@@ -471,17 +565,17 @@ J.controller.prototype.send_problem_table = function() {
 
 J.controller.prototype.update_merge_table = function(data) {
 
-  // console.log('Received new merge table', data);
+  console.log('Received new merge table');
 
-  this._merge_table = data;
+  this._new_merge_table = data;
 
   this.create_gl_merge_table();
 
 };
 
-J.controller.prototype.send_merge_table = function() {
+J.controller.prototype.send_temp_merge_table = function() {
 
-  this.send('MERGETABLE', this._merge_table);
+  this.send('MERGETABLE_SUBSET', this._temp_merge_table);
 
 };
 
@@ -499,11 +593,15 @@ J.controller.prototype.send_mouse_move = function(i_j_k) {
 
 J.controller.prototype.update_lock_table = function(data) {
 
-  // console.log('Received new lock table', data);
+  console.log('Received new lock table');
+
+  this._gl_lock_table = new Uint8Array(8192*8192);
 
   this._lock_table = data;
 
   this.create_gl_lock_table();
+
+  this._gl_lock_table_changed = true
 
 };
 
@@ -515,6 +613,30 @@ J.controller.prototype.send_log = function(message) {
 
 J.controller.prototype.is_locked = function(id) {
   return (id in this._lock_table);
+};
+
+J.controller.prototype.kill = function(x, y) {
+
+  var i_j = this._viewer.xy2ij(x, y);
+
+  if (i_j[0] == -1 || i_j[1] == -1) return;
+
+  this._viewer.get_segmentation_id(i_j[0], i_j[1], function(id) {
+
+    var color1 = DOJO.viewer.get_color(id);
+    var color1_hex = rgbToHex(color1[0], color1[1], color1[2]);
+    var log = 'User $USER deleted label <font color="'+color1_hex+'">'+id+'</font>.';
+
+    this.send_log(log);
+
+    this.start_merge(0,x,y);
+    this.draw_merge(x,y);
+    this.end_draw_merge();
+
+    this._viewer.redraw();
+
+  }.bind(this));
+
 };
 
 J.controller.prototype.lock = function(x, y) {
@@ -534,12 +656,10 @@ J.controller.prototype.lock = function(x, y) {
     if (id in this._lock_table) {
       delete this._lock_table[id];
 
-      // console.log('Unlocking', id);
-      verb = 'unlocked';
+            verb = 'unlocked';
     } else {
       this._lock_table[id] = true;
-      // console.log('Locking', id);
-    }
+          }
 
     var color1 = DOJO.viewer.get_color(id);
     var color1_hex = rgbToHex(color1[0], color1[1], color1[2]);
@@ -548,6 +668,8 @@ J.controller.prototype.lock = function(x, y) {
     this.send_log(log);
 
     this.create_gl_lock_table();
+
+    this._gl_lock_table_changed = true;
 
     this.send_lock_table();
 
@@ -559,7 +681,7 @@ J.controller.prototype.lock = function(x, y) {
 
 J.controller.prototype.larger_brush = function() {
 
-  this._brush_size = Math.min(10, this._brush_size+=1);
+  this._brush_size = Math.min(30, this._brush_size+=1);
 
 };
 
@@ -574,34 +696,30 @@ J.controller.prototype.reload_tiles = function(values) {
   var z = values['z'];
   var full_bbox = JSON.parse(values['full_bbox']);
 
-
   var x = this._viewer._camera._x;
   var y = this._viewer._camera._y;
-  var z2 = this._viewer._camera._z; // the actual displayed z
+  var z2 = this._viewer._camera._z;
   var w = this._viewer._camera._w;
-  this._viewer._loader.clear_cache_segmentation(x,y,z,w);
+  
+  // Clear cache for complete depth
+  for (var zi=0; zi<this._viewer._image.max_z_tiles; zi++){
+     this._viewer._loader.clear_cache_segmentation(x,y,zi,w); 
+  }
 
   for (var l=0;l<this._viewer._image.zoomlevel_count;l++) {  
 
-    // only draw if current z == z2 and l == w (meaning only if zoomlevel and z are displayed right now)
+    // only draw if zoomlevel is displayed 
     var draw = (z == z2 && w == l);
-    // console.log('reload tile', l, draw, full_bbox);
-    this._viewer._loader.load_tiles(x,y,z,l,l,!draw); // negate draw since it is a no_draw flag woot woot
+    // negate draw since it is a no_draw flag
+    this._viewer._loader.load_tiles(x,y,z,l,l,!draw);
 
   }
-  
-  // update 3d with lowest zoomlevel (== always one tile)
-  // setTimeout(function() {
-
-    var lowest_w = this._viewer._image.zoomlevel_count-1;
-    this._viewer._loader.get_segmentation(0, 0, z, lowest_w, function(x, y, z, lowest_w, s) {
+  var lowest_w = this._viewer._image.zoomlevel_count-1;
+  this._viewer._loader.get_segmentation(0, 0, z, lowest_w, function(x, y, z, lowest_w, s) {
       
-      this.update_3D_textures(z, full_bbox, s);
+    this.update_3D_textures(z, full_bbox, s);
 
-    }.bind(this, 0, 0, z, lowest_w));
-
-  // }.bind(this),2000); // TODO this should not be fixed
-  
+  }.bind(this, 0, 0, z, lowest_w));
 
 };
 
@@ -609,18 +727,10 @@ J.controller.prototype.update_3D_textures = function(z, full_bbox, texture) {
 
   if (!DOJO.threeD) return;
 
-  // console.log(full_bbox, texture);
-  // console.log('upd 3d', full_bbox);
-
   var x1 = Math.floor(full_bbox[0] / this._viewer._image.zoom_levels[0][2]);
   var y1 = Math.floor(full_bbox[1] / this._viewer._image.zoom_levels[0][2]);
   var x2 = Math.floor(full_bbox[2] / this._viewer._image.zoom_levels[0][2]);
   var y2 = Math.floor(full_bbox[3] / this._viewer._image.zoom_levels[0][2]);
-
-  // var byte_start = (x1+y1*512)*4;
-  // var byte_end = (x2+y2*512)*4+4;
-
-  // console.log('a',byte_start, byte_end, texture.length)
 
   var vol = DOJO.threeD.volume;
   var dim_x = vol.dimensions[0];
@@ -631,77 +741,52 @@ J.controller.prototype.update_3D_textures = function(z, full_bbox, texture) {
   vol.children[2].children[z].labelmap.texture.updateTexture(texture);
   vol.children[2].children[z].labelmap.modified();
 
-  var bytes_start_t = (x1+y1*512)*4;
-  var bytes_end_t = (x1+y2*512)*4;
+  console.log('XY for zoomlevel', x1, y1, x2, y2);
 
-  var bytes_per_value = 4;
+  for (var x=x1; x<=x2; x++) {
 
-  var nb_pix_per_z = 512*512;
+    for (var y=y1; y<=y2; y++) {
 
-  var px = 0;
-  for (var p=bytes_start_t; p<bytes_end_t; p+=bytes_per_value) {
+      var byte_start = (x + y*dim_x)*4;
+      var pixel_value_x_y_0 = texture[byte_start];
+      var pixel_value_x_y_1 = texture[byte_start + 1];
+      var pixel_value_x_y_2 = texture[byte_start + 2];
+      var pixel_value_x_y_3 = texture[byte_start + 3];
 
-    //var z = Math.floor(px / nb_pix_per_z);
-    var y = Math.floor((px % nb_pix_per_z) / dim_x);
-    var x = Math.floor((px % nb_pix_per_z) % dim_x);
+      // now update the slices in y direction
+      var slice_y = vol.children[1].children[y];
+      if (slice_y) {
+        var labelmap_y = slice_y.labelmap;
+        var data = labelmap_y.texture.rawData;
+        var target_byte_start = (x + z*dim_x)*4;
+        data[target_byte_start] = pixel_value_x_y_0;
+        data[target_byte_start+1] = pixel_value_x_y_1;
+        data[target_byte_start+2] = pixel_value_x_y_2;
+        data[target_byte_start+3] = pixel_value_x_y_3;
 
-    // var z_index = (x + y*dim_y)*bytes_per_value;
-    var y_index = (x + z*dim_x)*bytes_per_value;
-    var x_index = (y + z*dim_y)*bytes_per_value;
+        labelmap_y.texture.updateTexture(data);
+        labelmap_y.modified();
+      }
 
-    var old_data_x = vol.children[0].children[x].labelmap.texture.rawData;
-    var old_data_y = vol.children[1].children[y].labelmap.texture.rawData;
+      // now update the slices in x direction
+      var slice_x = vol.children[0].children[x];
+      if (slice_x) {
+        var labelmap_x = slice_x.labelmap;
+        var data = labelmap_x.texture.rawData;
+        target_byte_start = (y + z*dim_y)*4;
+        data[target_byte_start] = pixel_value_x_y_0;
+        data[target_byte_start+1] = pixel_value_x_y_1;
+        data[target_byte_start+2] = pixel_value_x_y_2;
+        data[target_byte_start+3] = pixel_value_x_y_3;
 
-    for (var i=0;i<bytes_per_value;i++) {
+        labelmap_x.texture.updateTexture(data);
+        labelmap_x.modified();
 
-      old_data_x[x_index+i] = texture[p+i];
-      old_data_y[y_index+i] = texture[p+i];
-      // slices_z[z][z_index+i] = data[p+i];
+      }
 
-    }
-
-    px++;
-
-  }
-
-  for (var x=0; x<dim_x; ++x) {
-
-    var old_data_x = vol.children[0].children[x].labelmap.texture.rawData;
-    vol.children[0].children[x].labelmap.texture.updateTexture(old_data_x);
-    vol.children[0].children[x].labelmap.modified();
-
-  }
-
-  for (var y=0; y<dim_y; ++y) {
-
-    var old_data_y = vol.children[1].children[y].labelmap.texture.rawData;
-    vol.children[1].children[y].labelmap.texture.updateTexture(old_data_y);
-    vol.children[1].children[y].labelmap.modified();
+    }  
 
   }
-
-  // // update pixel data in x
-  // for (var x=x1;x<x2;x++) {
-
-  //   var labelmap_x = vol.children[0].children[x].labelmap;
-
-  //   var offset_x = x;
-  //   var old_data = vol.children[0].children[x].labelmap.texture.rawData;
-  //   // replace pixels
-  //   var bytes_start_t = (x1+offset_x+y1*512)*4;
-  //   var bytes_end_t = (x1+offset_x+y2*512)*4+4;
-  //   // var cur_x = (dim[2] - z)*4;
-  //   // var cur_y = (y1)*4;
-  //   // var bytes_start_x = cur_x + cur_y*dim[2];
-  //   var bytes_start_x = (y1+z*dim[1])*4;
-  //   console.log(bytes_start_t, bytes_end_t, bytes_start_x);
-  //   old_data.set(texture.subarray(bytes_start_t, bytes_end_t), bytes_start_x);
-
-  //   labelmap_x.texture.updateTexture(old_data);
-  //   labelmap_x.modified();
-  // }
-
-
 
 };
 
@@ -729,10 +814,6 @@ J.controller.prototype.draw_adjust = function(x, y) {
 
   var i_js = this._viewer.xy2ij(x, y);
 
-  // this._viewer.get_segmentation_id(i_js[0], i_js[1], function(id) {
-
-    // if (this._adjust_id == id) return;
-
     var color = this._viewer.get_color(this._adjust_id);
 
     var id = this._viewer._overlay_buffer_context.createImageData(this._brush_size, this._brush_size);
@@ -750,9 +831,6 @@ J.controller.prototype.draw_adjust = function(x, y) {
     this._brush_ijs.push(brush_ij);
 
     this._viewer._overlay_buffer_context.putImageData(id, u_v[0], u_v[1]);
-
-  // }.bind(this));
-
 };
 
 J.controller.prototype.end_adjust = function() {
@@ -790,16 +868,22 @@ J.controller.prototype.finish_adjust = function(values) {
 
 };
 
-J.controller.prototype.finish_split = function(values) {
+J.controller.prototype.hard_reload_tiles = function(values) {
 
-  // reload all slices, set to split mode -1
+  
   this.reload_tiles(values);
 
   this._viewer.clear_overlay_buffer();
 
+};
+
+J.controller.prototype.finish_split = function(values) {
+
+  // reload all slices, set to split mode -1
+  this.hard_reload_tiles(values);
+
   this._split_mode = -1;
   this.activate(null);
-
 
   var color1 = DOJO.viewer.get_color(this._split_id);
   var color1_hex = rgbToHex(color1[0], color1[1], color1[2]);
@@ -812,7 +896,6 @@ J.controller.prototype.start_split = function(id, x, y) {
 
   if (this._split_mode == -1) {
     // select label
-    // console.log('splitting', id);
     this._split_mode = 1;
     this._split_id = id;
     this.activate(id);    
@@ -821,22 +904,15 @@ J.controller.prototype.start_split = function(id, x, y) {
 
   } else if (this._split_mode == 1) {
     // start drawing
-    //ar u_v = this._viewer.xy2uv(x*this._viewer._camera._view[0],y*this._viewer._camera._view[4]);
     var i_j = this._viewer.xy2ij(x, y);
     var u_v = this._viewer.ij2uv_no_zoom(i_j[0],i_j[1]);
-    // var u_v = this._viewer.ij2uv(i_j[0], i_j[1]);
-    // var u_v = [x*this._viewer._camera._view[0],y*this._viewer._camera._view[4]];
 
     var context = this._viewer._overlay_buffer_context;
 
-    // context.save();
-    // var view = this._viewer._camera._view;
-    //context.setTransform(view[0], view[1], view[3], view[4], 0,0);
     this._brush_ijs = [];
     this._brush_bbox = [];
     context.beginPath();
     context.moveTo(u_v[0], u_v[1]);
-    // context.restore();
 
   } else if (this._split_mode == 4) {
 
@@ -848,12 +924,11 @@ J.controller.prototype.start_split = function(id, x, y) {
     data['line'] = this._split_line;
     data['z'] = this._viewer._camera._z;
     data['click'] = i_j;
+    data['current_action'] = this._current_action;
     data['bbox'] = this._brush_bbox;
     this.send('FINALIZESPLIT', data);
 
   }
-
-
 
 };
 
@@ -927,27 +1002,16 @@ J.controller.prototype.draw_split = function(x, y) {
   if (this._split_mode == 1 || this._split_mode == 2) {
    
     this._split_mode = 2;
-    // var u_v = this._viewer.xy2uv(x*this._viewer._camera._view[0],y*this._viewer._camera._view[4]);
     var i_j = this._viewer.xy2ij(x, y);
     if (i_j[0] == -1) return;
     var u_v = this._viewer.ij2uv_no_zoom(i_j[0],i_j[1]);
-    // console.log(i_j, u_v)
-    // console.log(i_j);
-    // var u_v = this._viewer.ij2uv(i_j[0], i_j[1]);  
-    // console.log(u_v);  
-    //var u_v = [x*this._viewer._camera._view[0],y*this._viewer._camera._view[4]];
-    // console.log('draw split');
 
     var context = this._viewer._overlay_buffer_context;
-
-    // context.save();
-    // var view = this._viewer._camera._view;
-    //context.setTransform(view[0], view[1], view[3], view[4], 0,0);
 
     // update bounding box
     if (this._brush_bbox.length > 0) {
 
-      var brush = Math.ceil(this._brush_size);
+      var brush = Math.ceil(3);//this._brush_size);
 
       var factor = 1;
 
@@ -972,7 +1036,7 @@ J.controller.prototype.draw_split = function(x, y) {
 
     context.lineTo(u_v[0], u_v[1]);
     context.strokeStyle = 'rgba(0,191,255,0.1)';
-    context.lineWidth = this._brush_size;
+    context.lineWidth = 3;//this._brush_size;
     context.stroke();
     // context.restore();
   }
@@ -990,19 +1054,13 @@ J.controller.prototype.end_draw_split = function(x, y) {
     var context = this._viewer._image_buffer_context;    
     context.closePath();
 
-    // console.log(this._brush_bbox);
-    // console.log(this._brush_ijs);
-
-    // send via ajax (id, brush_bbox, brush_i_js, z, brushsize)
     var data = {};
     data['id'] = this._split_id;
     data['brush_bbox'] = this._brush_bbox;
     data['i_js'] = this._brush_ijs;
     data['z'] = this._viewer._camera._z;
-    data['brush_size'] = this._brush_size;
+    data['brush_size'] = 3;//this._brush_size;
     this.send('SPLIT', data);
-
-
 
     this._split_mode = 3;
 
@@ -1010,17 +1068,143 @@ J.controller.prototype.end_draw_split = function(x, y) {
 
   }
 
+};
 
+J.controller.prototype.start_merge = function(id, x, y) {
+
+  if (this._merge_mode != -1) return;
+
+  console.log('start merge');
+
+  this._merge_mode = 1;
+  this._merge_id = id;
+  this._merge_target_ids =[];
+  this._brush_ijs = [];
+
+  this._split_mode = 666;
+
+  this._viewer._canvas.style.cursor = 'crosshair';
+
+  this.activate(id);
+
+  var i_j = this._viewer.xy2ij(x, y);
+  var u_v = this._viewer.ij2uv_no_zoom(i_j[0],i_j[1]);
+
+  var context = this._viewer._overlay_buffer_context;
+
+  this._brush_ijs = [];
+  this._brush_bbox = [];
+  context.beginPath();
+  context.moveTo(u_v[0], u_v[1]);  
+
+};
+
+J.controller.prototype.draw_merge = function(x, y) {
+
+  if (this._merge_mode != 1 && this._merge_mode != 2) return;
+
+  console.log('draw merge')
+
+  this._merge_mode = 2;
+
+  var i_j = this._viewer.xy2ij(x, y);
+  if (i_j[0] == -1) return;
+  var u_v = this._viewer.ij2uv_no_zoom(i_j[0],i_j[1]);
+
+  var context = this._viewer._overlay_buffer_context;
+
+  // and store the i_j's for later use
+  this._brush_ijs.push(i_j);
+
+  context.lineTo(u_v[0], u_v[1]);
+  context.strokeStyle = 'rgba(0,191,255,0.1)';
+  context.lineWidth = this._brush_size;
+  context.stroke();
+
+  var left = Math.floor(i_j[0] - this._brush_size/2);
+  var right = Math.floor(i_j[0] + this._brush_size/2);
+
+  console.log(left, right)
+
+  for (var i=left; i<right; i++) {
+
+    DOJO.viewer.get_segmentation_id(i, i_j[1], function(id) {
+
+      if (this._merge_target_ids.indexOf(id) == -1) {
+        
+        if(!(id in this._lock_table)){
+          this._merge_target_ids.push(id);
+        }
+      }
+
+    }.bind(this));
+
+  }
+
+};
+
+J.controller.prototype.end_draw_merge = function() {
+
+  console.log('end draw merge')
+
+  if (this._merge_mode == -1)
+    return;
+
+  this._last_id = this._merge_id;
+
+  this._temp_merge_table = {};
+
+  console.log(this._lock_table);
+
+  // add all to merge table
+  var no_target_ids = this._merge_target_ids.length;
+  for (var i=0; i<no_target_ids; i++) {
+    var merge_id = this._merge_target_ids[i]
+    this.merge(merge_id);
+  }
+
+  var context = this._viewer._image_buffer_context;    
+  context.closePath();  
+
+  this._viewer._canvas.style.cursor = '';
+  this._viewer.clear_overlay_buffer();
+
+  if(this._last_id){
+    var color2 = DOJO.viewer.get_color(this._last_id);
+    var color2_hex = rgbToHex(color2[0], color2[1], color2[2]);
+    var log = 'User $USER merged many labels to <font color="'+color2_hex+'">' +this._last_id + '</font>.';
+    this.send_log(log);
+  }
+
+  for (var id in this._temp_merge_table) {
+
+    this._new_merge_table[id] = this._temp_merge_table[id];
+
+  }
+
+  this.create_gl_merge_table();
+
+  this._gl_merge_table_changed = true;
+
+  this.send_temp_merge_table();
+
+  this.highlight(this._last_id);
+
+  // send an action for undo/redo
+  this.add_action('MERGE_GROUP', [this._merge_target_ids, this._last_id]);
+
+  // turn off merge mode
+  this._merge_mode = -1;
 
 };
 
 J.controller.prototype.merge = function(id) {
 
-  if (!this._merge_table) {
+  if (!this._new_merge_table) {
     throw new Error('Merge-table does not exist.');
   }
 
-  if (!this._last_id) {
+  if ( !(this._last_id >= 0) ) {
     this._last_id = this._viewer.lookup_id(id);
 
     this.activate(id);
@@ -1030,79 +1214,21 @@ J.controller.prototype.merge = function(id) {
 
   if (this._last_id == id) return;
 
-  // console.log('Merging', this._last_id, id);
-
-  // if (!(id in this._merge_table)) {
-  //   this._merge_table[id] = [];
-  // }
-
-  // this._merge_table[id].push(this._last_id);
-
-  this._merge_table[id] = this._last_id;
-
-  var color1 = DOJO.viewer.get_color(id);
-  var color1_hex = rgbToHex(color1[0], color1[1], color1[2]);
-  var color2 = DOJO.viewer.get_color(this._last_id);
-  var color2_hex = rgbToHex(color2[0], color2[1], color2[2]);
-
-  var colored_id1 = id;
-  var colored_id2 = this._last_id;
-
-  var log = 'User $USER merged labels <font color="'+color1_hex+'">'+colored_id1+'</font> and <font color="'+color2_hex+'">' +colored_id2 + '</font>.';
-
-  this.send_log(log);
-  // shouldn't be required
-  // DOJO.update_log(log);
-
-  // this._viewer.redraw();
-
-  this.create_gl_merge_table();
-
-  // this._viewer.redraw();
-
-  this.send_merge_table();
-
-  this.highlight(this._last_id);
-
-};
-
-J.controller.prototype.undo = function(x, y) {
-
-  var i_j = this._viewer.xy2ij(x, y);
-
-  if (i_j[0] == -1) return;
-
-  this._viewer.get_segmentation_id_before_merge(i_j[0], i_j[1], function(id) {
-
-    delete this._merge_table[id];
-
-
-    var color1 = DOJO.viewer.get_color(id);
-    var color1_hex = rgbToHex(color1[0], color1[1], color1[2]);
-
-    var colored_id1 = id;
-
-    var log = 'User $USER removed merge for label <font color="'+color1_hex+'">'+colored_id1+'</font>.';
-
-    this.send_log(log);
-
-    this.create_gl_merge_table();
-
-    // this._viewer.redraw();
-
-    this.send_merge_table();  
-
-    this.activate(null);
-
-
-  }.bind(this));
+  this._temp_merge_table[id] = this._last_id;
 
 };
 
 J.controller.prototype.create_gl_merge_table = function() {
 
-  var keys = Object.keys(this._merge_table);
+  var mt = $.extend({},this._new_merge_table)
+  var keys = Object.keys(mt);
   var no_keys = keys.length;
+
+  for (key in mt){
+    while (mt[key] in mt) {
+      mt[key] = mt[mt[key]];
+    }
+  }
 
   if (no_keys == 0) {
 
@@ -1114,8 +1240,10 @@ J.controller.prototype.create_gl_merge_table = function() {
 
   }
 
+  // Closest power of 2 containing length of array
   var new_length = Math.pow(2,Math.ceil(Math.log(no_keys)/Math.log(2)));
 
+  this._merge_table_end = no_keys;
   this._merge_table_length = new_length;
 
   this._gl_merge_table_keys = new Uint8Array(4 * new_length);
@@ -1137,7 +1265,7 @@ J.controller.prototype.create_gl_merge_table = function() {
   for (var k=0; k<no_keys; k++) {
     // pack value to 4 bytes (little endian)
     var key = parseInt(keys[k],10);
-    var value = this._merge_table[key];
+    var value = mt[key];
     var b = from32bitTo8bit(value);
     this._gl_merge_table_values[pos++] = b[0];
     this._gl_merge_table_values[pos++] = b[1];
@@ -1148,6 +1276,22 @@ J.controller.prototype.create_gl_merge_table = function() {
 };
 
 J.controller.prototype.create_gl_lock_table = function() {
+
+  var lt = this._lock_table;  
+  var keys = Object.keys(lt);
+  var no_keys = keys.length;
+
+  for (var k=0; k<no_keys; k++) {
+
+    var key = parseInt(keys[k],10);
+    var value = lt[keys[k]];
+        if (value) {
+      this._gl_lock_table[key] = 255;
+          } else {
+      this._gl_lock_table[key] = 0;  
+    }
+    
+  }
 
   var keys = Object.keys(this._lock_table);
   var no_keys = keys.length;
@@ -1221,16 +1365,17 @@ J.controller.prototype.is_3d_label = function(id) {
 
 J.controller.prototype.add_3d_label = function(id) {
 
-  this._3d_labels[id] = true;
+  if (id != 0) {
+    this._3d_labels[id] = true;
 
-  this.create_gl_3d_labels();
-  this.update_threeD();
+    this.create_gl_3d_labels();
+    this.update_threeD();
+  }
 
 };
 
 J.controller.prototype.add_fixed_3d_label = function(id) {
   this._fixed_3d_labels[id] = true;
-
 
 };
 
@@ -1266,7 +1411,6 @@ J.controller.prototype.reset_3d_labels = function() {
   
 
   this.update_threeD();
-
 
 };
 

@@ -1,3 +1,6 @@
 *.pyc
-.DS_Store
-
+*.png
+*.swp
+*.idea
+*.ipynb
+_web/over
