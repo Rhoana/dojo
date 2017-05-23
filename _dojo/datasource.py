@@ -41,9 +41,9 @@ class Datasource(object):
     self.__volume = None
 
     # file system regex
-    self.__info_regex = re.compile('.*' + self.__sub_dir + '/tiledVolumeDescription.xml$')
-    self.__colormap_file_regex = re.compile('.*' + self.__sub_dir + '/colorMap.hdf5$')
-    self.__segmentinfo_file_regex = re.compile('.*' + self.__sub_dir + '/segmentInfo.db$')
+    self.__info_regex = re.compile('.*tiledVolumeDescription.xml$')#re.compile('.*' + self.__sub_dir + '/tiledVolumeDescription.xml$')
+    self.__colormap_file_regex = re.compile('.*colorMap.hdf5')#re.compile('.*' + self.__sub_dir + '/colorMap.hdf5$')
+    self.__segmentinfo_file_regex = re.compile('.*segmentInfo.db$')#re.compile('.*' + self.__sub_dir + '/segmentInfo.db$')
 
     # handler regex
     self.__query_toc_regex = re.compile('^/' + self.__query + '/contents$')
@@ -79,49 +79,54 @@ class Datasource(object):
     '''
 
     # parse the mojo directory
-    for root, dirs, files in os.walk(self.__mojo_dir):  
+    #for 1:root, dirs, files in os.walk(self.__mojo_dir):  
 
-      for f in files:
+    root = os.path.join(self.__mojo_dir,self.__sub_dir)
+    files = os.listdir(root)
 
-        # info file
-        if self.__info_regex.match(os.path.join(root,f)):
-          tree = ET.parse(os.path.join(root,f))
-          xml_root = tree.getroot()
-          self.__info = xml_root.attrib
-          # set the max deepzoom zoom level
-          self.__max_deepzoom_level = int(math.log(int(self.__info['numVoxelsX']), 2))
-          # set the max mojo zoom level
-          self.__max_mojozoom_level = int(math.ceil( math.log(float(self.__info['numVoxelsPerTileX'])/float(self.__info['numVoxelsX']), 0.5) ))
-          # get the max number of Z tiles
-          self.__max_z_tiles = int(self.__info['numTilesZ'])
-          # get the file format
-          self.__input_format = str(self.__info['fileExtension'])
-          # width and height
-          self._width = int(self.__info['numVoxelsX'])
-          self._height = int(self.__info['numVoxelsY'])
+    print files
 
-        # colormap
-        elif self.__colormap_file_regex.match(os.path.join(root,f)):
-          hdf5_file = h5py.File(os.path.join(root,f), 'r')
-          list_of_names = []
-          hdf5_file.visit(list_of_names.append) 
-          self.__has_colormap = True
-          self.__colormap = hdf5_file[list_of_names[0]].value
+    for f in files:
 
-        # segmentinfo database
-        elif self.__segmentinfo_file_regex.match(os.path.join(root,f)):
+      # info file
+      if self.__info_regex.match(os.path.join(root,f)):
+        tree = ET.parse(os.path.join(root,f))
+        xml_root = tree.getroot()
+        self.__info = xml_root.attrib
+        # set the max deepzoom zoom level
+        self.__max_deepzoom_level = int(math.log(int(self.__info['numVoxelsX']), 2))
+        # set the max mojo zoom level
+        self.__max_mojozoom_level = int(math.ceil( math.log(float(self.__info['numVoxelsPerTileX'])/float(self.__info['numVoxelsX']), 0.5) ))
+        # get the max number of Z tiles
+        self.__max_z_tiles = int(self.__info['numTilesZ'])
+        # get the file format
+        self.__input_format = str(self.__info['fileExtension'])
+        # width and height
+        self._width = int(self.__info['numVoxelsX'])
+        self._height = int(self.__info['numVoxelsY'])
 
-          old_db_file = os.path.join(root,f)
-          # new_db_file = old_db_file.replace(self.__mojo_dir, self.__out_dir+'/')
-          
-          # os.mkdir(self.__out_dir+'/ids')
-          # print 'Copied DB from', old_db_file, 'to', new_db_file
-          # shutil.copy(old_db_file, new_db_file)
-          print 'Connecting to DB'
-          self.__database = Database(old_db_file)
-          # grab existing merge table
-          self.__database._merge_table = self.__database.get_merge_table()
-          self.__database._lock_table = self.__database.get_lock_table()
+      # colormap
+      elif self.__colormap_file_regex.match(os.path.join(root,f)):
+        hdf5_file = h5py.File(os.path.join(root,f), 'r')
+        list_of_names = []
+        hdf5_file.visit(list_of_names.append) 
+        self.__has_colormap = True
+        self.__colormap = hdf5_file[list_of_names[0]].value
+
+      # segmentinfo database
+      elif self.__segmentinfo_file_regex.match(os.path.join(root,f)):
+
+        old_db_file = os.path.join(root,f)
+        # new_db_file = old_db_file.replace(self.__mojo_dir, self.__out_dir+'/')
+        
+        # os.mkdir(self.__out_dir+'/ids')
+        # print 'Copied DB from', old_db_file, 'to', new_db_file
+        # shutil.copy(old_db_file, new_db_file)
+        print 'Connecting to DB'
+        self.__database = Database(old_db_file)
+        # grab existing merge table
+        self.__database._merge_table = self.__database.get_merge_table()
+        self.__database._lock_table = self.__database.get_lock_table()
 
 
 

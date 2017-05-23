@@ -15,6 +15,7 @@ import lxml.etree
 import glob
 import sqlite3
 import colorsys
+import tifffile as tif
 
 def run(input_dir, output_dir):
 
@@ -34,7 +35,7 @@ def run(input_dir, output_dir):
     original_input_ids_path  = input_dir
     output_path     = output_dir
 
-    nimages_to_process            = 1337
+    nimages_to_process            = 1697 
     ncolors                       = 1000
     input_file_format             = 'tif'
 
@@ -98,8 +99,7 @@ def run(input_dir, output_dir):
 
     def load_id_image ( file_path ):
         print file_path
-        ids = np.int32( np.array( mahotas.imread( file_path ) ) )
-        # print np.unique(ids)
+        ids = tif.imread( file_path ).astype(np.uint32)
 
         # if len( ids.shape ) == 3:
         #     ids = ids[ :, :, 0 ] + ids[ :, :, 1 ] * 2**8 + ids[ :, :, 2 ] * 2**16
@@ -122,6 +122,9 @@ def run(input_dir, output_dir):
     #id_color_map         = color_map_mat_dict[ 'cmap' ]
     input_search_string  = original_input_ids_path + os.sep + '*.' + input_file_format
     files                = sorted( glob.glob( input_search_string ) )
+
+    files = files[1595:]
+
     print "Found {0} input images in {1}".format( len(files), input_search_string )
 
     if len(files) > 0:
@@ -166,7 +169,7 @@ def run(input_dir, output_dir):
         id_max               = 0;
         id_counts            = np.zeros( 0, dtype=np.int64 );
         id_tile_list         = [];
-        tile_index_z         = 0
+        tile_index_z         = 1595
 
         # Make a color index
         #id_label = id_color_map[ :, 0 ] + id_color_map[ :, 1 ] * 2**8 + id_color_map[ :, 2 ] * 2**16
@@ -212,7 +215,7 @@ def run(input_dir, output_dir):
             original_input_ids_name = file
 
             original_ids = load_id_image( original_input_ids_name )
-            print original_ids
+            #print original_ids, original_ids.dtype
             ## Grow regions until there are no boundaries
 
             ## Method 4 - watershed
@@ -249,16 +252,17 @@ def run(input_dir, output_dir):
 
             #    grow_count = grow_count + 1
             #    print "Grow count {0}: {1} boundary pixels remaining.".format(grow_count, len(boundary_indices[0]))
-
+            
             current_image_counts = np.bincount( original_ids.ravel() )
             current_image_counts_ids = np.nonzero( current_image_counts )[0]
             current_max = np.max( current_image_counts_ids )
-            
             if id_max < current_max:
                 id_max = current_max;
                 id_counts.resize( id_max + 1 );
-                
-            id_counts[ current_image_counts_ids ] = id_counts[ current_image_counts_ids ] + np.int64( current_image_counts [ current_image_counts_ids ] )
+           
+            #print '1',current_image_counts_ids 
+            if len(current_image_counts_ids) > 1:
+                id_counts[ current_image_counts_ids ] = id_counts[ current_image_counts_ids ] + np.int64( current_image_counts [ current_image_counts_ids ] )
             
             ( original_image_num_pixels_x, original_image_num_pixels_y ) = original_ids.shape
 

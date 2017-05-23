@@ -63,14 +63,18 @@ class ServerLogic:
     # create it now
     #
 
-
+    print 'aaa'
     # register two data sources
     self.__segmentation = _dojo.Segmentation(mojo_dir, tmpdir, out_dir, self)
     self.__image = _dojo.Image(mojo_dir, tmpdir)
 
+    print 'bbb'
+
     # detect orphans
     if orphan_detection:
       self.__segmentation.detect_orphans()
+
+    print 'after orphan'
 
     # and the controller
     if self.__segmentation:

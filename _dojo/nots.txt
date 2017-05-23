@@ -1,0 +1,18 @@
+/n/coxfs01/haehn/3D/R0_mojo_test/raw
+
+
+source new-modules.sh
+module load python/2.7.11-fasrc01
+source activate h5_tile
+
+
+discarding /n/sw/fasrcsw/apps/Core/Anaconda/2.5.0-fasrc01/x/bin from PATH
+prepending /n/home05/haehn/.conda/envs/h5_tile/bin to PATH
+
+srun -p cox -t 7-12:00 --gres=gpu:1 --pty --mem 200000 /bin/bash 
+
+
+
+import image_tile_calculator
+>>> image_tile_calculator.run('/n/coxfs01/haehn/3D/R0_mojo_test/raw/','/n/coxfs01/haehn/3D/R0_mojo_test/mojo/')
+
