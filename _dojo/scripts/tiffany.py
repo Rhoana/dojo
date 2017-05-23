@@ -8,24 +8,20 @@ import struct
 class Scanner(object):
 
   def __init__(self, f):
-    '''
-    '''
+
     self._pointer = 0
     self._f = f
 
   def jumpTo(self, where):
-    '''
-    '''
+
     self._pointer = where
 
   def jump(self, howmuch):
-    '''
-    '''
+
     self._pointer += howmuch
 
   def scanWithoutMoving(self, where, type, chunks=1):
-    '''
-    '''
+
     old_pointer = self._pointer
     self._pointer = where
     result = self.scan(type, chunks)
@@ -33,8 +29,7 @@ class Scanner(object):
     return result
 
   def scan(self, type, chunks=1):
-    '''
-    '''
+
     chunk_size = 1
     if type == 'uchar':
       chunk_size = 1
@@ -59,8 +54,7 @@ class Scanner(object):
 class TIFFile(object):
 
   def __init__(self):
-    '''
-    '''
+
     self._little_endian = False
     self._tags = {}
 

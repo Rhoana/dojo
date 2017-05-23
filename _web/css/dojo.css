@@ -11,6 +11,45 @@ body {
   background-color:black;
 }
 
+#undoredo {
+  width: 60px;
+  margin-left: -4px;
+}
+
+#undo {
+  width: 20px;
+  opacity: 0.3;
+}
+
+#redo {
+  width: 20px;
+  opacity: 0.3;
+}
+
+#blocker {
+  position: absolute;
+  top:0px;
+  left:0px;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  z-index: 500000;
+  color: white;
+  display: none;
+}
+
+#loading_blocker {
+  position: absolute;
+  top:0px;
+  left:0px;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  z-index: 500000;
+  color: white;
+  display: block;
+}
+
 .toolbar {
   width:32px;
   height:200px;
@@ -20,6 +59,8 @@ body {
 }
 
 .infopanel {
+  background-color:black;
+  padding: 5 10 10 5;
   position: absolute;
   bottom: 10px;
   left:10px;
@@ -36,17 +77,64 @@ body {
   overflow: hidden;
 }
 
-.threeDpanel {
+.draggable_panel {
   position: absolute;
-  right: 10px;
-  top: 10px;
-  width:300px;
-  height:300px;
   background-color:black;
   opacity: 1;
   border: solid 1px white;  
-  display: none;
   z-index: 1000;
+  color: white;
+}
+
+.panel_unsure {
+  background-color: #660000;
+}
+
+.panel_correct {
+  background-color: #006600;
+}
+
+.default_arrow {
+  background-color: black;
+  cursor: pointer;
+}
+
+.pressed_arrow {
+  background-color: #666;
+}
+
+#save {
+  margin-top: 6px;
+  width: 30px;
+  margin-left: 3px;
+}
+
+.noselect {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+
+#threeD {
+  /*right: 10px;*/
+  /*top: 10px;*/
+  width:300px;
+  height:300px;
+  display: none;  
+}
+
+#todo {
+  /*right: 10px;*/
+  /*top: 320px;*/
+  width: 300px;
+  height: 150px;
+  /*bottom: 220px;*/
+  overflow: hidden;
+  display: none;
 }
 
 #slicenumber {
@@ -68,4 +156,52 @@ body {
   color:white;
   width: 100px;
   margin-left: 10px;
+}
+
+.todo_toplevel {
+  color:white;
+  margin: 10px;
+  border: 1px solid white;
+}
+
+.todo_header {
+  border-bottom: 1px solid white; 
+}
+
+.todo_check {
+  float:right;
+}
+
+.todo_color {
+  background-color: green;
+  border: 1px solid white;
+  width: 20px;
+  height: 20px;
+  float: left;
+}
+
+.todo_label {
+  margin-left: 6px;
+}
+
+ul {
+  list-style-type: none;
+  -webkit-margin-before: 0px;
+  -webkit-margin-start: 0px;
+  -webkit-padding-start: 10px;
+  margin-before: 0px;
+  margin-start: 0px;
+  padding-start: 10px;
+}
+
+li {
+  line-height: 30px;
+}
+
+li li {
+  border: solid 1px white;
+  padding: 10px;  
+  margin: 1px;
+  line-height: 20px;
+  margin-right: 20px;
 }

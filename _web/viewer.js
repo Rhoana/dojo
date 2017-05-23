@@ -2,21 +2,19 @@ var J = J || {};
 
 J.viewer = function(container) {
 
-  var _container = document.getElementById(container);
+  this._container = document.getElementById(container);
 
-  var _canvas = document.createElement('canvas');
-  _canvas.width = _container.clientWidth;
-  _canvas.height = _container.clientHeight;
-  _container.appendChild(_canvas);
+  this._canvas = document.createElement('canvas');
+  this._canvas.width = this._container.clientWidth;
+  this._canvas.height = this._container.clientHeight;
+  this._container.appendChild(this._canvas);
 
-  this._width = _canvas.width;
-  this._height = _canvas.height;
+  this._width = this._canvas.width;
+  this._height = this._canvas.height;
 
-  this._canvas = _canvas;
   this._context = this._canvas.getContext('2d');
 
   this._image_buffer = document.createElement('canvas');
-  //_container.appendChild(this._image_buffer);
   this._image_buffer_context = this._image_buffer.getContext('2d');
   this._image_buffer_ready = false;
 
@@ -30,9 +28,16 @@ J.viewer = function(container) {
   this._pixel_data_buffer = this._segmentation_buffer_context.createImageData(512, 512);
 
   this._offscreen_buffer = document.createElement('canvas');
-  _container.appendChild(this._offscreen_buffer);
+  this._container.appendChild(this._offscreen_buffer);
   this._offscreen_buffer.width = 512;
   this._offscreen_buffer.height = 512;
+
+  // Buffer for the mouse pointer
+  this._pt_g_cols = [[0,0],[.5,0],[.6,.1],[.7,.2],[.8,1],[1,0]];
+  this._pt_buff = document.createElement('canvas');
+  this._container.appendChild(this._pt_buff);
+  this._pt_ctx = this._pt_buff.getContext('2d');
+  this._pt_ctx.rad = 200;
 
   this._force_rerender = false;
 
@@ -46,6 +51,7 @@ J.viewer = function(container) {
   this._overlay_show = true;
   this._overlay_opacity = 100;  
   this._overlay_borders = true;
+  this._only_locked = false;
 
   this._loader = new J.loader(this);
   this._camera = new J.camera(this);
@@ -84,8 +90,11 @@ J.viewer.prototype.init = function(callback) {
     // type cast some stuff
     this._image.width = parseInt(this._image.width, 10);
     this._image.height = parseInt(this._image.height, 10);
-    this._image.zoomlevel_count = parseInt(this._image.zoomlevel_count, 10);
+
+    this._image.zSample_max = parseInt(this._image.zSample_max, 10);
     this._image.max_z_tiles = parseInt(this._image.max_z_tiles, 10);
+    this._image.zoomlevel_count = parseInt(this._image.zoomlevel_count, 10);
+    this._camera._zStack = this._image.zSample_max/this._image.max_z_tiles;
 
     this._image.zoom_levels = this.calc_zoomlevels();
 
@@ -94,8 +103,8 @@ J.viewer.prototype.init = function(callback) {
 
     this._interactor = new J.interactor(this);
 
-    this._image_buffer.width = this._overlay_buffer.width = this._image.width;
-    this._image_buffer.height = this._overlay_buffer.height = this._image.height;
+    this._image_buffer.width = this._overlay_buffer.width = this._pt_buff.width = this._image.width;
+    this._image_buffer.height = this._overlay_buffer.height = this._pt_buff.height = this._image.height;
 
     this._loader.load_json('/segmentation/contents', function(res) {
 
@@ -187,7 +196,7 @@ J.viewer.prototype.draw_image = function(x,y,z,w,i,s) {
 J.viewer.prototype.draw_webgl = function(x,y,z,w,i,s) {
 
   // draw image and segmentation
-  this._offscreen_renderer.draw(i, s, this._image_buffer_context, x, y);  
+  this._offscreen_renderer.draw(i, s, this._image_buffer_context, x, y);
 
 };
 
@@ -292,11 +301,11 @@ J.viewer.prototype.draw_canvas = function(x,y,z,w,i,s) {
 
 J.viewer.prototype.lookup_id = function(id) {
 
-  if (this._controller._merge_table_length == -1) return;
+  if (!this._controller._new_merge_table) return;
 
   // check if this has an entry in the merge table
-  while(typeof this._controller._merge_table[id] !== 'undefined') {
-    id = this._controller._merge_table[id];
+  while(typeof this._controller._new_merge_table[id] !== 'undefined') {
+    id = this._controller._new_merge_table[id];
   }
 
   return id;
@@ -309,6 +318,40 @@ J.viewer.prototype.get_color = function(id) {
 
 };
 
+J.viewer.prototype.move_pointer = function(x,y,win = true) {
+
+  // Get zoom level and radius
+  var level = 1/(Math.pow(2,this._camera._w));
+  var rad = this._pt_ctx.rad*level;
+  this.clear_pointer_buffer();
+
+  // If screen coordinates
+  if (win) {
+    var i_j = this.xy2ij(x,y);
+    if (i_j.some((e) => {return e < 0})) { return; };
+    i_j = i_j.map((e) => {return e*level});
+  }
+  else {
+    var i_j = [x,y];
+  }
+
+  var pt =rad*(1-this._pt_g_cols[4][0]);
+  var grad = this._pt_ctx.createRadialGradient(i_j[0], i_j[1], 0, i_j[0], i_j[1],rad);
+
+  this._pt_g_cols.forEach((c)=>{grad.addColorStop(c[0], 'rgba(1,1,1,'+c[1]+')');});
+  this._pt_ctx.arc(i_j[0], i_j[1],rad, 0, 2*Math.PI);
+  this._pt_ctx.fillStyle = grad;
+  this._pt_ctx.fill();
+
+  this._pt_ctx.beginPath();
+  this._pt_ctx.fillStyle = 'rgb(1,1,1)';
+  this._pt_ctx.moveTo(i_j[0]-pt/2,i_j[1]+pt-rad);
+  this._pt_ctx.lineTo(i_j[0]+pt/2,i_j[1]+pt-rad);
+  this._pt_ctx.lineTo(i_j[0],i_j[1]);
+  this._pt_ctx.closePath();
+  this._pt_ctx.fill();
+};
+
 J.viewer.prototype.clear_buffer = function(width, height) {
 
   this._image_buffer_context.clearRect(0, 0, width, height);
@@ -318,6 +361,12 @@ J.viewer.prototype.clear_buffer = function(width, height) {
 J.viewer.prototype.clear_overlay_buffer = function() {
 
   this._overlay_buffer_context.clearRect(0,0,this._image.width, this._image.height);
+
+};
+
+J.viewer.prototype.clear_pointer_buffer = function() {
+
+  this._pt_ctx.clearRect(0,0,this._image.width, this._image.height);
 
 };
 
@@ -358,8 +407,7 @@ J.viewer.prototype.decrease_opacity = function() {
 };
 
 J.viewer.prototype.loading = function(value) {
-  // console.log('loading', value)
-  this._image_buffer_ready = !value;
+    this._image_buffer_ready = !value;
 };
 
 J.viewer.prototype.render = function() {
@@ -377,6 +425,9 @@ J.viewer.prototype.render = function() {
     // draw overlays
     this._context.drawImage(this._overlay_buffer,0,0);
 
+    // draw mouse pointer
+    this._context.drawImage(this._pt_buff,0,0);
+
     this._force_rerender = false;
   }
 
@@ -388,13 +439,10 @@ J.viewer.prototype.xy2uv = function(x, y) {
 
   var u = x - this._camera._view[6];
   var v = y - this._camera._view[7];
-  // console.log(u, this._camera._view[6], x, this._image.zoom_levels[this._camera._zoom_level][0])
-  //if (u < 0 || u >= this._camera._view[0] * this._zoom_level*512) {
   if (u < 0 || u >= this._camera._view[0] * this._image.zoom_levels[this._camera._w][2] *512) {
     u = -1;
   }
 
-  //if (v < 0 || v >= this._camera._view[4] * this._zoom_level*512) {
   if (v < 0 || v >= this._camera._view[4] * this._image.zoom_levels[this._camera._w][3] *512) {
     v = -1;
   }
@@ -455,18 +503,28 @@ J.viewer.prototype.ij2uv_no_zoom = function(i, j) {
 
 J.viewer.prototype.ijk2xyz = function(i, j, k) {
 
-  return [Math.floor((i*512)/this._image.height) - 256, Math.floor((j*512)/this._image.width) - 256, Math.floor(k - (this._image.max_z_tiles-1)/2)*DOJO.threeD.volume.spacing[2]];
+  var spacing = 1;
+  return [Math.floor((i*512)/this._image.height) - 256, Math.floor((j*512)/this._image.width) - 256, Math.floor(k - (this._image.max_z_tiles-1)/2)*spacing];
 
 };
+
+J.viewer.prototype.ijk2xyz3d = function(i, j, k) {
+
+  var spacing = 1;
+
+  if (DOJO.threeD) {
+    spacing = DOJO.threeD.volume.spacing[2];
+  }
+
+  return [Math.floor((i*512)/this._image.height) - 256, Math.floor((j*512)/this._image.width) - 256, Math.floor(k - (this._image.max_z_tiles-1)/2)*spacing];
+
+};
+
 
 J.viewer.prototype.xyz2ijk = function(x, y, z) {
 
   var i = Math.floor((x + 256)*this._image.height/512);
   var j = Math.floor((y + 256)*this._image.width/512);
-  // var adjusted_z_range = Math.floor(this._image.max_z_tiles*DOJO.threeD.volume.spacing[2]);
-  // var k = Math.floor((z/adjusted_z_range)*adjusted_z_range;
-
-  // var k = z + Math.floor(this._image.max_z_tiles/2) * DOJO.threeD.volume.spacing[2];
   var k = z/DOJO.threeD.volume.spacing[2] + Math.floor(this._image.max_z_tiles/2);
 
   return [i, j, k];
