@@ -3,6 +3,7 @@ import mahotas as mh
 import numpy as np
 import os
 import re
+import compresso as c
 import zlib
 import StringIO
 
@@ -111,6 +112,17 @@ class Segmentation(Datasource):
     # mh.imsave('/tmp/'+os.path.basename(file)+'.tif', hardened_image_data.astype(np.uint32))
     # print 'TIF saved'
 
+    # #
+    # #
+    # # COMPRESSO
+    # #
+    # #
+    # # B to the OCKWURST!!!
+    # # 
+    # hardened_image_data = hardened_image_data[np.newaxis]
+    # compressed_image_data = c.compresso.compress(hardened_image_data.astype(np.uint32), [1,8,8])
+
+    # c_image_data = zlib.compress(compressed_image_data)
     c_image_data = zlib.compress(hardened_image_data.astype(np.uint32))
 
     output = StringIO.StringIO()
