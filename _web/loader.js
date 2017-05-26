@@ -128,14 +128,16 @@ J.loader.prototype.get_segmentation = function(x, y, z, w, callback, no_cache) {
     var compressed = new Zlib.Inflate(new Uint8Array(s.response));
     var raw_s = compressed.decompress();
 
-    // //
-    // //
-    // // COMPRESSO
-    // //
-    // // B to the OCKWURST!!!
-    // //
-    // //
-    // raw_s = COMPRESSO.Decompress(raw_s);
+    //
+    //
+    // COMPRESSO
+    //
+    // B to the OCKWURST!!!
+    //
+    //
+    AAAAA = raw_s = new Uint8Array(COMPRESSO.Decompress(raw_s).decompressed_data.buffer);
+
+
 
     // cache this image
     this._segmentation_cache[z] = this._segmentation_cache[z] ? this._segmentation_cache[z] : [];
