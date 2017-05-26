@@ -222,4 +222,11 @@ J.offscreen_renderer.prototype.draw = function(i, s, c, x, y) {
 
   c.drawImage(this._canvas,0,0,512,512,x*512,y*512,512,512);
 
+  if (DOJO.debug_tiles) {
+    c.globalCompositeOperation = "source-over";
+    c.lineWidth = 4;
+    c.strokeStyle="#FF0000";
+    c.strokeRect(x*512,y*512,512,512);
+  }
+  
 };

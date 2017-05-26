@@ -195,7 +195,7 @@ J.viewer.prototype.draw_image = function(x,y,z,w,i,s) {
 
 J.viewer.prototype.draw_webgl = function(x,y,z,w,i,s) {
 
-  // draw image and segmentation
+  // draw image and segmentation   
   this._offscreen_renderer.draw(i, s, this._image_buffer_context, x, y);
 
 };
@@ -421,7 +421,7 @@ J.viewer.prototype.render = function() {
     this.clear();
     // put image buffer
     this._context.drawImage(this._image_buffer, 0, 0);
-    
+
     // draw overlays
     this._context.drawImage(this._overlay_buffer,0,0);
 
@@ -533,20 +533,41 @@ J.viewer.prototype.xyz2ijk = function(x, y, z) {
 
 J.viewer.prototype.get_segmentation_id = function(i, j, callback) {
 
-  var x = Math.floor(i / 512);
-  var y = Math.floor(j / 512);
+  var u_v = DOJO.viewer.ij2uv_no_zoom(i, j);
+
+
+  var x = Math.floor(u_v[0] / 512);//this._camera._x;//Math.floor(i / 512);
+  var y = Math.floor(u_v[1] / 512);//this._camera._y;//Math.floor(j / 512);
   var z = this._camera._z;
-  var w = 0;
-  
+  var w = this._camera._w;
+
+  // console.log(x,y,z,w, u_v)
+
   this._loader.get_segmentation(x, y, z, w, function(s) {
 
     var pixel_data = new Uint32Array(s.buffer);
 
-    var id = this.lookup_id(pixel_data[(j % 512) * 512 + (i % 512)]);
+    var id = this.lookup_id(pixel_data[(parseInt(u_v[1],10) % 512) * 512 + (parseInt(u_v[0],10) % 512)]);
 
     callback(id);
 
   }.bind(this));
+
+
+  // var x = Math.floor(i / 512);
+  // var y = Math.floor(j / 512);
+  // var z = this._camera._z;
+  // var w = 0;
+  
+  // this._loader.get_segmentation(x, y, z, w, function(s) {
+
+  //   var pixel_data = new Uint32Array(s.buffer);
+
+  //   var id = this.lookup_id(pixel_data[(j % 512) * 512 + (i % 512)]);
+
+  //   callback(id);
+
+  // }.bind(this));
 
 };
 

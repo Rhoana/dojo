@@ -119,6 +119,8 @@ J.loader.prototype.get_segmentation = function(x, y, z, w, callback, no_cache) {
 
   }
 
+  console.time('get_segmentation-'+x+'-'+y+'-'+z+'-'+w);
+
   this.load_segmentation(x, y, z, w, function(s) {
 
     tempA = s.responseURL.split("/").slice(-3);
@@ -131,6 +133,8 @@ J.loader.prototype.get_segmentation = function(x, y, z, w, callback, no_cache) {
     this._segmentation_cache[z][w] = this._segmentation_cache[z][w] ? this._segmentation_cache[z][w] : [];
     this._segmentation_cache[z][w][x] = this._segmentation_cache[z][w][x] ? this._segmentation_cache[z][w][x] : [];
     this._segmentation_cache[z][w][x][y] = raw_s;
+
+    console.timeEnd('get_segmentation-'+x+'-'+y+'-'+z+'-'+w);
 
     // call real callback
     callback(raw_s);

@@ -13,6 +13,7 @@ DOJO.threeD_active = false;
 DOJO.link_active = false;
 DOJO.mousemove_timeout = null;
 DOJO.single_segment = false;
+DOJO.debug_tiles = false;
 
 DOJO.init = function() {
 
