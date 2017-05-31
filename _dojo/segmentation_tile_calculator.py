@@ -123,7 +123,7 @@ def run(input_dir, output_dir):
     input_search_string  = original_input_ids_path + os.sep + '*.' + input_file_format
     files                = sorted( glob.glob( input_search_string ) )
 
-    files = files[1595:]
+    #files = files[1595:]
 
     print "Found {0} input images in {1}".format( len(files), input_search_string )
 
@@ -169,7 +169,7 @@ def run(input_dir, output_dir):
         id_max               = 0;
         id_counts            = np.zeros( 0, dtype=np.int64 );
         id_tile_list         = [];
-        tile_index_z         = 1595
+        tile_index_z         = 0
 
         # Make a color index
         #id_label = id_color_map[ :, 0 ] + id_color_map[ :, 1 ] * 2**8 + id_color_map[ :, 2 ] * 2**16
