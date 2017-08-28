@@ -185,7 +185,10 @@
       color.a = uOpacity/255.;
 
       // locked
-      if (is_locked(id)) {
+      if (int(id) == 0){
+        color.a = 0.0;
+      }
+      else if (is_locked(id)) {
 
         if (mod(vTexturePosition.x, 0.05) < 0.01) {
           color *= 1.5;
