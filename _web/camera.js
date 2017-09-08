@@ -101,7 +101,7 @@ J.camera.prototype.jumpIJK = function(i, j, k) {
   this._view[7] = this._viewer._height/2 - view[4]*ijk_int[1]
 
   // control mouse pointer
-  DOJO.viewer.move_pointer(ijk_int[0],ijk_int[1],false);
+  // DOJO.viewer.move_pointer(ijk_int[0],ijk_int[1],false);
 
 };
 
