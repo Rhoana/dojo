@@ -98,7 +98,7 @@ class Database(object):
 
   def get_merge_table(self):
 
-    lut = np.arange(MAX_SEGMENTS)
+    lut = np.arange(MAX_SEGMENTS, dtype=np.uint64)
 
     try:
       self.__cursor.execute('SELECT * FROM relabelMap')
