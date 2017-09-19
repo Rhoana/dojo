@@ -75,66 +75,48 @@ function remove_duplicates(array) {
 //
 // shader utility functions
 //
-function readAndCompileShader(gl, id) {
-
-  var shaderScript = document.getElementById(id);
-
-  if (!shaderScript) {
-    return null;
-  }
-
-  var str = "";
-  var k = shaderScript.firstChild;
-  while (k) {
-    if (k.nodeType == 3) {
-      str += k.textContent;
-    }
-    k = k.nextSibling;
-  }
-
-  var shader;
-  if (shaderScript.type == "x-shader/x-fragment") {
-    shader = gl.createShader(gl.FRAGMENT_SHADER);
-  } else if (shaderScript.type == "x-shader/x-vertex") {
-    shader = gl.createShader(gl.VERTEX_SHADER);
-  } else {
-    return null;
-  }
-  
-  gl.shaderSource(shader, str);
-  gl.compileShader(shader);
-
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    console.log(gl.getShaderInfoLog(shader));
-    return null;
-  }
-
-  return shader;
-
+function readShader(id) {
+  return document.getElementById(id).textContent.replace(/^\s+|\s+$/g, '');
 };
 
-function linkShaders(gl, vs_id, fs_id) {
+function createShader(gl, source, type) {
+  var shader = gl.createShader(type);
+  gl.shaderSource(shader, source);
+  gl.compileShader(shader);
+  return shader;
+}
 
-  var fragmentShader = readAndCompileShader(gl, fs_id);
-  var vertexShader = readAndCompileShader(gl, vs_id);
+function createProgram(gl, vertexShaderSource, fragmentShaderSource) {
+  var program = gl.createProgram();
+  var vshader = createShader(gl, vertexShaderSource, gl.VERTEX_SHADER);
+  var fshader = createShader(gl, fragmentShaderSource, gl.FRAGMENT_SHADER);
+  gl.attachShader(program, vshader);
+  gl.deleteShader(vshader);
+  gl.attachShader(program, fshader);
+  gl.deleteShader(fshader);
+  gl.linkProgram(program);
 
-  var shaderProgram = gl.createProgram();
-  gl.attachShader(shaderProgram, vertexShader);
-  gl.attachShader(shaderProgram, fragmentShader);
-  gl.linkProgram(shaderProgram);
-
-  if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
       console.log("Could not initialise shaders");
 
-      console.log(gl.getShaderInfoLog(fragmentShader));
-      console.log(gl.getShaderInfoLog(vertexShader));
-      console.log(gl.getProgramInfoLog(shaderProgram));
+      console.log(gl.getShaderInfoLog(fshader));
+      console.log(gl.getShaderInfoLog(vshader));
+      console.log(gl.getProgramInfoLog(program));
 
       return null;
 
   }
 
-  return shaderProgram;
+  return program;
+};
+
+function linkShaders(gl, vs_id, fs_id) {
+
+  var fragmentShader = readShader(fs_id);
+  var vertexShader = readShader(vs_id);
+  console.log(fragmentShader)
+
+  return createProgram(gl, vertexShader, fragmentShader);
 
 };
 

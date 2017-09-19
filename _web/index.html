@@ -32,8 +32,10 @@
 
   <!-- SHADERS -->
   <script id="fs1" type="x-shader/x-fragment">
-    precision mediump float;
-    precision mediump int;
+    #version 300 es
+    precision highp float;
+    precision highp int;
+    precision highp usampler2D;
 
     uniform sampler2D uImageSampler;
     uniform sampler2D uTextureSampler;
@@ -306,6 +308,7 @@
   </script>
 
   <script id="vs1" type="x-shader/x-vertex">
+    #version 300 es
     attribute vec3 aPosition;
     attribute vec2 aTexturePosition;
 
