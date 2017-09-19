@@ -37,10 +37,8 @@ J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
   gl.blendEquation(gl.FUNC_ADD);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   gl.enable(gl.BLEND);
-
+  // Clear everything
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
   // create shaders
   this._program = linkShaders(gl, vs_id, fs_id);
@@ -49,7 +47,6 @@ J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
     return false;
   }
   gl.useProgram(h);
-
 
   // Get all uniform locations
   this._uni = {};
@@ -133,13 +130,14 @@ J.offscreen_renderer.prototype.init_buffers = function() {
     var vals = this._tex[tex];
     var flip = vals.flip || false;
     var filter = vals.filter || 'NEAREST';
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, flip);
 
-    // Get texture locations
+    // Get texture location and order
     vals.texture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, vals.texture);
-    // Get texture Order
     vals.id = Number(vals.name.match(/\d+/)[0]);
+
+    // Set texture parameters one time
+    gl.bindTexture(gl.TEXTURE_2D, vals.texture);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, flip);
 
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
@@ -193,8 +191,6 @@ J.offscreen_renderer.prototype.draw = function(i, s, c, x, y) {
 
   if (this._controller._gl_merge_table_changed) {
 
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-
     gl.bindTexture(gl.TEXTURE_2D, this._tex.merge_keys.texture);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, merge_table_length, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, this._controller._gl_merge_table_keys);
 
@@ -202,8 +198,6 @@ J.offscreen_renderer.prototype.draw = function(i, s, c, x, y) {
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, merge_table_length, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, this._controller._gl_merge_table_values);
 
     this._controller._gl_merge_table_changed = false;
-
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
   }
 
@@ -214,14 +208,10 @@ J.offscreen_renderer.prototype.draw = function(i, s, c, x, y) {
 
   if (this._controller._gl_lock_table_changed) {
 
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-
     gl.bindTexture(gl.TEXTURE_2D, this._tex.lock_values.texture);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, lock_table_length, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, this._controller._gl_lock_table);
 
     this._controller._gl_lock_table_changed = false;
-
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
   }
 
