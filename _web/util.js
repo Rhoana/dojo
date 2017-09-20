@@ -114,7 +114,6 @@ function linkShaders(gl, vs_id, fs_id) {
 
   var fragmentShader = readShader(fs_id);
   var vertexShader = readShader(vs_id);
-  console.log(fragmentShader)
 
   return createProgram(gl, vertexShader, fragmentShader);
 

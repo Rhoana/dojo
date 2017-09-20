@@ -23,7 +23,10 @@ J.offscreen_renderer = function(viewer) {
 J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
 
   var canvas = this._canvas;
-  var gl = canvas.getContext('experimental-webgl') || canvas.getContext('webgl');
+  var no_alias = {
+    "antialias": false,
+  }
+  var gl = canvas.getContext('webgl2', no_alias);
 
   if (!gl) {
     return false;
@@ -54,9 +57,9 @@ J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
     'uMergeTableKeySampler', 'uMergeTableValueSampler', 'uLockTableSampler',
     'uTextureSampler', 'uImageSampler', 'uColorMapSampler',
     'uSplitMode', 'uAdjustMode', 'uMaxColors', 'uBorders',
-    'uOnlyLocked', 'uMergeTableEnd', 'uShowOverlay',
     'uOpacity', 'uHighlightedId', 'uActivatedId',
     'uMergeTableLength', 'uLockTableLength',
+    'uOnlyLocked', 'uShowOverlay',
   ];
   uniforms.forEach(function(u){
     this._uni[u] = gl.getUniformLocation(h, u);
@@ -175,7 +178,7 @@ J.offscreen_renderer.prototype.draw = function(i, s, c, x, y) {
 
   // create segmentation texture buffer
   gl.bindTexture(gl.TEXTURE_2D, this._tex.ids.texture);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 512, 512, 0, gl.RGBA, gl.UNSIGNED_BYTE, s);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, 512, 512, 0, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, s);
 
 
   // create image texture buffer
@@ -187,15 +190,14 @@ J.offscreen_renderer.prototype.draw = function(i, s, c, x, y) {
   // MERGE TABLE
   //
   var merge_table_length = this._controller._merge_table_length;
-  var merge_table_end = this._controller._merge_table_end;
 
   if (this._controller._gl_merge_table_changed) {
 
     gl.bindTexture(gl.TEXTURE_2D, this._tex.merge_keys.texture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, merge_table_length, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, this._controller._gl_merge_table_keys);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, merge_table_length, 1, 0, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, this._controller._gl_merge_table_keys);
 
     gl.bindTexture(gl.TEXTURE_2D, this._tex.merge_values.texture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, merge_table_length, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, this._controller._gl_merge_table_values);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, merge_table_length, 1, 0, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, this._controller._gl_merge_table_values);
 
     this._controller._gl_merge_table_changed = false;
 
@@ -209,7 +211,7 @@ J.offscreen_renderer.prototype.draw = function(i, s, c, x, y) {
   if (this._controller._gl_lock_table_changed) {
 
     gl.bindTexture(gl.TEXTURE_2D, this._tex.lock_values.texture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, lock_table_length, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, this._controller._gl_lock_table);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, lock_table_length, 1, 0, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, this._controller._gl_lock_table);
 
     this._controller._gl_lock_table_changed = false;
 
@@ -220,21 +222,24 @@ J.offscreen_renderer.prototype.draw = function(i, s, c, x, y) {
   gl.bindBuffer(gl.ARRAY_BUFFER, this._square_buffer);
   gl.vertexAttribPointer(this._att.aPosition, 3, gl.FLOAT, false, 0, 0);
 
-  // some values
-  gl.uniform1f(this._uni.uActivatedId, this._viewer._controller._activated_id);
-  gl.uniform1f(this._uni.uHighlightedId, this._viewer._controller._highlighted_id);
+  // Values for given IDs
+  gl.uniform1ui(this._uni.uActivatedId, this._viewer._controller._activated_id);
+  gl.uniform1ui(this._uni.uHighlightedId, this._viewer._controller._highlighted_id);
+
+  // Display settings
+  gl.uniform1i(this._uni.uShowOverlay, this._viewer._overlay_show);
   gl.uniform1f(this._uni.uOpacity, this._viewer._overlay_opacity);
-  gl.uniform1f(this._uni.uMaxColors, this._viewer._max_colors);
   gl.uniform1i(this._uni.uBorders, this._viewer._overlay_borders);
   gl.uniform1i(this._uni.uOnlyLocked, this._viewer._only_locked);
 
+  // Flags for current modes
   gl.uniform1i(this._uni.uSplitMode, this._viewer._controller._split_mode);
   gl.uniform1i(this._uni.uAdjustMode, this._viewer._controller._adjust_mode);
 
-  gl.uniform1i(this._uni.uMergeTableEnd, merge_table_end);
-  gl.uniform1i(this._uni.uMergeTableLength, merge_table_length);
-  gl.uniform1i(this._uni.uLockTableLength, lock_table_length);
-  gl.uniform1i(this._uni.uShowOverlay, this._viewer._overlay_show);
+  // Information about textures
+  gl.uniform1f(this._uni.uLockTableLength, lock_table_length);
+  gl.uniform1f(this._uni.uMaxColors, this._viewer._max_colors);
+  gl.uniform1f(this._uni.uMergeTableLength, merge_table_length);
 
   // Add all the textures to the shaders
   for (tex in this._tex) {

@@ -20,7 +20,6 @@ J.controller = function(viewer) {
 
   this._lock_table_length = -1;
   this._merge_table_length = -1;
-  this._merge_table_end = -1;
 
   this._highlighted_id = null;
   this._activated_id = null;
@@ -1243,7 +1242,6 @@ J.controller.prototype.create_gl_merge_table = function() {
   // Closest power of 2 containing length of array
   var new_length = Math.pow(2,Math.ceil(Math.log(no_keys)/Math.log(2)));
 
-  this._merge_table_end = no_keys;
   this._merge_table_length = new_length;
 
   this._gl_merge_table_keys = new Uint8Array(4 * new_length);
