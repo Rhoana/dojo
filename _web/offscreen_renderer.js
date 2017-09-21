@@ -74,12 +74,10 @@ J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
 
   this._tex = {
     'ids': {
-      flip: true,
       name: 'TEXTURE0',
       sampler: this._uni['uTextureSampler'],
     },
     'colormap': {
-      flip: true,
       name: 'TEXTURE1',
       sampler: this._uni['uColorMapSampler'],
     },
@@ -88,7 +86,6 @@ J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
       sampler: this._uni['uMergeTableKeySampler'],
     },
     'merge_values': {
-      flip: true,
       name: 'TEXTURE3',
       sampler: this._uni['uMergeTableValueSampler'],
     },
@@ -97,23 +94,39 @@ J.offscreen_renderer.prototype.init = function(vs_id, fs_id) {
       sampler: this._uni['uLockTableSampler'],
     },
     'image': {
-      flip: true,
       filter: 'LINEAR',
       name: 'TEXTURE5',
       sampler: this._uni['uImageSampler'],
     },
   }
 
-  // create geometry
-  this._square_buffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, this._square_buffer);
-  var vertices = new Float32Array([
-    -1, -1., 0.,
-     1., -1., 0.,
-    -1.,  1., 0.,
-    1.,  1., 0.
-    ]);
-  gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+  // Vertex Position Buffer
+  var vertexPos = new Float32Array([
+      -1.0, -1.0,
+       1.0, -1.0,
+       1.0,  1.0,
+       1.0,  1.0,
+      -1.0,  1.0,
+      -1.0, -1.0
+  ]);
+  this._vertexBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, this._vertexBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, vertexPos, gl.STATIC_DRAW);
+  gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+  // Texture Position Buffer
+  var texturePos = new Float32Array([
+      0.0, 1.0,
+      1.0, 1.0,
+      1.0, 0.0,
+      1.0, 0.0,
+      0.0, 0.0,
+      0.0, 1.0
+  ]);
+  this._textureBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, this._textureBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, texturePos, gl.STATIC_DRAW);
+  gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
   this._gl = gl;
 
@@ -131,7 +144,6 @@ J.offscreen_renderer.prototype.init_buffers = function() {
   for ( tex in this._tex) {
 
     var vals = this._tex[tex];
-    var flip = vals.flip || false;
     var filter = vals.filter || 'NEAREST';
 
     // Get texture location and order
@@ -140,7 +152,6 @@ J.offscreen_renderer.prototype.init_buffers = function() {
 
     // Set texture parameters one time
     gl.bindTexture(gl.TEXTURE_2D, vals.texture);
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, flip);
 
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
@@ -150,11 +161,6 @@ J.offscreen_renderer.prototype.init_buffers = function() {
 
     gl.bindTexture(gl.TEXTURE_2D, null);
   }
-
-  // u-v
-  this._uv_buffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, this._uv_buffer);
-  gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from('00100111'), gl.STATIC_DRAW);
 
 };
 
@@ -217,11 +223,6 @@ J.offscreen_renderer.prototype.draw = function(i, s, c, x, y) {
 
   }
 
-  // now really draw
-  gl.enableVertexAttribArray(this._att.aPosition);
-  gl.bindBuffer(gl.ARRAY_BUFFER, this._square_buffer);
-  gl.vertexAttribPointer(this._att.aPosition, 3, gl.FLOAT, false, 0, 0);
-
   // Values for given IDs
   gl.uniform1ui(this._uni.uActivatedId, this._viewer._controller._activated_id);
   gl.uniform1ui(this._uni.uHighlightedId, this._viewer._controller._highlighted_id);
@@ -241,6 +242,18 @@ J.offscreen_renderer.prototype.draw = function(i, s, c, x, y) {
   gl.uniform1f(this._uni.uMaxColors, this._viewer._max_colors);
   gl.uniform1f(this._uni.uMergeTableLength, merge_table_length);
 
+  // Bind the Vertex Buffer
+  gl.enableVertexAttribArray(this._att.aPosition);
+  gl.bindBuffer(gl.ARRAY_BUFFER, this._vertexBuffer);
+  gl.vertexAttribPointer(this._att.aPosition, 2, gl.FLOAT, false, 0, 0);
+  gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+  // Bind the Texture Buffer
+  gl.enableVertexAttribArray(this._att.aTexturePosition);
+  gl.bindBuffer(gl.ARRAY_BUFFER, this._textureBuffer);
+  gl.vertexAttribPointer(this._att.TexturePosition, 2, gl.FLOAT, false, 0, 0);  
+  gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
   // Add all the textures to the shaders
   for (tex in this._tex) {
 
@@ -250,11 +263,7 @@ J.offscreen_renderer.prototype.draw = function(i, s, c, x, y) {
     gl.uniform1i(vals.sampler, vals.id);
   }
 
-  gl.enableVertexAttribArray(this._att.aTexturePosition);
-  gl.bindBuffer(gl.ARRAY_BUFFER, this._uv_buffer);
-  gl.vertexAttribPointer(this._att.TexturePosition, 2, gl.FLOAT, false, 0, 0);  
-
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
 
   c.drawImage(this._canvas,0,0,512,512,x*512,y*512,512,512);
 
