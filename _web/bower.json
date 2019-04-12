@@ -1,0 +1,22 @@
+{
+  "name": "dojo_web",
+  "homepage": "https://github.com/Rhoana/dojo",
+  "authors": [
+    "Daniel Haehn <haehn@saes.harvard.edu>"
+  ],
+  "description": "",
+  "dependencies": {
+    "zlib": "https://raw.githubusercontent.com/imaya/zlib.js/master/bin/zlib.min.js",
+    "dragresize": "http://git.twinhelix.com/cgit/dragresize/plain/dragresize.js"
+  },
+  "main": "",
+  "moduleType": [],
+  "license": "none",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}

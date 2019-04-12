@@ -7,6 +7,12 @@ Distributed Proofreading of Automatic Segmentations
 
 Instructions: http://rhoana.org/dojo/
 
+Client Dependencies
+
+```
+cd _web
+bower install
+```
 
 USAGE:
 
